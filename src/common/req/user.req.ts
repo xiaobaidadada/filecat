@@ -57,8 +57,8 @@ export enum UserAuth {
     vir_net = 5, // 和虚拟网络有关系的所有功能
     token_update = 6, // token 过期时间
     code_auth = 7, // 自定义 auth 废弃
-    code_resource = 8, // 自定义 code 资源
-    code_api = 9, // 自定义 api 功能
+    code_resource = 8, // 已废弃：自定义资源路由移除
+    code_api = 9, // 已废弃：自定义 api 路由移除
     update_password = 10, // 修改密码
     net_site_tag_update = 11, // 网址收藏修改 废弃
     ssh_proxy_tag_update = 12, // ssh 代理标签修改
@@ -92,7 +92,7 @@ export enum UserAuth {
     workflow_exe, // workflow 执行 功能
     workflow_exe_user, // 能被设置执行的 workf
     workflow_job,// low 用户
-    workflow_api, // workflow 自定义触发api
+    workflow_api, // 已废弃：workflow 触发路由移除
     dir_upload_max_num = 43, // 目录上传数量限制
     http_proxy_download_cancel, // 关闭下载
     // customer_api_pre_key, // 自定义api前缀修改 todo 放弃了 下次用 46开始
@@ -104,7 +104,7 @@ export enum UserAuth {
     ai_agent_page= 50, // ai 聊天页面
     share_file , // 文件分享功能
     sys_env_page, //  系统页面
-    auth_router_page= 53, // 自定义路由页面
+    auth_router_page= 53, // 已废弃：自定义路由页面移除
     firewall = 89, // 防火墙管理（页面可见 + 全部接口）
     shell_cmd_filecat_upgrade , // 升级命令
     shell_cmd_filecat_kill_self= 55, //

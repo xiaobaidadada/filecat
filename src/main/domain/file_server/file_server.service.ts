@@ -109,11 +109,13 @@ export class FileServerService {
         if (!item) {
             throw new Error("file server not found");
         }
+        // 开启即视为启用，重启后自动拉起
+        if (item.enabled === false) {
+            this.set_enabled(id, true);
+            item.enabled = true;
+        }
         if (this.running.has(id)) {
             return;
-        }
-        if (item.enabled === false) {
-            throw new Error("file server is disabled");
         }
 
         // 根目录必须存在，否则各协议行为不一致
@@ -149,12 +151,23 @@ export class FileServerService {
 
     /** 停止一个服务 */
     async stop(id: string): Promise<void> {
+        // 关闭即视为禁用，重启后不再自动拉起
+        this.set_enabled(id, false);
         const srv = this.running.get(id);
         if (!srv) {
             return;
         }
         await srv.stop();
         this.running.delete(id);
+    }
+
+    /** 只更新 enabled 字段，不启动/停止服务 */
+    private set_enabled(id: string, enabled: boolean) {
+        const list = this.list();
+        const item = list.find(v => v.id === id);
+        if (!item) return;
+        item.enabled = enabled;
+        this.save(list);
     }
 
     /** 取运行状态 */

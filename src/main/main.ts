@@ -229,6 +229,10 @@ export async function start_main() {
     // AI 接口没有目录参数，靠前端带上来的 mount_path 头判断。
     expressApp.use(`${sys_pre}/ai_agent`, ai_forward_middleware);
 
+    // 插件自定义路由：api / resource / workflow 三种类型。
+    // 必须放在 useExpressServer 和前端页面兜底之前，否则非 /api 的插件路由会被前端页面接走。
+    expressApp.use(settingService.plugin_route_middleware());
+
     // 创建 应用并注册控制器
     const app = useExpressServer(expressApp, {
         cors: false,

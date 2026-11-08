@@ -99,15 +99,6 @@ export function Permission(props:{
             ]
         },
         {
-            title: t("自定义路由"),
-            list: [
-                { title: t("自定义路由页面"), permission: UserAuth.auth_router_page },
-                { title: t("wf_api"), permission: UserAuth.workflow_api },
-                { title: t("自定义资源路由"), permission: UserAuth.code_resource },
-                { title: t("api_rt"), permission: UserAuth.code_api }
-            ]
-        },
-        {
             title: t("标签编辑权限"),
             list: [
                 // { title: t("网址导航"), permission: UserAuth.net_site_tag_update },

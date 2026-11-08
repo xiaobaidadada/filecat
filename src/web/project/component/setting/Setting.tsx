@@ -1,7 +1,6 @@
 import React from 'react'
 import {Menu} from "../../../meta/component/Dashboard";
 import {UserAuth} from "../../../../common/req/user.req";
-import {CustomerRouter} from "./CustomerRouter";
 import {Sys} from "./Sys";
 import {useTranslation} from "react-i18next";
 import {Env} from "./Env";
@@ -26,9 +25,6 @@ export default function  Settings() {
     }
     if(check_user_auth(UserAuth.sys_env_page)) {
         menuRots.push(     {index: 3, name: `${t("系统环境")}`, rto: "env_setting/",component: <Env />},)
-    }
-    if(check_user_auth(UserAuth.auth_router_page)) {
-        menuRots.push( {index: 4, name: t("自定义路由"), rto: "customer_router/",component: <CustomerRouter />},)
     }
     if(check_user_auth(UserAuth.file_mount)) {
         menuRots.push({index: 5, name:t("网盘挂载"),rto: "mount_setting/",component: <MountSetting />})

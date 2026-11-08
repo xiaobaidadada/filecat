@@ -222,7 +222,7 @@ export class ShellService {
 
             if (need_path) {
                 if (!file_path) {
-                    send("缺少 act 文件路径参数");
+                    send("Missing act file path parameter");
                     return;
                 }
                 const res = resolve_local_path(file_path);
@@ -232,14 +232,14 @@ export class ShellService {
                         // 本地目录挂载：还原成真实物理路径，后续按普通本地文件处理
                         const real = driver.local_real_path(res.inner_path);
                         if (!real) {
-                            send(`挂载路径无法还原为本地路径: ${file_path}`);
+                            send(`The mount path cannot be resolved to a local path.: ${file_path}`);
                             return;
                         }
                         local_path = real;
                     } else if (driver instanceof TcpProxyDriver) {
                         // filecat 挂载：交给对端执行，本机不关心对端具体怎么跑
                         if (exe === filecat_cmd.filecat_act_status) {
-                            send("filecat 挂载目录下的 workflow 状态暂不支持在终端查询，请到对端查看");
+                            send("Workflow status under FileCat mount directories cannot currently be queried from the terminal. Please check it on the remote endpoint.");
                             return;
                         }
                         forward_driver = driver;
@@ -249,7 +249,7 @@ export class ShellService {
                             : (exe === filecat_cmd.filecat_act_restart ? "restart" : "start");
                     } else {
                         // 其他网盘：workflow 进程只能跑在真实主机上
-                        send(`路径位于 ${driver.display_name} 挂载内，该类型不支持执行 workflow`);
+                        send(`Path is located at ${driver.display_name} Workflow execution is not supported for this type of mount.`);
                         return;
                     }
                 }
@@ -259,42 +259,41 @@ export class ShellService {
             if (forward_driver && forward_act) {
                 const rsp = await forward_driver.act_request(forward_inner, forward_act);
                 if (rsp?.code !== 0) {
-                    send(`对端执行失败: ${rsp?.message ?? "未知错误"}`);
+                    send(`Remote execution failed.: ${rsp?.message ?? "Remote execution failed."}`);
                     return;
                 }
-                const label = forward_act === "stop" ? "已停止" : (forward_act === "restart" ? "已重启" : "已启动");
-                send(`workflow ${label}（对端执行）: ${file_path}`);
+                send(`workflow ${forward_act}（Remote execution）: ${file_path}`);
                 return;
             }
 
             if (exe === filecat_cmd.filecat_act_start || exe === filecat_cmd.filecat_act_restart) {
                 if (exe === filecat_cmd.filecat_act_start) {
                     await workflowService.act_start(local_path, user_id);
-                    send(`workflow 已启动: ${file_path}`);
+                    send(`workflow Started: ${file_path}`);
                 } else {
                     await workflowService.act_restart(local_path, user_id);
-                    send(`workflow 已重启: ${file_path}`);
+                    send(`workflow Restarted: ${file_path}`);
                 }
             } else if (exe === filecat_cmd.filecat_act_stop) {
                 await workflowService.act_stop(local_path);
-                send(`workflow 已停止: ${file_path}`);
+                send(`workflow Stopped: ${file_path}`);
             } else {
                 // status
                 if (local_path) {
                     const task = workflowService.act_get_running(local_path);
                     if (!task) {
-                        send(`未在运行: ${file_path}`);
+                        send(`Not running: ${file_path}`);
                     } else {
-                        send(`[运行中] ${file_path}  name=${task.name} run-name=${task["run-name"]} 状态=${this.act_status_text(task.running_type)}`);
+                        send(`[running] ${file_path}  name=${task.name} run-name=${task["run-name"]} status=${this.act_status_text(task.running_type)}`);
                     }
                 } else {
                     const list = workflowService.act_get_running_list();
                     if (!list.length) {
-                        send("当前没有运行的 workflow");
+                        send("No active  workflow");
                         return;
                     }
                     const lines = list.map(it =>
-                        `[运行中] ${it.path}  name=${it.name} run-name=${it["run-name"]} 状态=${this.act_status_text(it.running_type)}`
+                        `[running] ${it.path}  name=${it.name} run-name=${it["run-name"]} status=${this.act_status_text(it.running_type)}`
                     );
                     send(lines.join("\n\r"));
                 }

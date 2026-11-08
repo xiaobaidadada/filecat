@@ -113,10 +113,6 @@ export class AuthMiddleware implements ExpressMiddlewareInterface {
             sshService.download(req);
             return ;
         }
-        //  自定义路由拦截
-        if (await settingService.intercept(req)) {
-            return ;
-        }
         if (req.originalUrl.indexOf(login_start_pre) !==-1
             // || !req.originalUrl.startsWith(base_pre) // 根本不会匹配除了 /api其它的 框架设置了前缀
             // pathRegex.test(req.originalUrl)

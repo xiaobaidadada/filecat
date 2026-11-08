@@ -7,7 +7,6 @@ import {settingService} from "./setting.service";
 import {mdThemeService} from "./md_theme.service";
 import {sys_setting_type, TokenSettingReq, TokenTimeMode} from "../../../common/req/setting.req";
 import {data_common_key, data_dir_tem_name, file_key} from "../data/data_type";
-import {router_pre_file} from "./setting.prefile";
 import {userService} from "../user/user.service";
 import fs from "fs"
 import path from "path"
@@ -24,85 +23,6 @@ import {FileUtil} from "../file/FileUtil";
 
 @JsonController("/setting")
 export class SettingController {
-
-
-    // 获取页面路由
-    @Get(`/${Http_controller_router.setting_customer_router}`)
-    getRouter(@Req() r) {
-        userService.have_user_auth(r.headers.authorization, UserAuth.auth_router_page);
-        return Sucess(settingService.getCustomerRouter());
-    }
-
-    // 设置页面路由
-    @Post(`/${Http_controller_router.setting_customer_router_save}`)
-    saveRouter(@Body() req: any, @Req() r) {
-        userService.have_user_auth(r.headers.authorization, UserAuth.auth_router_page);
-        userService.have_user_auth(r.headers.authorization, UserAuth.code_resource);
-        settingService.setCustomerRouter(req);
-        return Sucess("1");
-    }
-
-    @Get(`/${Http_controller_router.setting_customer_workflow_router}`)
-    get_workflow_router(@Req() r) {
-        userService.have_user_auth(r.headers.authorization, UserAuth.auth_router_page);
-        return Sucess(settingService.get_workflow_router());
-    }
-
-    // 设置workflow路由
-    @Post(`/${Http_controller_router.setting_customer_workflow_router_save}`)
-    save_workflow_router(@Body() req: any, @Req() r) {
-        userService.have_user_auth(r.headers.authorization, UserAuth.auth_router_page);
-        userService.have_user_auth(r.headers.authorization, UserAuth.workflow_api);
-        settingService.save_workflow_router(req);
-        return Sucess("1");
-    }
-
-    // 获取api路由
-    @Get("/api/customer_router")
-    getApiRouter( @Req() r) {
-        userService.have_user_auth(r.headers.authorization, UserAuth.auth_router_page);
-        return Sucess(settingService.getCustomerApiRouter());
-    }
-
-    // 设置api路由
-    @Post('/api/customer_router/save')
-    saveApiRouter(@Body() req: any, @Req() r) {
-        userService.have_user_auth(r.headers.authorization, UserAuth.auth_router_page);
-        userService.have_user_auth(r.headers.authorization, UserAuth.code_api);
-        // todo 之前设置的js代码文件是否一直保留
-        settingService.setCustomerApiRouter(req);
-        return Sucess("1");
-    }
-
-    // 获取api路由  修改路由后js代码也没了
-    @Get("/self_auth_open")
-    getSelfAuth() {
-        // 该功能已迁移到插件系统（插件注册 login_auth 回调），接口保留仅用于兼容调用方返回关闭状态
-        return Sucess(false);
-    }
-
-    // 获取js代码
-    @Get('/jscode/:router*')
-    async getJscode(@Req() req, @Param("router") router?: string) {
-        userService.have_user_auth(req.headers.authorization, UserAuth.code_api);
-        router = settingService.routerHandler(router);
-        const context = DataUtil.getFile(router, data_dir_tem_name.all_user_api_file_dir);
-        const pre = router_pre_file;
-        if (!context) {
-            DataUtil.setFile(router, pre, data_dir_tem_name.all_user_api_file_dir);
-        }
-        return Sucess(context || pre);
-    }
-
-    // 设置js代码(用于任意的js代码文件保存)
-    @Post('/jscode/save')
-    async saveJscode(@Body() req: { router: string, context: string }, @Req() r) {
-        // 通用 js 代码保存（原「自定义登录auth」代码已迁移到插件系统，不再走此接口）
-        userService.have_user_auth(r.headers.authorization, UserAuth.code_api);
-        const dir = data_dir_tem_name.all_user_api_file_dir;
-        DataUtil.setFile(settingService.routerHandler(req.router), req.context, dir);
-        return Sucess("1");
-    }
 
 
     @Get('/token')

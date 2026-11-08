@@ -489,9 +489,6 @@ export function use_handleContextMenu() {
         if (file_cap.git_available && nowFileList?.folders?.find(v => v.name === '.git')) {
             list.push({r: t("查看Git提交"), v: "git_page"})
         }
-        if (check_user_auth(UserAuth.code_resource)) {
-            list.push({r: t("add_rot"), v: "code_resource"})
-        }
         if (check_user_auth(UserAuth.http_proxy)) {
             list.push({r: t("dl_here"), v: "http_resource"})
         }
@@ -520,15 +517,6 @@ export function use_handleContextMenu() {
                 const dirPath = getRouterAfter('file', getRouterPath());
                 setShowPrompt({data: undefined, overlay: false, type: "", show: false});
                 navigate(`${routerConfig.git_page}/${encodeURIComponent(dirPath)}`);
-                return;
-            } else if (v === "code_resource") {
-                const result = await ws.sendData(CmdType.file_info, {
-                    // type: "",
-                    path: getRouterAfter('file', getRouterPath())
-                });
-                set_router_jump({page_self_router_api_data: [`/api/${Date.now()}`, result.context.now_absolute_path]});
-                setShowPrompt({data: undefined, overlay: false, type: "", show: false});
-                navigate("/setting/customer_router/");
                 return;
             } else if (v === "http_resource") {
                 const result = await ws.sendData(CmdType.file_info, {

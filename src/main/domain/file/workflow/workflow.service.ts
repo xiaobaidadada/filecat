@@ -482,8 +482,9 @@ export class work_children {
                     const job = v_List[i];
                     this.need_job_set.delete(job);
                     this.run_job(job).catch(e => {
-                        throw e;
-                    }).then(() => {
+                        // run_job 内部已经处理错误，这里只兜底，不能重新 throw，
+                        // 否则会产生 unhandled rejection 导致 work_exec_map 残留
+                        console.log('workflows job error ', e);
                     })
                 }
             }

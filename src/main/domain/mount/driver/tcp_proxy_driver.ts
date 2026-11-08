@@ -351,7 +351,7 @@ export class TcpProxyDriver implements FileDriver {
                 try {
                     return JSON.parse(res.body.toString("utf8"));
                 } catch (e) {
-                    throw new Error(`对端返回异常（HTTP ${res.status}）`);
+                    throw new Error(`The remote endpoint returned an error.（HTTP ${res.status}）`);
                 }
             },
             (r: any) => r?.code !== 0 && is_auth_expired(r?.code),

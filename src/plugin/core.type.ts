@@ -63,25 +63,58 @@ export interface PluginContext {
         version:string;
     },
     params: { [key: string]: any };
+
+    /**
+     * 控制 workflow 执行
+     * @param file_path - workflow 文件（.act）的绝对路径
+     * @param action - start 开始执行；stop 停止该文件正在运行的实例
+     * @param user_id - 执行身份的用户 id。不填则使用 root 用户
+     * @returns 成功返回 true，失败抛出异常（如文件不存在、无权限、已在运行）
+     */
+    workflow_act: (file_path: string, action: 'start' | 'stop', user_id?: string) => Promise<boolean>;
 }
 
 /**
  * 插件自定义路由定义
- * 和系统自定义 API 路由一样的功能，让插件也能注册 HTTP 路由处理器
+ *
+ * 共支持三种类型（用 type 区分，不填默认 api）：
+ *   - api      ：自定义 API 路由，handler 直接处理请求（等价系统的「自定义 api 路由」）
+ *   - resource ：页面资源路由，把本地目录或 http 地址映射到一个 URL 前缀（等价「页面资源路由」）
+ *
+ * 匹配方式都是 router 前缀匹配（startsWith），同一前缀取最长匹配，因此
+ * /api/foo/bar 会优先命中 /api/foo 而不是 /api。
+ *
+ * workflow 触发不提供专用路由类型，插件在 api 路由的 handler 里自行调用
+ * context.workflow_act() 控制执行，这样触发条件、鉴权、返回值都由插件自己决定。
  */
+export type PluginRouteType = 'api' | 'resource';
+
+/** 插件自定义路由 定义 */
 export interface PluginRoute {
-    /** 路由路径，必须以系统 API 前缀开头，例如 /api/plugin/my-route */
+    /** 路由类型，默认 'api' */
+    type?: PluginRouteType;
+    /** 路由前缀，任意路径都可以（不再限定 /api 开头），例如 /plugin/my-route */
     router: string;
     /** 是否需要鉴权，默认 true */
     needAuth?: boolean;
 
     /**
      * 路由处理函数
+     * 仅 type === 'api' 时使用。
      * @param req - Express Request 对象，插件自己读取 body、headers 等
      * @param res - Express Response 对象，插件自己控制响应
      * @returns 返回的内容会作为 HTTP 响应发送，返回 null/undefined 则不自动发送（由插件自己通过 res 发送）
      */
-    handler: (req: import('express').Request, res: import('express').Response) => Promise<string | object | null | undefined>;
+    handler?: (req: import('express').Request, res: import('express').Response) => Promise<string | object | null | undefined>;
+
+    /**
+     * 资源路径
+     * 仅 type === 'resource' 时使用。
+     * 填本地绝对路径（目录，访问时会拼接 router 之后的剩余路径）或 http(s) 地址（做反向代理）。
+     */
+    location?: string;
+    /** 浏览器缓存时间（秒）。仅 type === 'resource' 且 location 为本地目录时生效 */
+    cache_length?: number;
 }
 
 /**

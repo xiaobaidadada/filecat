@@ -312,10 +312,10 @@ export class FileController {
     async workflow_act(@Body() data: { act: string; path?: string }, @Req() ctx) {
         const token = ctx.headers.authorization;
         if (data.act !== "start" && data.act !== "restart" && data.act !== "stop") {
-            throw new Error("未知的 act 操作");
+            throw new Error("Unknown action type");
         }
         if (!data.path) {
-            throw new Error("缺少 act 文件路径");
+            throw new Error("Missing act file path");
         }
         const sysPath = path.join(settingService.getFileRootPath(token), decodeURIComponent(data.path));
         userService.check_user_path(token, sysPath);

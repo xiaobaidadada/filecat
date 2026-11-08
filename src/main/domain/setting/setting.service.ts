@@ -3,7 +3,6 @@ import {MD_EDITOR_SETTING_FIELDS} from "../../../common/md_editor_setting.check"
 import path from "path";
 import fs from "fs";
 import {isAbsolutePath as is_absolute_path} from "../../../common/path_util";
-import {CustomerApiRouterPojo} from "../../../common/req/customerRouter.pojo";
 import {
     CONTROL_ENV_DEFAULT,
     control_env_pojo,
@@ -32,8 +31,7 @@ import {
 import {SystemUtil} from "../sys/sys.utl";
 import {Request} from "express";
 import {mdThemeService} from "./md_theme.service";
-import {data_common_key, data_dir_tem_name, file_key} from "../data/data_type";
-import * as vm from "node:vm";
+import {data_common_key, file_key} from "../data/data_type";
 import {UserService, userService} from "../user/user.service";
 import {shellServiceImpl, sysType} from "../shell/shell.service";
 import {workflowService} from "../file/workflow/workflow.service";
@@ -59,7 +57,6 @@ import {
     json_params_default
 } from "../../../common/req/filecat.ai.pojo";
 import {HttpRequest} from "../../../common/node/http";
-import axios from "axios";
 import {parse_allow_entry} from "../../other/middleware/browser_proxy_policy";
 import {is_private_ipv4_literal} from "../../../common/node/net";
 
@@ -68,7 +65,45 @@ const ffmpeg = require('fluent-ffmpeg');
 const Mustache = require('mustache');
 const cron = require("node-cron");
 
-const customer_router_key = data_common_key.customer_router_key;
+/**
+ * 插件自定义路由注册表
+ * 按 router 前缀匹配，取最长前缀命中，避免 /api 抢走 /api/foo 的请求
+ */
+export class PluginRouteTable {
+    private routes: { prefix: string, route: PluginRoute }[] = [];
+
+    set(route: PluginRoute) {
+        this.delete(route.router);
+        this.routes.push({ prefix: route.router, route });
+        // 长前缀优先，保证 /api/foo 先于 /api 被匹配
+        this.routes.sort((a, b) => b.prefix.length - a.prefix.length);
+    }
+
+    clear() {
+        this.routes = [];
+    }
+
+    delete(prefix: string) {
+        this.routes = this.routes.filter(v => v.prefix !== prefix);
+    }
+
+    get size() {
+        return this.routes.length;
+    }
+
+    has(prefix: string) {
+        return this.routes.some(v => v.prefix === prefix);
+    }
+
+    /** 返回命中的路由，以及 router 之后的剩余路径 */
+    match(url: string): { route: PluginRoute, rest: string } | undefined {
+        for (const item of this.routes) {
+            if (url.startsWith(item.prefix)) {
+                return { route: item.route, rest: url.slice(item.prefix.length) };
+            }
+        }
+    }
+}
 
 /**
  * 通配域名匹配：规则形如 *.example.com，只匹配一级子域。
@@ -83,206 +118,59 @@ const host_matches_wildcard = (host: string, pattern: string): boolean => {
 // 全局默认主题：服务端渲染 index.html 时写进 <head>，个人主题由前端 setTheme() 覆盖
 const DEFAULT_THEME: string = "google";
 
-const customer_api_router_key = data_common_key.customer_api_router_key;
-
-// const token_setting = data_common_key.token_setting;
-
-// const files_pre_mulu_key = data_common_key.files_pre_mulu_key;
-
-const customer_cache_map = new Map(); // 用于用户自定义缓存的map对象
-
 let process_copy_env: any;
-
-const sandbox = {
-    fs: fs,
-    path: path,
-    cache_map: customer_cache_map,
-    axios: axios,
-};
-const sandbox_context = vm.createContext(sandbox); // 创建沙箱上下文
 
 export class SettingService {
 
 
-    getCustomerRouter(): [string, string, number, string][] {
-        const list: any[] = DataUtil.get(customer_router_key);
-        return list ?? [];
+    /**
+     * 插件自定义路由的 Express 中间件
+     * 必须注册在 useExpressServer 和前端静态资源兜底之前，否则非 /api 路径会先被前端页面接走。
+     */
+    plugin_route_middleware() {
+        return async (req: Request, res: Response, next: Function) => {
+            if (await this.handle_plugin_route(req)) return;
+            next();
+        };
     }
 
-    setCustomerRouter(req: any) {
-        DataUtil.set(customer_router_key, req);
-    }
-
-    // 1. 路由 2. 文件路径 3 token 4 用户Id 5 备注
-    get_workflow_router(): [string, string, string, string, string][] {
-        const list: any[] = DataUtil.get(data_common_key.customer_workflow_router_key);
-        return list ?? [];
-    }
-
-    save_workflow_router(req: any) {
-        DataUtil.set(data_common_key.customer_workflow_router_key, req);
-    }
-
-
-    // 甚至可以替代系统的 api
-    public async intercept(ctx: Request) {
+    /**
+     * 处理插件自定义路由
+     * @returns true 表示已处理（响应已发出），false 表示未命中
+     */
+    public async handle_plugin_route(ctx: Request): Promise<boolean> {
+        // 没有注册任何插件路由时直接跳过，不产生匹配开销
+        if (this.plugin_routes.size === 0) return false;
         try {
             let c_url = ctx.originalUrl;
-            if (ctx.originalUrl.includes("?")) {
-                c_url = ctx.originalUrl.split("?")[0];
+            if (c_url.includes("?")) {
+                c_url = c_url.split("?")[0];
             }
-            if (!c_url || !c_url.startsWith(await get_sys_base_url_pre())) return;
-            const workflow_list_router = this.get_workflow_router();
-            if (!!workflow_list_router && workflow_list_router.length > 0) {
-                for (let item of workflow_list_router) {
-                    const router = item[0];
-                    if (router === c_url) {
-                        const location = item[1];
-                        if (location && await FileUtil.access(location)) {
-                            const token = item[2];
-                            if (token) {
-                                // token验证
-                                if (path.isAbsolute(token)) {
-                                    const context = (await FileUtil.readFileSync(token)).toString().trim();
-                                    if (context !== ctx.headers.authorization) {
-                                        ctx.res.status(500).send("token is invalid");
-                                        return true;
-                                    }
-                                } else if (token !== ctx.headers.authorization) {
-                                    ctx.res.status(500).send("token is invalid");
-                                    return true;
-                                }
-                            }
-                            // workflow文件存在
-                            try {
-                                const user_info = userService.get_user_info_by_user_id(item[3]);
-                                userService.check_user_auth_by_user_id(item[3], UserAuth.workflow_exe);
-                                workflowService.exec_file(location, user_info).catch((e) => {
-                                    console.log("workflow触发失败", e)
-                                    ctx.res.status(500).send(JSON.stringify(e));
-                                }).then(() => {
-                                    ctx.res.status(200).send("ok");
-                                });
-                            } catch (e) {
-                                ctx.res.status(500).send(JSON.stringify(e));
-                            }
-                            return true;
-                        }
-                    }
+            const hit = this.plugin_routes.match(c_url);
+            if (!hit) return false;
+            const plugin_route = hit.route;
+            if (plugin_route.needAuth !== false) {
+                const token = ctx.headers.authorization;
+                if (!await this.check(token)) {
+                    ctx.res.send(AuthFail('失败'));
+                    ctx.res.end();
+                    return true;
                 }
             }
-            const list_router = this.getCustomerRouter()
-            if (!!list_router && list_router.length > 0) {
-                for (let item of list_router) {
-                    const router = item[0]
-                    if (c_url.startsWith(router)) { // 使用包含 可以用于目录的情况
-                        const location = item[1];
-                        if (location) {
-                            if ((location as string).startsWith("http")) {
-                                const response = await HttpRequest.request({
-                                    url: location,
-                                    method: 'GET',
-                                    headers: ctx.headers as any,
-                                    responseType: 'arraybuffer',
-                                    validateStatus: () => true,
-                                });
-                                for (let key in response.headers) {
-                                    // 跳过 transfer-encoding 等导致分块问题的头
-                                    if (['transfer-encoding', 'connection'].includes(key.toLowerCase())) continue;
-                                    ctx.res.setHeader(key, response.headers[key]);
-                                }
-                                ctx.res.status(response.status).send(Buffer.from(response.data));
-                            } else {
-                                let sys_file_path = path.join(location); // 可以删除 .. 符号
-                                let stats = await FileUtil.statSync(location);
-                                if (stats.isDirectory()) {
-                                    let p = c_url.slice(router.length);
-                                    p = decodeURIComponent(p);
-                                    if (p === "/" || !p) {
-                                        const list = await FileUtil.readdirSync(sys_file_path);
-                                        const ok_file_name = list.find((v => v.startsWith("index.htm") || v === "index"));
-                                        if (ok_file_name) {
-                                            sys_file_path = path.join(location, ok_file_name);
-                                            stats = await FileUtil.statSync(sys_file_path);
-                                        } else {
-                                            throw " 404 ";
-                                        }
-                                    } else {
-                                        sys_file_path = path.join(location, p);
-                                        stats = await FileUtil.statSync(sys_file_path);
-                                    }
-                                }
-                                if (!userService.isSubPath(location, sys_file_path)) {
-                                    throw " 404 ";
-                                }
-                                FileServiceImpl.download_one_file(path.basename(sys_file_path), stats.size, sys_file_path, ctx.res, {
-                                    handle_type_: "inline",
-                                    cache_length: item[2]
-                                });
-                            }
-                            return true;
-                        }
-                    }
-                }
-            }
-            // 插件自定义路由拦截（优先级高于用户自定义 API 路由）
-            const plugin_route = this.plugin_routes.get(c_url);
-            if (plugin_route) {
-                if (plugin_route.needAuth !== false) {
-                    const token = ctx.headers.authorization;
-                    if (!await this.check(token)) {
-                        ctx.res.send(AuthFail('失败'));
-                        ctx.res.end();
-                        return true;
-                    }
-                }
-                try {
+            try {
+                if (plugin_route.type === 'resource') {
+                    await this.handle_plugin_resource(plugin_route as PluginRoute, hit.rest, ctx);
+                } else {
                     // 直接把 ctx (Express Request) 传给插件，让插件自己处理 body 等
-                    const r = await plugin_route.handler(ctx, ctx.res);
+                    const r = await (plugin_route as PluginRoute).handler(ctx, ctx.res);
                     if (r !== null && r !== undefined) {
                         ctx.res.status(200).send(r);
                     }
-                } catch (e) {
-                    ctx.res.status(500).send(Sucess(e.toString()));
                 }
-                return true;
+            } catch (e) {
+                ctx.res.status(500).send(Sucess(e.toString()));
             }
-
-            const list_api_router = DataUtil.get<CustomerApiRouterPojo[]>(customer_api_router_key);
-            if (!!list_api_router && list_api_router.length > 0) {
-                for (let item of list_api_router) {
-                    if (item.router === c_url) {
-                        if (item.needAuth) {
-                            const token = ctx.headers.authorization;
-                            if (!await this.check(token)) {
-                                ctx.res.send(AuthFail('失败'));
-                                ctx.res.end()
-                                return true;
-                            }
-                        }
-                        try {
-
-                            const instance = this.getHandlerClass(item.router, data_dir_tem_name.all_user_api_file_dir);
-                            // 监听 'data' 事件以接收数据块
-                            let data = '';
-                            ctx.on('data', (chunk) => {
-                                data += chunk;
-                            });
-                            // 等待 'end' 事件完成
-                            await new Promise((resolve) => {
-                                ctx.on('end', resolve);
-                            });
-                            const r = await instance.handler(ctx.headers, data, ctx);
-                            if (r !== null && r !== undefined) {
-                                ctx.res.status(200).send(r);
-                            }
-                        } catch (e) {
-                            ctx.res.status(500).send(Sucess(e.toString()))
-                        }
-                        return true;
-                    }
-                }
-            }
+            return true;
 
             // 拦截失败
             return false;
@@ -294,32 +182,82 @@ export class SettingService {
 
     }
 
-    // 每次都会重新读取文件没有必要缓存 todo 更合适方案
-    public getHandlerClass(key, dir) {
-        const jscode = DataUtil.getFile(this.routerHandler(key), dir);
-        if (!jscode) {
-            return {};
+    /**
+     * 页面资源路由：本地目录映射 或 http 反向代理
+     * @param rest router 之后的剩余路径（如 /a/b.js）
+     */
+    private async handle_plugin_resource(route: PluginRoute, rest: string, ctx: Request) {
+        const location = route.location;
+        if (!location) throw new Error("resource route location is required");
+        if (location.startsWith("http")) {
+            const response = await HttpRequest.request({
+                url: location + rest,
+                method: 'GET',
+                headers: ctx.headers as any,
+                responseType: 'arraybuffer',
+                validateStatus: () => true,
+            });
+            for (let key in response.headers) {
+                // 跳过 transfer-encoding 等导致分块问题的头
+                if (['transfer-encoding', 'connection'].includes(key.toLowerCase())) continue;
+                ctx.res.setHeader(key, response.headers[key]);
+            }
+            ctx.res.status(response.status).send(Buffer.from(response.data));
+            return;
         }
-        const result = vm.runInContext(`(() => {
-                                                ${jscode};
-                                                return Api;
-                                            })()`, sandbox_context);
-        const instance = new result();
-        // const ApiClass = eval(`(() => {
-        //     ${jscode};
-        //     return Api;
-        // })()`);
-        // const instance = new ApiClass();
-        return instance;
+        let sys_file_path = path.join(location); // 可以删除 .. 符号
+        let stats = await FileUtil.statSync(sys_file_path);
+        if (!stats.isDirectory()) throw new Error("resource route location must be a directory");
+        let p = decodeURIComponent(rest);
+        if (p === "/" || !p) {
+            const list = await FileUtil.readdirSync(sys_file_path);
+            const ok_file_name = list.find((v => v.startsWith("index.htm") || v === "index"));
+            if (!ok_file_name) throw new Error("404");
+            sys_file_path = path.join(location, ok_file_name);
+            stats = await FileUtil.statSync(sys_file_path);
+        } else {
+            sys_file_path = path.join(location, p);
+            stats = await FileUtil.statSync(sys_file_path);
+        }
+        if (!userService.isSubPath(location, sys_file_path)) throw new Error("404");
+        FileServiceImpl.download_one_file(path.basename(sys_file_path), stats.size, sys_file_path, ctx.res, {
+            handle_type_: "inline",
+            cache_length: route.cache_length
+        });
     }
 
-    getCustomerApiRouter() {
-        const list = DataUtil.get(customer_api_router_key);
-        return list ?? [];
+    /**
+     * 插件调用的 workflow 控制函数
+     * @param file_path workflow 文件绝对路径
+     * @param action start 开始执行 / stop 停止运行中的实例
+     * @param user_id 执行身份用户 id，不填则用 root 用户
+     */
+    async plugin_workflow_act(file_path: string, action: 'start' | 'stop', user_id?: string) {
+        if (!path.isAbsolute(file_path)) throw new Error("workflow file_path must be absolute");
+        if (!await FileUtil.access(file_path)) throw new Error("workflow file not exist");
+        if (action === 'stop') {
+            await workflowService.act_stop(file_path);
+            return true;
+        }
+        if (action !== 'start') throw new Error("workflow action must be start or stop");
+        // 未指定用户时用 root 用户执行
+        const uid = user_id ? user_id : this.get_root_user_id();
+        if (!uid) throw new Error("workflow need user_id");
+        userService.check_user_auth_by_user_id(uid, UserAuth.workflow_exe);
+        const user_info = userService.get_user_info_by_user_id(uid);
+        // 同一 workflow 不允许并发执行
+        if (workflowService.act_get_running_list().some(v => v.path === file_path)) {
+            throw new Error("workflow is running");
+        }
+        await workflowService.exec_file(file_path, user_info);
+        return true;
     }
 
-    setCustomerApiRouter(req: any) {
-        DataUtil.set(customer_api_router_key, req);
+    private get_root_user_id(): string | undefined {
+        const mapping = DataUtil.get<{ [id: string]: { is_root?: boolean } }>(data_common_key.user_id_info_data_mapping);
+        for (const id in mapping) {
+            if (mapping[id].is_root) return id;
+        }
     }
 
     public async check(token: string) {
@@ -328,17 +266,6 @@ export class SettingService {
             return true;
         }
         return false;
-    }
-
-    public routerHandler(p) {
-        p = decodeURIComponent(p);
-        const keys = p.split("");
-        for (let i = 0; i < keys.length; i++) {
-            if (keys[i] === "/") {
-                keys[i] = "_";
-            }
-        }
-        return keys.join("");
     }
 
     /**
@@ -1640,7 +1567,7 @@ export class SettingService {
     plugin_themes: Map<string, string> = new Map();
 
     /** 插件注册的自定义路由：{路由路径: PluginRoute} */
-    plugin_routes: Map<string, PluginRoute> = new Map();
+    plugin_routes: PluginRouteTable = new PluginRouteTable();
 
     /** 插件注册的「登录鉴权」回调列表（替代旧版自定义登录 auth） */
     plugin_login_auth_list: { id: string; handler: (headers: any, req: any) => any }[] = [];
@@ -1813,11 +1740,11 @@ export class SettingService {
             if (this.plugin_routes.has(route.router)) {
                 console.warn(`[Plugin] 路由冲突: "${route.router}" 被插件 "${plugin.meta.name}" 覆盖`);
             }
-            this.plugin_routes.set(route.router, route);
+            this.plugin_routes.set(route);
         }
         console.log(
             `[Plugin] "${plugin.meta.name}" 已注册路由:`,
-            plugin.routes.map(r => r.router).join(', ')
+            plugin.routes.map(r => `${r.type ?? 'api'}:${r.router}`).join(', ')
         );
     }
 
@@ -1929,6 +1856,7 @@ export class SettingService {
                 version: process.env.version,
             },
             params,
+            workflow_act: (file_path: string, action: 'start' | 'stop', user_id?: string) => this.plugin_workflow_act(file_path, action, user_id),
         });
 
         this._register_ai_tools(plugin);
