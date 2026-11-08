@@ -114,10 +114,27 @@ export default function CredentialPanel() {
                 mountHttp.post("credential/list", {}),
                 mountHttp.post("credential/meta", {}),
             ]);
-            set_list(Array.isArray(c?.data) ? c.data : []);
+            const next_list = Array.isArray(c?.data) ? c.data : [];
+            set_list(next_list);
             setMetas(Array.isArray(m?.data) ? m.data : []);
+            return next_list;
         } catch (e) {
             // Http 层已提示
+            return [];
+        }
+    };
+
+    /**
+     * 账号增删改后，把当前编辑的凭据重新拉一遍回填。
+     * 账号操作是即时落库的，但右侧表单持有的是「点编辑那一刻的快照」，
+     * 不回填就会出现：保存后输入框还是旧对象（id 为空，再点保存又新建一条）、
+     * 删除后界面上还留着已删掉的账号。
+     */
+    const refresh_accounts = async (credential_id: string) => {
+        const next_list = await load();
+        const cur = next_list.find((v: CredentialRow) => v.id === credential_id);
+        if (cur) {
+            set_accounts(cur.accounts ?? []);
         }
     };
 
@@ -372,7 +389,7 @@ export default function CredentialPanel() {
                 password: acc.password,
             });
             NotySuccess(t("已保存"));
-            await load();
+            await refresh_accounts(id);
         } catch (e) {
             // Http 层已提示
         }
@@ -412,7 +429,7 @@ export default function CredentialPanel() {
                 try {
                     await mountHttp.post("credential/account_remove", {credential_id: id, account_id: acc.id});
                     NotySuccess(t("已删除"));
-                    await load();
+                    await refresh_accounts(id);
                 } catch (e) {
                     // Http 层已提示
                 }

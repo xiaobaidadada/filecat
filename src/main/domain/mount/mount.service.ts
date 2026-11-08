@@ -297,7 +297,8 @@ export class MountService {
      * 按挂载记录取驱动实例。
      * 凭据缺失或停用时会抛出明确错误，避免难以定位的失败。
      */
-    driver_of(mount: FileMountItem): FileDriver {        const cred = this.credential_of(mount);
+    driver_of(mount: FileMountItem): FileDriver {
+        const cred = this.get_credential(mount.credential_id);
         if (!cred) {
             throw new Error(`挂载「${mount.note || mount.mount_path}」引用的凭据已不存在，请重新配置`);
         }
@@ -308,31 +309,8 @@ export class MountService {
     }
 
     /**
-     * 取挂载实际使用的「凭据形态」——就是凭据表里那一条。
-     * 各类协议需要的 account 合并统一在 driver_factory 的 build_config 里做，
-     * 这里只处理「凭据本体里的字段需要按账号展开」的协议。
+     * 校验挂载引用的凭据（及账号）是否存在，返回错误信息；合法返回 undefined
      */
-    private credential_of(mount: FileMountItem): CredentialItem | undefined {
-        const cred = this.get_credential(mount.credential_id);
-        if (!cred) {
-            return undefined;
-        }
-        // 内网穿透：客户端来自凭据本体，对端账号密码来自选中的 account
-        if (cred.type === "tcp_proxy") {
-            const acc = (cred.accounts ?? []).find(v => v.id === mount.account_id);
-            return {
-                ...cred,
-                config: {
-                    ...cred.config,
-                    username: acc?.account_name ?? "",
-                    password: acc?.password ?? "",
-                },
-            };
-        }
-        return cred;
-    }
-
-    /** 校验挂载引用的凭据（及账号）是否存在，返回错误信息；合法返回 undefined */
     private validate_mount_credential(credential_id: string, account_id?: string): string | undefined {
         const cred = this.get_credential(credential_id);
         if (!cred) {
@@ -549,7 +527,7 @@ export class MountService {
                     root_dir: req.root_dir,
                 };
             }
-            const cred = this.credential_of(mount);
+            const cred = this.get_credential(mount.credential_id);
             if (!cred) {
                 return {ok: false, error: "请选择凭据"};
             }
