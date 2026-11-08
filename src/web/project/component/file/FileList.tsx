@@ -176,9 +176,9 @@ export default function FileList() {
             } else {
                 item.show_mtime = item.mtime ? getShortTime(item.mtime) : "";
             }
-            if (!have_workflow_water && (item.name.endsWith('.workflow.yml') || item.name.endsWith('.act'))) {
-                have_workflow_water = true;
-            }
+            // if (!have_workflow_water && (item.name.endsWith('.workflow.yml') || item.name.endsWith('.act'))) {
+            //     have_workflow_water = true;
+            // }
             if (item.name === workflow_dir_name) {
                 have_workflow_water = true;
             }

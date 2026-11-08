@@ -23,6 +23,10 @@ import {DataUtil} from "../data/DataUtil";
 import {filecat_upgrade_class} from "./utils/filecat_upgrade";
 import {ai_agent_class} from "./utils/ai_agent";
 import {workflowService} from "../file/workflow/workflow.service";
+import {resolve_local_path} from "../file/mount_adapter";
+import {mountService} from "../mount/mount.service";
+import {TcpProxyDriver} from "../mount/driver/tcp_proxy_driver";
+import {LocalDriver} from "../mount/driver/local_driver";
 import {wss_interface} from "../../../common/frame/type";
 
 const {spawn, exec} = require('child_process');
@@ -198,34 +202,86 @@ export class ShellService {
     /**
      * workflow act 控制的统一处理（启动/重启/停止/状态）
      * params 末尾已由 check_exe_cmd 追加了 user_id，params[0] 为 act 文件绝对路径（status 可不带）
+     *
+     * 路径可能落在挂载目录里，按驱动类型分流：
+     *   - 本地 / 本地目录挂载：换成真实物理路径后本地执行
+     *   - filecat（tcp_proxy）挂载：转发到对端执行
+     *   - 其他网盘（sftp/webdav/smb/s3/baidu）：流程跑不在网盘上，直接报错
      */
     private async act_cmd_base(exe: string, params: string[], send: (str: string, enter?: boolean) => void) {
         const user_id = params.pop();
         const file_path = params[0];
         try {
-            if (exe === filecat_cmd.filecat_act_start || exe === filecat_cmd.filecat_act_restart) {
+            // status 允许不带路径（列出全部运行中的任务），不需要过挂载
+            const need_path = exe !== filecat_cmd.filecat_act_status || Boolean(file_path);
+            let local_path = file_path;
+            // 需要转发到对端执行的驱动与挂载内路径；为空表示本地执行
+            let forward_driver: TcpProxyDriver | null = null;
+            let forward_inner = "";
+            let forward_act: "start" | "restart" | "stop" | null = null;
+
+            if (need_path) {
                 if (!file_path) {
                     send("缺少 act 文件路径参数");
                     return;
                 }
+                const res = resolve_local_path(file_path);
+                if (res.match) {
+                    const driver = mountService.driver_of(res.match.mount);
+                    if (driver instanceof LocalDriver) {
+                        // 本地目录挂载：还原成真实物理路径，后续按普通本地文件处理
+                        const real = driver.local_real_path(res.inner_path);
+                        if (!real) {
+                            send(`挂载路径无法还原为本地路径: ${file_path}`);
+                            return;
+                        }
+                        local_path = real;
+                    } else if (driver instanceof TcpProxyDriver) {
+                        // filecat 挂载：交给对端执行，本机不关心对端具体怎么跑
+                        if (exe === filecat_cmd.filecat_act_status) {
+                            send("filecat 挂载目录下的 workflow 状态暂不支持在终端查询，请到对端查看");
+                            return;
+                        }
+                        forward_driver = driver;
+                        forward_inner = res.inner_path;
+                        forward_act = exe === filecat_cmd.filecat_act_stop
+                            ? "stop"
+                            : (exe === filecat_cmd.filecat_act_restart ? "restart" : "start");
+                    } else {
+                        // 其他网盘：workflow 进程只能跑在真实主机上
+                        send(`路径位于 ${driver.display_name} 挂载内，该类型不支持执行 workflow`);
+                        return;
+                    }
+                }
+            }
+
+            // 转发到对端执行
+            if (forward_driver && forward_act) {
+                const rsp = await forward_driver.act_request(forward_inner, forward_act);
+                if (rsp?.code !== 0) {
+                    send(`对端执行失败: ${rsp?.message ?? "未知错误"}`);
+                    return;
+                }
+                const label = forward_act === "stop" ? "已停止" : (forward_act === "restart" ? "已重启" : "已启动");
+                send(`workflow ${label}（对端执行）: ${file_path}`);
+                return;
+            }
+
+            if (exe === filecat_cmd.filecat_act_start || exe === filecat_cmd.filecat_act_restart) {
                 if (exe === filecat_cmd.filecat_act_start) {
-                    await workflowService.act_start(file_path, user_id);
+                    await workflowService.act_start(local_path, user_id);
                     send(`workflow 已启动: ${file_path}`);
                 } else {
-                    await workflowService.act_restart(file_path, user_id);
+                    await workflowService.act_restart(local_path, user_id);
                     send(`workflow 已重启: ${file_path}`);
                 }
             } else if (exe === filecat_cmd.filecat_act_stop) {
-                if (!file_path) {
-                    send("缺少 act 文件路径参数");
-                    return;
-                }
-                await workflowService.act_stop(file_path);
+                await workflowService.act_stop(local_path);
                 send(`workflow 已停止: ${file_path}`);
             } else {
                 // status
-                if (file_path) {
-                    const task = workflowService.act_get_running(file_path);
+                if (local_path) {
+                    const task = workflowService.act_get_running(local_path);
                     if (!task) {
                         send(`未在运行: ${file_path}`);
                     } else {

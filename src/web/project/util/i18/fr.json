@@ -776,7 +776,7 @@
   "授权": "Autoriser",
   "授权失败": "Échec de l'autorisation",
   "strtdrt": "Dossier de départ",
-  "ftr2rmt": "Transférer vers le distant",
+  "ftr2rmt": "ws Transférer vers le distant",
   "ftr2rmt_tip": "Les requêtes terminal, workflow et git de ce dossier s'exécutent sur le FileCat distant",
   "授权检测": "Vérifier l'autorisation",
   "scrtkep": "Laisser SecretKey vide pour ne pas modifier",

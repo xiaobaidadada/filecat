@@ -786,7 +786,7 @@
   "授权": "Authorize",
   "授权失败": "Authorization failed",
   "strtdrt": "Start dir",
-  "ftr2rmt": "Forward to remote",
+  "ftr2rmt": "ws Forward to remote",
   "ftr2rmt_tip": "Terminal, workflow and git requests under this dir run on the remote FileCat",
   "授权检测": "Auth check",
   "scrtkep": "Leave SecretKey empty to keep unchanged",

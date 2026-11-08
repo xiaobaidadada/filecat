@@ -306,6 +306,33 @@ export class FileController {
         return Sucess(await workflowService.workflow_get_pre_inputs(sysPath));
     }
 
+    // workflow act 控制（启动/重启/停止）。供 pty 命令和「转发到对端」的挂载调用。
+    // 对端不知道挂载这一层，拿到的 path 是它自己视角的绝对路径。
+    @Post("/workflow/act")
+    async workflow_act(@Body() data: { act: string; path?: string }, @Req() ctx) {
+        const token = ctx.headers.authorization;
+        if (data.act !== "start" && data.act !== "restart" && data.act !== "stop") {
+            throw new Error("未知的 act 操作");
+        }
+        if (!data.path) {
+            throw new Error("缺少 act 文件路径");
+        }
+        const sysPath = path.join(settingService.getFileRootPath(token), decodeURIComponent(data.path));
+        userService.check_user_path(token, sysPath);
+        const user_info = userService.get_user_info_by_token(token);
+        if (!user_info) {
+            throw new Error("user not found");
+        }
+        if (data.act === "stop") {
+            await workflowService.act_stop(sysPath);
+        } else if (data.act === "restart") {
+            await workflowService.act_restart(sysPath, user_info.id);
+        } else {
+            await workflowService.act_start(sysPath, user_info.id);
+        }
+        return Sucess(sysPath);
+    }
+
     // workflow 执行
     @msg(CmdType.workflow_exec)
     async workflow_exec(data: WsData<WorkflowReq>) {

@@ -334,6 +334,31 @@ export class TcpProxyDriver implements FileDriver {
     }
 
     /**
+     * workflow act 控制转发到对端执行。
+     *
+     * 和 git_request 同理：挂载点内相对路径用 remote_path 换成对端视角的路径，
+     * 对端拿到的就是它自己根目录下的绝对路径，不需要知道「挂载」这层概念。
+     */
+    async act_request(inner: string, act: "start" | "restart" | "stop"): Promise<any> {
+        const remote_path = this.remote_path(inner);
+        return await this.with_auth<any>(
+            async (token) => {
+                const res = await this.request("POST", "/api/file/workflow/act", {
+                    body: {act, path: remote_path},
+                    headers: {Authorization: token},
+                    timeout: 60000,
+                });
+                try {
+                    return JSON.parse(res.body.toString("utf8"));
+                } catch (e) {
+                    throw new Error(`对端返回异常（HTTP ${res.status}）`);
+                }
+            },
+            (r: any) => r?.code !== 0 && is_auth_expired(r?.code),
+        );
+    }
+
+    /**
      * 带登录态自动重试的统一入口。
      *
      * 所有对端请求都从这里走：
