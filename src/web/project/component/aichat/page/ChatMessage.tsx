@@ -51,24 +51,28 @@ function CallListRenderer({callList}: { callList?: ai_agent_tool_call_item[] }) 
     const {t} = useTranslation();
     if (!callList?.length) return null;
     const successCount = callList.filter(c => c.success).length;
-    const failCount = callList.filter(c => !c.success).length;
+    const runningCount = callList.filter(c => (c as any).running).length;
+    const failCount = callList.filter(c => !c.success && !(c as any).running).length;
     return (
         <div className="chat-message-call-list">
             <div className="call-list-header" onClick={() => setExpanded(!expanded)}>
                 <Icon icon={expanded ? 'expand_less' : 'expand_more'}/>
                 <span className="call-list-summary">
+                    {runningCount > 0 && <span className="call-list-spinner"/>}
                     {t('工具调用')}
                     {failCount > 0 && <span className="call-list-fail"> {t('失败')}: {failCount}</span>}
                 </span>
             </div>
             {expanded && (
                 <div className="call-list-body">
-                    {callList.map((item, idx) => (
-                        <div key={idx} className={`call-list-item ${item.success ? 'call-success' : 'call-fail'}`}>
+                    {callList.map((item, idx) => {
+                        const itemRunning = (item as any).running;
+                        return (
+                        <div key={idx} className={`call-list-item ${itemRunning ? 'call-running' : (item.success ? 'call-success' : 'call-fail')}`}>
                             <div className="call-list-item-header">
-                                <Icon icon={item.success ? 'check_circle' : 'error'}/>
+                                <Icon icon={itemRunning ? 'progress_activity' : (item.success ? 'check_circle' : 'error')}/>
                                 <span className="call-list-tool-name">{item.tool_display_name || item.tool_name}</span>
-                                <span className="call-list-duration">{item.duration_ms}ms</span>
+                                {!itemRunning && <span className="call-list-duration">{item.duration_ms}ms</span>}
                             </div>
                             {item.tool_args && (
                                 <details className="call-list-details">
@@ -89,7 +93,8 @@ function CallListRenderer({callList}: { callList?: ai_agent_tool_call_item[] }) 
                                 </details>
                             )}
                         </div>
-                    ))}
+                        );
+                    })}
                 </div>
             )}
         </div>

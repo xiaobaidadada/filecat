@@ -5,23 +5,13 @@
  * 1. 发起一次 completions 类型的 WS 聊天请求
  * 2. 处理流式消息分块（ai_chat_msg），基于 chunk_index 维护多气泡
  * 3. 处理聊天结束 / 错误，自动清理 WS 监听
- * 4. 消息排队机制：sending 时用户发送的消息进入队列，当前轮结束后自动处理
  */
 import React, {useRef, useState} from "react";
 import {ws} from "../../../util/ws";
 import {CmdType, WsData} from "../../../../../common/frame/WsData";
-import {
-    ai_agent_message_attachment_item,
-    ai_agent_message_item,
-    ai_agent_content_part
-} from "../../../../../common/req/filecat.ai.pojo";
+import {ai_agent_message_item} from "../../../../../common/req/filecat.ai.pojo";
 import {Message} from "./chatTypes";
-import {toUiMessages, next_placeholder_id} from "./messageUtils";
-/** 排队消息的结构 */
-interface QueuedMsg {
-    text: string;
-    attachments: ai_agent_message_attachment_item[];
-}
+import {toUiMessages} from "./messageUtils";
 
 /**
  * 判断一条消息是否值得保留：用户消息永远保留；
@@ -84,8 +74,6 @@ export function useChatStream(opts: UseChatStreamOptions) {
      */
     const [pausing, setPausing] = useState(false);
 
-    /** 排队消息队列 */
-    const pendingQueueRef = useRef<QueuedMsg[]>([]);
     /** 当前请求的 AbortSignal 引用，用于暂停 */
     const abortRef = useRef<{ abort: () => void } | null>(null);
 
@@ -93,12 +81,10 @@ export function useChatStream(opts: UseChatStreamOptions) {
      * 核心：发起一次 completions 流式聊天
      * @param sessionId  会话 ID
      * @param userMsg    用户消息（UI 层）
-     * @param onDone     本轮结束后的回调（用于处理排队等）
      */
     const startChatStream = (
         sessionId: string,
         userMsg: Message,
-        onDone: () => void,
     ) => {
         const baseMessages = getMessages();
         // 记录本轮起点（user 消息的位置）：收尾时用它把本轮产生的气泡整段替换掉，
@@ -222,7 +208,6 @@ export function useChatStream(opts: UseChatStreamOptions) {
             }
             refreshSessions();
             scrollToBottom(true);
-            onDone();
         };
 
         // ===== ai_chat_error：清理并显示错误 =====
@@ -261,7 +246,6 @@ export function useChatStream(opts: UseChatStreamOptions) {
                 // 错误路径同样按最终位置重算 id，与正常收尾保持一致，避免气泡重挂
                 setMessages([...newMessages].map((m, i) => ({ ...m, id: i + 1 })));
             }
-            onDone();
         };
 
         // 清理 WS 监听
@@ -283,44 +267,6 @@ export function useChatStream(opts: UseChatStreamOptions) {
             sys_prompt_id: getSelectedSysPromptId(),
         });
     };
-
-    /**
-     * 处理排队消息：出队一条并递归调用
-     */
-    const processPendingQueue = () => {
-        const queue = pendingQueueRef.current;
-        if (queue.length === 0) return;
-
-        const next = queue.shift();
-        if (!next) return;
-
-        // 清理之前排队消息的 "⏳" 标记
-        setMessages(prev => prev.map(m => {
-            if (m.sender === 'user' && m.text.includes('⏳(排队中...)')) {
-                return {...m, text: m.text.replace(' ⏳(排队中...)', '')};
-            }
-            return m;
-        }));
-
-        const userMsg: Message = {
-            id: next_placeholder_id(),
-            sender: 'user',
-            text: next.text,
-            attachments: next.attachments,
-        };
-
-        startChatStream(getActiveSessionId(), userMsg, processPendingQueue);
-    };
-
-    /**
-     * 将一条新消息加入排队队列
-     */
-    const enqueueMessage = (text: string, attachments: ai_agent_message_attachment_item[]) => {
-        pendingQueueRef.current.push({text, attachments});
-    };
-
-    /** 获取当前队列长度 */
-    const getQueueLength = () => pendingQueueRef.current.length;
 
     /** 暂停当前 AI 请求（本地发起或其它页面在跑的会话都支持停止） */
     const abort = () => {
@@ -347,15 +293,12 @@ export function useChatStream(opts: UseChatStreamOptions) {
         if (!sid) return;
         // 不设 local_owner：确认后由后端续跑，本轮结束时不走 useChatStream 收尾，
         // 而是让订阅层用 reload_session 重载完整会话（含已补的工具结果）
-        setSending(true);
+        setSending(sid);
         ws.sendData(CmdType.ai_chat_confirm, { session_id: sid, ask_id, answer });
     };
 
     return {
         startChatStream,
-        processPendingQueue,
-        enqueueMessage,
-        getQueueLength,
         abort,
         confirmAsk,
         pausing,

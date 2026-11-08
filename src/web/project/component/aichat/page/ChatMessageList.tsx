@@ -109,6 +109,10 @@ const ChatMessageList: React.FC<ChatMessageListProps> = ({
             )}
             {messages.map(msg => {
                 const collapsed = collapsedIds.has(msg.id);
+                // 纯交互卡片（无正文）一旦处理完，整条气泡就没什么可显示的了，直接跳过
+                if (msg.interactive?.resolved && !msg.text && !msg.is_loading) {
+                    return null;
+                }
                 return (
                     <div
                         key={msg.id}
@@ -124,8 +128,9 @@ const ChatMessageList: React.FC<ChatMessageListProps> = ({
                             />
                         )}
 
-                        {/* 交互卡片：命令确认 / AI 提问，就地渲染在气泡里 */}
-                        {msg.interactive ? (
+                        {/* 交互卡片：命令确认 / AI 提问，就地渲染在气泡里
+                            resolved 后立即不渲染，不必等后端消息回推 */}
+                        {msg.interactive && !msg.interactive.resolved ? (
                             <InteractiveCard interactive={msg.interactive} on_resolved={on_interactive_resolved}
                                              on_submit={on_interactive_submit}/>
                         ) : msg.is_loading ? (

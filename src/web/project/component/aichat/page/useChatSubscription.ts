@@ -182,7 +182,9 @@ export function useChatSubscription(deps: Deps) {
         const handleChatError = (data: any) => {
             const ctx = data?.context || {};
             if (!ctx.session_id) return;
-            handleEnd(ctx.session_id, ctx.once_messages_list);
+            // 出错时整份重载：本轮数据不完整（例如报「还有未确认的操作卡片」），
+            // 必须以会话真实状态重建，才能把前端误删的交互卡片显示回来
+            handleEnd(ctx.session_id, ctx.once_messages_list, true);
         };
 
         ws.addMsg(CmdType.ai_chat_msg, handleChatMsg);

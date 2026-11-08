@@ -198,8 +198,13 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
         refresh_sessions: session_api.refreshSessions,
         reload_session: (id) => session_api.loadSession(id),
         set_active_session_running: session_api.setActiveSessionRunning,
-        // 本轮真正结束（含暂停等待工具跑完）后清掉"暂停中"状态
-        on_chat_end: () => reset_pausing_ref.current(),
+        // 本轮真正结束（含暂停等待工具跑完、确认后继续）后清掉"暂停中"与发送中状态。
+        // 确认后继续的轮次由 confirmAsk 发起，useChatStream 收尾路径不经过它，
+        // 所以 sendingSessionId 必须在这里统一清，否则界面会一直卡在"正在输出"。
+        on_chat_end: (sessionId) => {
+            reset_pausing_ref.current();
+            setSendingSessionId(prev => (prev === sessionId ? null : prev));
+        },
     });
     sub_ref.current = sub;
 
@@ -285,21 +290,8 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
         const text = (chatInputRef.current?.getValue() ?? '').trim();
         if (!text && pendingAttachments.length === 0) return;
 
-        // 当前会话本地正在执行 → 排队（其它会话在跑不影响本会话发送）
-        if (sendingSessionId === session_api.activeSessionId) {
-            const attachments = await buildAttachments(pendingAttachments);
-            chatStream.enqueueMessage(text, attachments);
-            chatInputRef.current?.clear();
-            setPendingAttachments([]);
-            const queuedMsg: Message = {
-                id: next_placeholder_id(),
-                sender: 'user',
-                text: text + (chatStream.getQueueLength() > 1 ? ` ⏳(排队中...)` : ''),
-                attachments,
-            };
-            msg.setMessages(prev => [...prev, queuedMsg]);
-            return;
-        }
+        // 当前会话本地正在执行 → 不发送（后端一轮未结束时无法并发同一个会话）
+        if (sendingSessionId === session_api.activeSessionId) return;
 
         // 无会话时先建一个
         let sessionId = session_api.activeSessionId;
@@ -344,7 +336,6 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
                     setSendingSessionId(null);
                     session_api.refreshSessions();
                     msg.scrollToBottom(true);
-                    chatStream.processPendingQueue();
                 }
             );
 
@@ -353,13 +344,12 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
                 botMsg.is_loading = false;
                 msg.setMessages([...newMessages]);
                 setSendingSessionId(null);
-                chatStream.processPendingQueue();
             }
             return;
         }
 
         // completions → WebSocket 流式
-        chatStream.startChatStream(sessionId, userMsg, () => chatStream.processPendingQueue());
+        chatStream.startChatStream(sessionId, userMsg);
     };
 
     // ===== 附件 =====

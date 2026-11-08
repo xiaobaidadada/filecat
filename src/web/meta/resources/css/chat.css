@@ -1295,6 +1295,26 @@
     margin-left: 0.25rem;
 }
 
+/* 工具执行中的转圈，纯 CSS，不依赖字体图标动画 */
+.call-list-spinner {
+    display: inline-block;
+    width: 0.75em;
+    height: 0.75em;
+    margin-right: 0.25rem;
+    border: 0.125em solid var(--borderPrimary);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: call-list-spin 0.8s linear infinite;
+}
+
+@keyframes call-list-spin {
+    to { transform: rotate(360deg); }
+}
+
+.call-list-item.call-running .call-list-tool-name {
+    color: var(--textSecondary);
+}
+
 .call-list-body {
     display: flex;
     flex-direction: column;

@@ -461,7 +461,7 @@ export class ChatCore {
             // todo 改为构建遍历的时候检测
             const unconfirmed = find_unconfirmed_ask(s?.messages);
             if (unconfirmed) {
-                throw new Error("还有未确认的操作卡片，请先处理后再继续对话");
+                throw new Error("There are unconfirmed action cards. Please resolve them before continuing.");
             }
         }
         const {
@@ -632,23 +632,7 @@ const workMessages: ai_agent_message_list = [
         controller.signal.addEventListener('abort', onAbort);
 
         try {
-        // 上一轮因等待确认而暂停时，工具结果是由 confirmAsk 直接补进会话文件的。
-        // 这里把它们捞出来先推一次，让前端立刻看到工具卡片 ——
-        // 否则要等本轮 LLM 跑完推新的 tool_call_ends 才出现，表现为“刷新后才有”。
-        // 注意要从原始会话里找：workMessages 已经被归一化摊平，tool_call_ends 不在了。
-        if (session_id) {
-            const raw = await aiAgentMemoryService.get_session(user_id, session_id);
-            const restored = find_restored_tool_ends(raw?.messages ?? []);
-            console.log('[restore_tool_ends] session=', session_id, 'count=', restored.length);
-            if (restored.length > 0) {
-                on_msg({
-                    text: "",
-                    chunk_index: globalChunkIndex,
-                    tool_call_ends: restored,
-                });
-                globalChunkIndex++;
-            }
-        }
+
         while (loopEnv.toolLoop-- > 0) {
 
             // 若已被取消，直接结束本轮（不再发起新的 LLM 请求）
@@ -838,6 +822,31 @@ const workMessages: ai_agent_message_list = [
             }
 
             // 有 tool_calls，开始执行工具
+            // 工具即将开始执行：先把「运行中」的卡片推给前端，
+            // 否则要等 Promise.all 全部跑完（可能几十秒）才第一次推 tool_call_ends，
+            // 表现为工具框过了很久才冒出来、而那时其实早跑完了。
+            on_msg({
+                text: "",
+                chunk_index: globalChunkIndex,
+                tool_call_ends: assistantMessage.tool_calls.map(tc => {
+                    let toolArgs: any = tc.function?.arguments ?? null;
+                    try { toolArgs = JSON.parse(tc.function?.arguments || "{}"); } catch (e) { /* 保留原样 */ }
+                    return {
+                        tool_name: tc.function?.name ?? "",
+                        tool_display_name: tc.function?.name ?? "",
+                        tool_args: toolArgs,
+                        success: true, // todo 其实还没有 可以补个黄色运行中
+                        error: undefined,
+                        tool_result: undefined,
+                        duration_ms: 0,
+                        tool_call_id: tc.id,
+                        running: true,
+                    } as any;
+                }),
+            });
+            // 不递增 chunk index：执行完还要用同一个气泡更新成最终结果，
+            // 前端对 tool_call_ends 是整体替换语义。
+
             await Promise.all(assistantMessage.tool_calls.map(call=>{
                 return (async ()=>{
                     // 防御：即使 name 缺失（流式解析中断等），也确保生成一个 tool 响应，
