@@ -28,6 +28,8 @@ export interface MountAccount {
     account_name?: string;
     /** 登录密码（tcp_proxy 用；明文保存，与项目其他凭据一致） */
     password?: string;
+    /** S3 的 Secret Key（access_key 存在 account_name 里） */
+    secret_key?: string;
     /** 昵称（如百度网盘昵称） */
     nickname?: string;
     avatar_url?: string;
@@ -101,6 +103,24 @@ export interface CredentialMeta {
     type: CredentialType;
     name: string;
     fields: CredentialField[];
+    /**
+     * 该凭据维护「名称 → 本地路径」映射列表，而不是简单的文本字段。
+     *
+     * 本地目录没有认证信息，一个凭据里可以登记多个常用源目录，
+     * 挂载时只从里面挑一个；这和 SMB 一个凭据下多个共享、S3 一个凭据下多个桶是同一类概念。
+     */
+    sources?: boolean;
+    /**
+     * 该凭据维护「多账号」列表（accounts），而不是在 config 里存单套账号密码。
+     *
+     * 账号字段由 account_fields 描述；挂载时用 account_id 选中其中一条，
+     * 由 build_config 把 account_name/password（S3 还有 secret_key）并进连接配置。
+     */
+    accounts?: boolean;
+    /** accounts 为真时，每个账号要填的字段（不含备注） */
+    account_fields?: CredentialField[];
+    /** accounts 里表示账号标识的字段 key（列表里作为主列显示） */
+    account_key?: string;
 }
 
 /**
@@ -113,7 +133,11 @@ export const CREDENTIAL_META_LIST: CredentialMeta[] = [
         name: "WebDAV",
         fields: [
             {key: "url", label: "服务地址", type: "text", required: true, placeholder: "https://example.com/dav"},
-            {key: "username", label: "用户名", type: "text"},
+        ],
+        accounts: true,
+        account_key: "account_name",
+        account_fields: [
+            {key: "account_name", label: "用户名", type: "text"},
             {key: "password", label: "密码", type: "password", tip: "坚果云/群晖等请使用应用密码"},
         ],
     },
@@ -123,7 +147,11 @@ export const CREDENTIAL_META_LIST: CredentialMeta[] = [
         fields: [
             {key: "host", label: "主机", type: "text", required: true},
             {key: "port", label: "端口", type: "text", placeholder: "默认 22"},
-            {key: "username", label: "用户名", type: "text", required: true},
+        ],
+        accounts: true,
+        account_key: "account_name",
+        account_fields: [
+            {key: "account_name", label: "用户名", type: "text", required: true},
             {key: "password", label: "密码", type: "password", tip: "与私钥二选一"},
             {key: "private_key", label: "私钥内容", type: "password", tip: "与密码二选一"},
         ],
@@ -133,8 +161,11 @@ export const CREDENTIAL_META_LIST: CredentialMeta[] = [
         name: "SMB / Windows 共享",
         fields: [
             {key: "server", label: "主机", type: "text", required: true, placeholder: "192.168.1.10 或 nas.local"},
-            {key: "share", label: "共享目录", type: "text", required: true, placeholder: "如 public"},
-            {key: "username", label: "用户名", type: "text"},
+        ],
+        accounts: true,
+        account_key: "account_name",
+        account_fields: [
+            {key: "account_name", label: "用户名", type: "text"},
             {key: "password", label: "密码", type: "password"},
         ],
     },
@@ -150,11 +181,14 @@ export const CREDENTIAL_META_LIST: CredentialMeta[] = [
                 placeholder: "https://s3.amazonaws.com",
                 tip: "阿里云OSS/腾讯COS/MinIO 等填各自的 endpoint",
             },
-            {key: "bucket", label: "存储桶", type: "text", required: true},
             {key: "region", label: "区域", type: "text", placeholder: "us-east-1"},
-            {key: "access_key", label: "AccessKey", type: "text", required: true},
-            {key: "secret_key", label: "SecretKey", type: "password", required: true},
             {key: "force_path_style", label: "强制路径风格", type: "text", placeholder: "填 1 开启（MinIO 通常需要）"},
+        ],
+        accounts: true,
+        account_key: "account_name",
+        account_fields: [
+            {key: "account_name", label: "AccessKey", type: "text", required: true},
+            {key: "secret_key", label: "SecretKey", type: "password", required: true},
         ],
     },
     {
@@ -168,19 +202,11 @@ export const CREDENTIAL_META_LIST: CredentialMeta[] = [
         ],
     },
     {
-        // 本地目录：凭据只保存源目录的绝对路径，挂载后可在 filecat 内部形成目录链接
+        // 本地目录没有认证信息；一个凭据里登记多个「名称 → 路径」映射，挂载时挑一个
         type: "local",
         name: "本地目录",
-        fields: [
-            {
-                key: "path",
-                label: "源目录",
-                type: "text",
-                required: true,
-                placeholder: "如 D:\\photos 或 /home/user/photos",
-                tip: "本地已存在的绝对目录；挂载后访问挂载点即访问该目录",
-            },
-        ],
+        fields: [],
+        sources: true,
     },
     {
         // 内网穿透客户端：凭据只记客户端，对端 FileCat 的账号密码存在 accounts 里（可多个）

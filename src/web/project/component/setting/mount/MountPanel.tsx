@@ -1,8 +1,11 @@
+import RemotePathPicker from "./RemotePathPicker";
 import React, {useEffect, useState} from "react";
 import {useTranslation} from "react-i18next";
-import {Card} from "../../../../meta/component/Card";
+import {Card, CardFull, TextTip} from "../../../../meta/component/Card";
+import {Column, Dashboard, Row} from "../../../../meta/component/Dashboard";
 import {ActionButton} from "../../../../meta/component/Button";
-import Switch from "../../../../meta/component/Button";import {InputRow, InputText, Select} from "../../../../meta/component/Input";
+import Switch from "../../../../meta/component/Button";
+import {InputRow, InputText, Select} from "../../../../meta/component/Input";
 import {Table} from "../../../../meta/component/Table";
 import {mountHttp} from "../../../util/config";
 import {NotyFail, NotySuccess} from "../../../util/noty";
@@ -11,6 +14,7 @@ import {
     CredentialRow,
     credential_options,
     account_options,
+    need_account_of,
     DEFAULT_COLOR,
     DriverMeta,
     MountRow,
@@ -73,7 +77,7 @@ export default function MountPanel() {
      * 只有「一凭据多账号」的凭据（百度、内网穿透）才有 accounts，其余凭据不需要。
      */
     const cur_account_options = account_options(credential_id, creds);
-    const need_account = cur_account_options.length > 0;
+    const need_account = need_account_of(credential_id, creds);
 
     /** 关闭表单并清空（新增完成后、切换编辑对象时用） */
     const close_form = () => {
@@ -183,26 +187,79 @@ export default function MountPanel() {
 
     const driver_name = (v: string) => drivers.find(d => d.type === v)?.name ?? v;
 
-    return (
-        <Card self_title={<span className={" div-row "}><h2>{t("挂载列表")}</h2></span>}
-              rightBottomCom={<div>
-                  {/* 未展开表单时只显示「+」开始新增；展开后显示测试、保存与取消 */}
-                  {!editing && <ActionButton icon={"add"} title={t("添加")} onClick={start_add}/>}
-                  {editing && <ActionButton icon={"network_check"} title={t("测试连接")} onClick={test}/>}
-                  {editing && <ActionButton icon={"save"} title={t("保存")} onClick={save}/>}
-                  {editing && <ActionButton icon={"cancel"} title={t("取消")} onClick={close_form}/>}
-              </div>}>
+    /** 路径字段按协议叫法命名，不要一律叫「起始目录」 */
+    const dir_label = () => {
+        if (driver === "smb" || driver === "s3") {
+            return "子路径";
+        }
+        if (driver === "baidu") {
+            return "网盘目录";
+        }
+        if (driver === "tcp_proxy") {
+            return "对端目录";
+        }
+        return "目录";
+    };
 
-            {/* 表单只在新增/编辑时展开 */}
-            {editing && <React.Fragment>
+    /** 当前驱动的元信息 */
+    const driver_meta = drivers.find(d => d.type === driver);
+    /** 位置是「可远程列出」的形式（SMB 共享名、S3 存储桶 + 前缀） */
+    const use_location_list = driver_meta?.location === "share";
+    /** 位置从凭据里的「名称 → 路径」映射中挑（本地目录） */
+    const use_local_source = driver_meta?.location === "local";
+    /** 当前凭据登记的本地源目录映射 */
+    const local_sources: {name: string; path: string}[] = (() => {
+        const cfg = creds.find(c => c.id === credential_id)?.config;
+        return Array.isArray(cfg?.sources) ? cfg.sources : [];
+    })();
+    const local_options = local_sources.map(v => ({title: `${v.name}（${v.path}）`, value: v.name}));
+
+    return (<Row>
+        {/* 左侧：挂载列表 */}
+        <Column widthPer={50} maxWidth={"40rem"}>
+            <Dashboard>
+                <CardFull self_title={<span className={" div-row "}><h2>{t("网盘挂载")}</h2></span>}
+                          rightTopCom={<div className={"div-row"}>
+                              <ActionButton icon={"add"} title={t("添加")} onClick={start_add}/>
+                          </div>}>
+                    <Table headers={[t("备注"), t("挂载类型"), t("凭据"), t("账号"), t("操作")]}
+                           rows={list.map(item => {
+                               const cred = creds.find(c => c.id === item.credential_id);
+                               const acc = (cred?.accounts ?? []).find(a => a.id === item.account_id);
+                               return [
+                                   <TextTip context={item.note || "-"}/>,
+                                   <p>{driver_name(item.driver)}</p>,
+                                   <TextTip context={cred ? cred.note : t("凭据已丢失")}/>,
+                                   <TextTip context={item.account_id ? (acc ? (acc.note || acc.account_name || acc.nickname || acc.id) : t("账号已丢失")) : "-"}/>,
+                                   <div>
+                                       <ActionButton icon={"edit"} title={t("编辑")} onClick={() => edit(item)}/>
+                                       <ActionButton icon={"delete"} title={t("删除")} onClick={() => del(item)}/>
+                                   </div>,
+                               ];
+                           })}/>
+                </CardFull>
+            </Dashboard>
+        </Column>
+
+        {/* 右侧：添加/编辑面板 */}
+        <Column widthPer={50} maxWidth={"40rem"}>
+            {editing && <Dashboard>
+                <Card self_title={<span className={" div-row "}>
+                    <h2>{t(id ? "编辑" : "添加")}</h2></span>}
+                      rightBottomCom={<div>
+                          <ActionButton icon={"network_check"} title={t("测试连接")} onClick={test}/>
+                          <ActionButton icon={"save"} title={t("保存")} onClick={save}/>
+                          <ActionButton icon={"cancel"} title={t("取消")} onClick={close_form}/>
+                      </div>}>
                 <InputRow label={t("挂载类型")} label_width={"6rem"}>
                     <Select value={driver}
                             options={drivers.map(d => ({title: d.name, value: d.type}))}
                             onChange={(v) => {
                                 set_driver(v);
-                                // 换类型时清掉已选凭据（类型可能不匹配）
+                                // 换类型时清掉已选凭据（类型可能不匹配）和位置（语义不同）
                                 set_credential_id("");
                                 set_account_id("");
+                                set_root_dir("");
                             }}/>
                 </InputRow>
                 <InputRow label={t("凭据")} label_width={"6rem"} required>
@@ -211,6 +268,7 @@ export default function MountPanel() {
                                 set_credential_id(v);
                                 // 换凭据时清掉已选账号（账号属于原凭据）
                                 set_account_id("");
+                                set_root_dir("");
                             }}/>
                 </InputRow>
                 {/* 只有「一凭据多账号」的凭据（百度、内网穿透）才需要再选具体账号 */}
@@ -222,11 +280,32 @@ export default function MountPanel() {
                     <InputText placeholder={t("被挂载的本地绝对路径")} value={mount_path}
                                handleInputChange={set_mount_path}/>
                 </InputRow>
-                {/* 起始目录决定读到远端哪个子目录，属于数据来源；备注只是列表上的标签 */}
-                <InputRow label={t("strtdrt")} label_width={"6rem"}>
-                    <InputText placeholder={t("远端目录")} value={root_dir}
-                               handleInputChange={set_root_dir}/>
-                </InputRow>
+                {/* 位置：用目录树选择；SMB 列不出共享时可在下面直接填共享名 */}
+                {use_location_list && <InputRow label={t(driver_meta?.location_label === "s3_bucket" ? "存储桶" : "共享目录")}
+                                                label_width={"6rem"} required>
+                    <RemotePathPicker driver={driver} credential_id={credential_id} account_id={account_id}
+                                      require_account={need_account}
+                                      config={creds.find(c => c.id === credential_id)?.config ?? {}}
+                                      value={root_dir} onChange={set_root_dir}/>
+                    {driver === "smb" && <InputText value={String(root_dir ?? "").split("/")[0] ?? ""}
+                                      placeholder={t("或直接输入共享名")}
+                                      handleInputChange={(v) => {
+                                          const sub = String(root_dir ?? "").split("/").slice(1).join("/");
+                                          const name = v.trim();
+                                          set_root_dir(name ? (sub ? `${name}/${sub}` : name) : "");
+                                      }}/>}
+                </InputRow>}
+                {use_local_source && <InputRow label={t("源目录")} label_width={"6rem"} required>
+                    <Select value={root_dir} options={local_options}
+                            placeholder={t("选择源目录")}
+                            onChange={(v) => set_root_dir(v)}/>
+                </InputRow>}
+                {!use_location_list && !use_local_source && <InputRow label={t(dir_label())} label_width={"6rem"}>
+                    <RemotePathPicker driver={driver} credential_id={credential_id} account_id={account_id}
+                                      require_account={need_account}
+                                      config={creds.find(c => c.id === credential_id)?.config ?? {}}
+                                      value={root_dir} onChange={set_root_dir}/>
+                </InputRow>}
                 <InputRow label={t("备注")} label_width={"6rem"}>
                     <InputText placeholder={t("列表显示的名称")} value={note}
                                handleInputChange={set_note}/>
@@ -236,24 +315,8 @@ export default function MountPanel() {
                     <Switch checked={forward_to_remote} onChange={set_forward_to_remote}
                             title={t("ftr2rmt_tip")}/>
                 </InputRow>}
-            </React.Fragment>}
-
-            {/* 列表只在未展开表单时显示，避免编辑中误点其它行的操作按钮 */}
-            {!editing && <Table headers={[t("备注"), t("挂载类型"), t("凭据"), t("账号"), t("操作")]}
-                   rows={list.map(item => {
-                       const cred = creds.find(c => c.id === item.credential_id);
-                       const acc = (cred?.accounts ?? []).find(a => a.id === item.account_id);
-                       return [
-                           <p>{item.note}</p>,
-                           <p>{driver_name(item.driver)}</p>,
-                           <p>{cred ? cred.note : t("凭据已丢失")}</p>,
-                           <p>{item.account_id ? (acc ? (acc.note || acc.account_name || acc.nickname || acc.id) : t("账号已丢失")) : "-"}</p>,
-                           <div>
-                               <ActionButton icon={"edit"} title={t("编辑")} onClick={() => edit(item)}/>
-                               <ActionButton icon={"delete"} title={t("删除")} onClick={() => del(item)}/>
-                           </div>,
-                       ];
-                   })}/>}
-        </Card>
-    );
+                </Card>
+            </Dashboard>}
+        </Column>
+    </Row>);
 }

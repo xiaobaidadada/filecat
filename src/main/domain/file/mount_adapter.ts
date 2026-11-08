@@ -109,6 +109,8 @@ export function current_mount_info(abs_path: string): {
     forward_to_remote: boolean;
     /** 转发目标穿透客户端 id；未开启转发或取不到时为 null */
     forward_client_num_id: number | null;
+    /** 挂载的起始目录（对端视角），用于把本机 URL 路径换算成对端真实路径 */
+    root_dir: string;
 } | null {
     const match = mountService.resolve(abs_path);
     if (!match) {
@@ -138,6 +140,7 @@ export function current_mount_info(abs_path: string): {
         account_note: acc?.note ||"",
         forward_to_remote,
         forward_client_num_id,
+        root_dir: String(m.root_dir ?? "").trim(),
     };
 }
 

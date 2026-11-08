@@ -45,3 +45,63 @@
   justify-content: center;
   gap: 0.4rem;
 }
+
+/* 文件服务：每条共享一块，用边框把同一组的字段框起来 */
+.fss-share {
+  border: 1px solid var(--borderPrimary);
+  border-radius: 0.3rem;
+  padding: 0.5rem 0.6rem;
+  margin-bottom: 0.6rem;
+}
+
+/* 远端目录树选择器：上面显示当前选中路径，下面是可以逐层展开的目录树 */
+.rpp {
+  width: 100%;
+}
+
+.rpp-head {
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
+}
+
+.rpp-label {
+  color: var(--textSecondary);
+  font-size: 0.9em;
+}
+
+.rpp-path {
+  color: var(--textSecondary);
+  font-size: 0.9em;
+  word-break: break-all;
+}
+
+/* 回到根目录的入口，做成朴素文字按钮，避免和树的交互抢视觉 */
+.rpp-reset {
+  margin-left: auto;
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--primary);
+  cursor: pointer;
+  font-size: 0.9em;
+}
+
+.rpp-reset:hover {
+  text-decoration: underline;
+}
+
+/* 树本身限高滚动，目录多时不把整个表单撑长 */
+.rpp-tree {
+  max-height: 16rem;
+  overflow: auto;
+  border: 1px solid var(--borderPrimary);
+  border-radius: 0.3rem;
+  padding: 0.3rem;
+}
+
+.rpp-empty {
+  color: var(--textSecondary);
+  font-size: 0.9em;
+  padding: 0.3rem 0.4rem;
+}

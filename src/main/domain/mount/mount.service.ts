@@ -13,8 +13,10 @@ import {
 import {get_driver, dispose_driver, dispose_all_drivers, create_test_driver} from "./driver/driver_factory";
 import {FileDriver, MountDriverType} from "./driver/file_driver";
 import {clear_tcp_proxy_token} from "./driver/tcp_proxy_driver";
+import {FileTypeEnum} from "../../../common/file.pojo";
 import {SmbDriver} from "./driver/smb_driver";
-import {LocalDriver, validate_local_mount} from "./driver/local_driver";
+import {S3Driver} from "./driver/s3_driver";
+import {LocalDriver, LocalSource, validate_local_mount} from "./driver/local_driver";
 import {DriverMeta, DRIVER_META_LIST} from "./driver/file_driver_type";
 import {
     BaiduTokenStore,
@@ -49,6 +51,23 @@ export class MountService {
     /** 取某个凭据 */
     get_credential(id: string): CredentialItem | undefined {
         return this.list_credentials().find(v => v.id === id);
+    }
+
+    /**
+     * 规范化账号列表：没 id 的生成一个（新增的账号），
+     * 密码类字段留空表示沿用已保存的值（编辑时前端不回显明文密码）。
+     */
+    normalize_accounts(accounts?: MountAccount[]): MountAccount[] | undefined {
+        if (!accounts) {
+            return undefined;
+        }
+        return accounts.map((acc) => {
+            const next: MountAccount = {...acc};
+            if (!next.id) {
+                next.id = `acc_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+            }
+            return next;
+        });
     }
 
     /** 新增凭据 */
@@ -88,6 +107,8 @@ export class MountService {
             note: patch.note ?? old.note,
             enabled: patch.enabled ?? old.enabled,
             config,
+            // 账号列表整份替换：用户删掉的账号要真的消失，不能按字段合并
+            accounts: patch.accounts ?? old.accounts,
         };
         this.set_credentials(list);
         // 凭据变了：引用它的挂载驱动都要重建
@@ -287,18 +308,14 @@ export class MountService {
     }
 
     /**
-     * 取挂载实际使用的「凭据形态」——就是凭据表里那一条，并把配置转成驱动需要的形态。
-     *
-     * 百度是「一凭据多账号」：凭据存应用配置，账号在 accounts 里，
-     * 驱动只认 account_key（= 应用凭据 id）+ account_id（= 账号 uk）。
+     * 取挂载实际使用的「凭据形态」——就是凭据表里那一条。
+     * 各类协议需要的 account 合并统一在 driver_factory 的 build_config 里做，
+     * 这里只处理「凭据本体里的字段需要按账号展开」的协议。
      */
     private credential_of(mount: FileMountItem): CredentialItem | undefined {
         const cred = this.get_credential(mount.credential_id);
         if (!cred) {
             return undefined;
-        }
-        if (cred.type === "baidu") {
-            return {...cred, config: {account_key: cred.id, account_id: mount.account_id}};
         }
         // 内网穿透：客户端来自凭据本体，对端账号密码来自选中的 account
         if (cred.type === "tcp_proxy") {
@@ -369,14 +386,21 @@ export class MountService {
         if (driver !== MountDriverType.local) {
             return;
         }
-        const cred = this.get_credential(credential_id);
-        const source_path = cred?.config?.path;
-        if (!source_path) {
-            throw new Error("该本地目录凭据缺少源目录");
+        // 本地目录没有认证信息：root_dir 是凭据里某个映射的名称
+        const source_name = String(root_dir ?? "").trim();
+        if (!source_name) {
+            throw new Error("本地目录挂载请选择源目录");
         }
-        // 若配置了起始目录，真实源 = 源目录 + 起始目录
-        const inner_root = String(root_dir ?? "").trim().replace(/^[/\\]+|[/\\]+$/g, "");
-        const real_source = inner_root ? `${source_path.replace(/[/\\]+$/, "")}/${inner_root}` : source_path;
+        const cred = this.get_credential(credential_id);
+        const sources: LocalSource[] = Array.isArray(cred?.config?.sources) ? cred.config.sources : [];
+        const hit = sources.find((s) => String(s?.name ?? "").trim() === source_name);
+        if (!hit) {
+            throw new Error(`该本地目录凭据里没有映射：${source_name}`);
+        }
+        const real_source = String(hit.path ?? "").trim();
+        if (!real_source) {
+            throw new Error(`本地目录映射「${source_name}」缺少路径`);
+        }
         const err = await validate_local_mount(real_source, mount_path);
         if (err) {
             throw new Error(err);
@@ -396,16 +420,15 @@ export class MountService {
         }
     }
 
-    /** 取某个凭据下的账号列表（不含 token / 密码等敏感信息，给前端用） */
-    list_accounts(credential_id: string): Array<Omit<MountAccount, "token" | "password"> & { authorized: boolean; has_password: boolean }> {
+    /** 取某个凭据下的账号列表（给前端用） */
+    list_accounts(credential_id: string): Array<MountAccount & { authorized: boolean }> {
         const cred = this.get_credential(credential_id);
         if (!cred) {
             return [];
         }
-        return (cred.accounts ?? []).map(({token, password, ...rest}) => ({
-            ...rest,
-            authorized: Boolean(token?.access_token),
-            has_password: Boolean(password),
+        return (cred.accounts ?? []).map((item) => ({
+            ...item,
+            authorized: Boolean(item.token?.access_token),
         }));
     }
 
@@ -545,26 +568,87 @@ export class MountService {
     }
 
     /**
-     * 列出远程主机上的共享名（目前只有 SMB 支持），
-     * 让用户在表单里直接挑，而不用自己知道共享叫什么。
+     * 列出远端可选的位置：
+     *  · SMB   —— 共享名
+     *  · S3    —— 存储桶
+     *  · 其它  —— 指定目录下的子目录（用于逐步选起始目录）
+     *
      * 传 id 时用已保存的凭据补齐没填的字段（编辑场景密码是脱敏的）。
+     * 传 account_id 时用该账号的账号密码建连接（一个凭据可存多个账号）。
      */
-    async list_shares(driver: MountDriverType, config: Record<string, any>, id?: string): Promise<{name: string; remark: string}[]> {
-        if (driver !== MountDriverType.smb) {
-            throw new Error("该类型不支持列出共享");
-        }
-        let server = config?.server;
-        let username = config?.username;
-        let password = config?.password;
+    async list_shares(driver: MountDriverType, config: Record<string, any>, id?: string, path?: string,
+                      account_id?: string): Promise<{name: string; remark: string}[]> {
+        const merged: Record<string, any> = {...(config ?? {})};
         if (id) {
             const old = this.get_credential(id);
-            if (old) {
-                server = server || old.config?.server;
-                username = username || old.config?.username;
-                password = password || old.config?.password;
+            for (const [k, v] of Object.entries(old?.config ?? {})) {
+                if (merged[k] === "" || merged[k] === undefined || merged[k] === null) {
+                    merged[k] = v;
+                }
+            }
+            // 账号密码在 accounts 里，按 account_id 取出来并进配置
+            const account = (old?.accounts ?? []).find(v => v.id === account_id);
+            if (account) {
+                if (!merged.username) {
+                    merged.username = account.account_name;
+                }
+                if (!merged.password) {
+                    merged.password = account.password;
+                }
+                if (account.token) {
+                    merged.account_id = account.id;
+                    merged.token = account.token;
+                }
             }
         }
-        return SmbDriver.list_shares({server, username, password});
+        // 传了 path 说明已经选好共享/桶，接下来是挑里面的子目录，走下面共用的列举逻辑
+        if (!path && driver === MountDriverType.smb) {
+            return SmbDriver.list_shares({
+                server: merged.server,
+                username: merged.username,
+                password: merged.password,
+            });
+        }
+        if (!path && driver === MountDriverType.s3) {
+            return S3Driver.list_buckets({
+                endpoint: merged.endpoint,
+                region: merged.region,
+                access_key: merged.access_key,
+                secret_key: merged.secret_key,
+                force_path_style: merged.force_path_style === "1" || merged.force_path_style === "true",
+            });
+        }
+
+        // 其余协议：把远端目录下的子目录列出来，供逐层挑选起始目录
+        const cred: any = {id, config: merged, accounts: []};
+        // 百度按 (应用凭据, 账号) 定位 token，账号要从表单里透传进来
+        if (account_id) {
+            cred.config.account_id = account_id;
+        }
+        const mount: any = {
+            driver,
+            // SMB 的共享名 / S3 的桶名也是位置的一部分，要一起给驱动，否则列不到
+            root_dir: path && path.trim() ? path.trim() : "",
+            account_id,
+            credential_id: id,
+        };
+        const d = create_test_driver(mount, cred);
+        try {
+            const dir = "/";
+            const items = await d.list(dir);
+            return items
+                .filter((it) => it.type === FileTypeEnum.folder)
+                .map((it) => ({
+                    name: it.name,
+                    remark: "",
+                }));
+        } finally {
+            try {
+                (d as any).dispose?.();
+            } catch (e) {
+                // ignore
+            }
+        }
     }
 
     /**

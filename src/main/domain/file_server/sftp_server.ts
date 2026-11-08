@@ -1,7 +1,7 @@
 import {path_join} from "../../../common/path_util";
 import * as path from "path";
 import {FileUtil} from "../file/FileUtil";
-import {FileServerItem} from "./file_server.pojo";
+import {FileServerItem, SftpAccount} from "./file_server.pojo";
 import {get_bin_dependency} from "../bin/get_bin_dependency";
 
 // ssh2 无类型定义，按项目约定用 any（见 ssh.ssh2.ts）
@@ -18,8 +18,9 @@ type FileEntry = any;
  * 基于 ssh2 的 Server 类实现。ssh2 已内置完整 SFTP 协议栈，
  * 这里只需要把 OPEN/READ/WRITE/OPENDIR/READDIR 等回调接到 FileUtil 上。
  *
- * 路径约定：客户端看到的是以 / 为根的虚拟目录，映射到 item.root_path。
- * 所有请求都必须经过 resolve() 校验，防止 ../ 逃逸到根目录之外。
+ * 共享模型：每条共享是一个独立账号，用户名即 share.name，密码即 share.password。
+ * 登录成功后该连接只能看到自己那条共享的目录，根路径即 share.path。
+ * 所有请求都必须经过 resolve() 校验，防止 ../ 逃逸到共享目录之外。
  */
 export class SftpServer {
 
@@ -31,12 +32,15 @@ export class SftpServer {
     private dir_cursor = new Map<number, number>();
     /** 当前活跃的客户端连接，停止时需要主动断开 */
     private clients = new Set<any>();
+    /** 连接 → 登录后可见的共享根目录 */
+    private conn_roots = new WeakMap<object, string>();
+    /** 连接 → 该连接是否只读（服务级或共享级任一为真） */
+    private conn_readonly = new WeakMap<object, boolean>();
 
     constructor(private item: FileServerItem) {}
 
     /** 把客户端传来的路径转成系统路径，越界时抛错 */
-    private resolve(client_path: string): string {
-        const root = path.resolve(this.item.root_path);
+    private resolve(root: string, client_path: string): string {
         // 客户端路径统一成 / 开头，去掉开头的斜杠后拼到 root 上
         const rel = String(client_path || "/").replace(/\\/g, "/").replace(/^\/+/, "");
         const full = path.resolve(root, rel);
@@ -132,10 +136,13 @@ export class SftpServer {
             if (ctx.method !== "password") {
                 return ctx.reject(["password"]);
             }
-            const ok = this.check_password(ctx.username, ctx.password);
-            if (!ok) {
+            const share = this.find_share(ctx.username, ctx.password);
+            if (!share) {
                 return ctx.reject();
             }
+            // 记住这条连接对应的根目录：SFTP 每条共享一个账号，登录后只看到自己的目录
+            this.conn_roots.set(client, path.resolve(share.path));
+            this.conn_readonly.set(client, this.item.readonly || share.readonly);
             ctx.accept();
         });
 
@@ -144,7 +151,13 @@ export class SftpServer {
                 const session = accept();
                 session.on("sftp", (accept_sftp) => {
                     const sftp = accept_sftp();
-                    this.bind_sftp(sftp);
+                    const root = this.conn_roots.get(client);
+                    if (!root) {
+                        // 未经认证不应走到这里
+                        sftp.end();
+                        return;
+                    }
+                    this.bind_sftp(sftp, root, this.conn_readonly.get(client) === true);
                 });
             });
         });
@@ -154,16 +167,13 @@ export class SftpServer {
         });
     }
 
-    /** 校验用户名密码 */
-    private check_password(username: string, password: string): boolean {
-        if (username !== this.item.sftp_username) {
-            return false;
-        }
-        return password === this.item.sftp_password;
+    /** 按用户名密码找共享；找不到返回 undefined */
+    private find_share(username: string, password: string): SftpAccount | undefined {
+        return this.item.sftp?.shares.find((s) => s.username === username && s.password === password);
     }
 
-    /** 绑定 SFTP 的全部回调 */
-    private bind_sftp(sftp: SFTPWrapper): void {
+    /** 绑定 SFTP 的全部回调；root/readonly 属于当前连接，不同账号连接互不影响 */
+    private bind_sftp(sftp: SFTPWrapper, root: string, readonly: boolean): void {
         const fail = (reqid: number, msg = "failure") => sftp.status(reqid, 4, msg);
 
         // 打开文件或目录
@@ -171,7 +181,7 @@ export class SftpServer {
             void (async () => {
                 let full: string;
                 try {
-                    full = this.resolve(filename);
+                    full = this.resolve(root, filename);
                 } catch (e) {
                     return sftp.status(reqid, 3, "permission denied");
                 }
@@ -179,7 +189,7 @@ export class SftpServer {
                 try {
                     const st = await FileUtil.statSync(full).catch(() => null);
                     const is_write = (flags & (0x02 | 0x04 | 0x08 | 0x10)) !== 0;
-                    if (is_write && this.item.readonly) {
+                    if (is_write && readonly) {
                         return sftp.status(reqid, 3, "read only");
                     }
                     if (!st) {
@@ -231,7 +241,7 @@ export class SftpServer {
         });
 
         sftp.on("WRITE", (reqid: number, handle: Buffer, offset: number, data: Buffer) => {
-            if (this.item.readonly) {
+            if (readonly) {
                 return sftp.status(reqid, 3, "read only");
             }
             const full = this.open_files.get(this.buf_to_handle(handle));
@@ -253,7 +263,7 @@ export class SftpServer {
         sftp.on("OPENDIR", (reqid: number, dir_path: string) => {
             let full: string;
             try {
-                full = this.resolve(dir_path);
+                full = this.resolve(root, dir_path);
             } catch (e) {
                 return sftp.status(reqid, 3, "permission denied");
             }
@@ -313,11 +323,11 @@ export class SftpServer {
         });
 
         sftp.on("LSTAT", (reqid: number, p: string) => {
-            this.stat_impl(sftp, reqid, p);
+            this.stat_impl(sftp, reqid, p, root);
         });
 
         sftp.on("STAT", (reqid: number, p: string) => {
-            this.stat_impl(sftp, reqid, p);
+            this.stat_impl(sftp, reqid, p, root);
         });
 
         sftp.on("FSTAT", (reqid: number, handle: Buffer) => {
@@ -325,16 +335,16 @@ export class SftpServer {
             if (!full) {
                 return sftp.status(reqid, 4, "invalid handle");
             }
-            this.stat_impl(sftp, reqid, full);
+            this.stat_impl(sftp, reqid, full, root);
         });
 
         sftp.on("MKDIR", (reqid: number, dir_path: string, attrs: any) => {
-            if (this.item.readonly) {
+            if (readonly) {
                 return sftp.status(reqid, 3, "read only");
             }
             void (async () => {
                 try {
-                    await FileUtil.mkdirSync(this.resolve(dir_path));
+                    await FileUtil.mkdirSync(this.resolve(root, dir_path));
                     sftp.status(reqid, 0);
                 } catch (e) {
                     fail(reqid);
@@ -343,12 +353,12 @@ export class SftpServer {
         });
 
         sftp.on("RMDIR", (reqid: number, dir_path: string) => {
-            if (this.item.readonly) {
+            if (readonly) {
                 return sftp.status(reqid, 3, "read only");
             }
             void (async () => {
                 try {
-                    await FileUtil.remove_dir(this.resolve(dir_path));
+                    await FileUtil.remove_dir(this.resolve(root, dir_path));
                     sftp.status(reqid, 0);
                 } catch (e) {
                     fail(reqid);
@@ -357,12 +367,12 @@ export class SftpServer {
         });
 
         sftp.on("REMOVE", (reqid: number, file_path: string) => {
-            if (this.item.readonly) {
+            if (readonly) {
                 return sftp.status(reqid, 3, "read only");
             }
             void (async () => {
                 try {
-                    await FileUtil.unlinkSync(this.resolve(file_path));
+                    await FileUtil.unlinkSync(this.resolve(root, file_path));
                     sftp.status(reqid, 0);
                 } catch (e) {
                     fail(reqid);
@@ -371,12 +381,12 @@ export class SftpServer {
         });
 
         sftp.on("RENAME", (reqid: number, old_p: string, new_p: string) => {
-            if (this.item.readonly) {
+            if (readonly) {
                 return sftp.status(reqid, 3, "read only");
             }
             void (async () => {
                 try {
-                    await FileUtil.renameSync(this.resolve(old_p), this.resolve(new_p));
+                    await FileUtil.renameSync(this.resolve(root, old_p), this.resolve(root, new_p));
                     sftp.status(reqid, 0);
                 } catch (e) {
                     fail(reqid);
@@ -392,8 +402,8 @@ export class SftpServer {
         sftp.on("SYMLINK", (reqid: number) => unsupported(reqid));
         sftp.on("REALPATH", (reqid: number, p: string) => {
             try {
-                const full = this.resolve(p);
-                const rel = path.relative(path.resolve(this.item.root_path), full).replace(/\\/g, "/");
+                const full = this.resolve(root, p);
+                const rel = path.relative(root, full).replace(/\\/g, "/");
                 sftp.name(reqid, [{filename: "/" + rel, longname: "/" + rel, attrs: {} as any}]);
             } catch (e) {
                 sftp.status(reqid, 3, "permission denied");
@@ -403,11 +413,11 @@ export class SftpServer {
     }
 
     /** STAT/LSTAT 共用实现 */
-    private stat_impl(sftp: SFTPWrapper, reqid: number, p: string): void {
+    private stat_impl(sftp: SFTPWrapper, reqid: number, p: string, root: string): void {
         void (async () => {
             let full: string;
             try {
-                full = this.resolve(p);
+                full = this.resolve(root, p);
             } catch (e) {
                 return sftp.status(reqid, 3, "permission denied");
             }

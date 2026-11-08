@@ -11,16 +11,17 @@ export interface MountAccountRow {
     /** 昵称（如百度网盘昵称） */
     nickname?: string;
     avatar_url?: string;
-    /** 是否已授权（token 不下发前端，只回传这个标记） */
-    authorized?: boolean;
-    /** 是否已设置密码（密码不下发前端，只回传这个标记） */
-    has_password?: boolean;
-    /** 授权时间戳 */
-    obtained_at?: number;
+    /** OAuth token（百度用；有 token 即表示已授权） */
+    token?: {
+        access_token: string;
+        refresh_token: string;
+        expires_at: number;
+        obtained_at: number;
+    };
     enabled?: boolean;
 }
 
-/** 凭据（脱敏：不含密码明文与 token） */
+/** 凭据 */
 export interface CredentialRow {
     id: string;
     type: string;
@@ -30,8 +31,6 @@ export interface CredentialRow {
     /** 子账号列表；「一凭据多账号」的类型才有（百度、内网穿透） */
     accounts?: MountAccountRow[];
     enabled?: boolean;
-    /** 是否已设置过密码类字段（编辑时留空表示不修改） */
-    has_password?: boolean;
     /** 前端标记：新加的行，尚未保存 */
     is_new?: boolean;
 }
@@ -82,6 +81,10 @@ export interface DriverMeta {
     type: string;
     name: string;
     has_root: boolean;
+    /** 位置选择方式：share 可远程列出供挑选，dir 手填路径，local 从凭据的映射里挑 */
+    location?: "dir" | "share" | "local" | "none";
+    /** 远程可列出时的列表语义 */
+    location_label?: "smb_share" | "s3_bucket";
 }
 
 /**
@@ -106,8 +109,9 @@ export function credential_options(driver: string, creds: CredentialRow[]) {
 }
 
 /**
- * 某个凭据可选的具体账号：只有「一凭据多账号」的凭据（百度、内网穿透）才有，
- * 其余凭据本身就是一份连接信息，返回空数组表示不需要再选账号。
+ * 某个凭据可选的具体账号。
+ * 除本地目录（用 sources 描述多个目录）外，其余凭据都是「一份连接信息 + 若干账号」，
+ * 挂载时必须指定其中一个账号。
  */
 export function account_options(credential_id: string, creds: CredentialRow[]) {
     const cred = creds.find(c => c.id === credential_id);
@@ -115,6 +119,12 @@ export function account_options(credential_id: string, creds: CredentialRow[]) {
         title: a.note || a.account_name || a.nickname || a.id,
         value: a.id,
     }));
+}
+
+/** 该凭据类型的挂载是否需要选账号：本地目录用 sources，其余都必须选 */
+export function need_account_of(credential_id: string, creds: CredentialRow[]) {
+    const cred = creds.find(c => c.id === credential_id);
+    return cred ? cred.type !== "local" : false;
 }
 
 /** 挂载目录默认标识色 */

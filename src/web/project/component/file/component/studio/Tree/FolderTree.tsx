@@ -10,6 +10,8 @@ export function FolderTree(props: {
     /** 当前打开文件的完整路径，用于高亮选中行 */
     active_path?: string,
     click?: (pojo: FileTree, set_children: (list: FileTree[]) => void, pre_path: string) => Promise<void>,
+    /** 仅「选中」不负责展开 */
+    onSelect?: (pojo: FileTree, set_children: (list: FileTree[]) => void, pre_path: string) => void,
     handleContextMenu?: (event, name,path, isDir,toggleExpansion) => void,
     fatherNowToggleExpansion?:()=>void,
     /** 重建后需要恢复展开的目录路径 */
@@ -26,7 +28,7 @@ export function FolderTree(props: {
                            fatherNowToggleExpansion={props.fatherNowToggleExpansion}
                            active_path={props.active_path}
                            expand_paths={props.expand_paths}
-                           children={value.children} click={props.click} size={value.size}/>
+                           children={value.children} click={props.click} onSelect={props.onSelect} size={value.size}/>
         })}
     </div>
 }

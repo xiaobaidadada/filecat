@@ -7,8 +7,9 @@ const webdav_lib = require("webdav-server");
 /**
  * WebDAV 文件服务。
  *
- * 基于 webdav-server 的 PhysicalFileSystem，直接把 root_path 暴露成一个
- * WebDAV 资源。鉴权走 HTTP Basic，只读模式通过 PrivilegeManager 拒绝写方法。
+ * 基于 webdav-server。共享模型：每条共享挂到 WebDAV 的一个路径 /<name>，
+ * 根目录用虚拟文件系统动态列出全部共享名，客户端挂一次根就能看到所有共享。
+ * 鉴权走 HTTP Basic，服务级单一账号，可访问全部共享。
  *
  * 注意：webdav-server 没有类型定义，按项目约定用 any 并通过 get_bin_dependency 加载。
  */
@@ -26,8 +27,8 @@ export class WebdavServer {
         // 只允许配置里这一个账号登录
         const user_manager = new v2.SimpleUserManager();
         const user = user_manager.addUser(
-            this.item.webdav_username ?? "",
-            this.item.webdav_password ?? "",
+            this.item.webdav?.username ?? "",
+            this.item.webdav?.password ?? "",
             false,
         );
 
@@ -39,8 +40,19 @@ export class WebdavServer {
             privilegeManager: privilege_manager,
         });
 
-        // 把真实的 root_path 挂到 WebDAV 的根路径
-        await webdav_server.setFileSystemAsync("/", new v2.PhysicalFileSystem(this.item.root_path));
+        const shares = this.item.webdav?.shares ?? [];
+
+        // 根路径：虚拟文件系统，只为把共享路径列表暴露出去
+        const root_fs = create_root_file_system(v2, shares.map((s) => s.url_path));
+        await webdav_server.setFileSystemAsync("/", root_fs);
+
+        // 每条共享挂到 /<url_path>，指向各自的目录
+        for (const share of shares) {
+            await webdav_server.setFileSystemAsync(
+                "/" + share.url_path,
+                new v2.PhysicalFileSystem(share.path),
+            );
+        }
 
         if (this.item.readonly) {
             this.apply_readonly(webdav_server);
@@ -87,4 +99,37 @@ export class WebdavServer {
             });
         }
     }
+}
+
+/**
+ * 根文件系统：在 / 下动态列出全部共享名。
+ *
+ * 继承 VirtualFileSystem 只为拿到一套默认实现，避免实现整个 FileSystem 接口；
+ * 实际的资源共享由 server 挂到 /<name> 下的 PhysicalFileSystem 提供，
+ * 这里的只负责「根目录长什么样」。
+ */
+function create_root_file_system(v2: any, names: string[]): any {
+    class RootFileSystem extends v2.VirtualFileSystem {
+        constructor() {
+            super(v2.VirtualSerializer);
+        }
+
+        _readDir(ctx: any, path: any, callback: any): void {
+            const p = path.toString();
+            if (p === "/" || p === "") {
+                return callback(null, names);
+            }
+            super._readDir(ctx, path, callback);
+        }
+
+        _type(ctx: any, path: any, callback: any): void {
+            const p = path.toString();
+            if (p === "/" || p === "") {
+                return callback(null, v2.ResourceType.Directory);
+            }
+            super._type(ctx, path, callback);
+        }
+    }
+
+    return new RootFileSystem();
 }

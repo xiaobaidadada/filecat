@@ -94,19 +94,20 @@ export class BaiduDriver implements FileDriver {
 
     /** 挂载点内相对路径 → 百度网盘的绝对路径 */
     private abs(p: string): string {
-        const root = (this.config.root ?? "").trim().replace(/\/+$/, "");
+        const root = (this.config.root ?? "").trim().replace(/^\/+|\/+$/g, "");
         const inner = norm_mount_path(p);
-        if (root) {
-            return inner === "/" ? root : root + inner;
+        if (!root) {
+            return inner;
         }
-        return inner;
+        return inner === "/" ? `/${root}` : `/${root}${inner}`;
     }
 
     /** 百度网盘绝对路径 → 挂载点内相对路径 */
     private inner(abs_path: string): string {
-        const root = (this.config.root ?? "").trim().replace(/\/+$/, "");
-        if (root && abs_path.startsWith(root)) {
-            return norm_mount_path(abs_path.slice(root.length));
+        const root = (this.config.root ?? "").trim().replace(/^\/+|\/+$/g, "");
+        const prefix = root ? `/${root}` : "";
+        if (prefix && abs_path.startsWith(prefix)) {
+            return norm_mount_path(abs_path.slice(prefix.length));
         }
         return norm_mount_path(abs_path);
     }

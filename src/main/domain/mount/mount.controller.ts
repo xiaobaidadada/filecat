@@ -6,7 +6,7 @@ import {get_sys_base_url_pre} from "../bin/bin";
 import {UserAuth} from "../../../common/req/user.req";
 import {mountService} from "./mount.service";
 import {FileMountItem} from "./mount.pojo";
-import {CredentialItem, CredentialType} from "./credential.pojo";
+import {CredentialItem, CredentialType, MountAccount} from "./credential.pojo";
 import {MountDriverType} from "./driver/file_driver";
 import {tcpForwardService} from "../net/tcp.forward.server.service";
 
@@ -35,6 +35,8 @@ export interface CredentialSaveReq {
     /** 备注（便于挂载时辨认） */
     note?: string;
     config?: Record<string, any>;
+    /** 账号列表（多账号类型：SMB/WebDAV/SFTP/S3） */
+    accounts?: MountAccount[];
     enabled?: boolean;
 }
 
@@ -72,12 +74,12 @@ export class MountController {
 
     // ==================== 凭据 ====================
 
-    /** 取凭据列表（密码等敏感字段不返回） */
+    /** 取凭据列表 */
     @Post("/credential/list")
     async credential_list(@Req() r) {
         userService.have_user_auth(r.headers.authorization, UserAuth.file_mount);
         const list = mountService.list_credentials_for_user(current_user_id(r), is_root_user(r));
-        return Sucess(list.map(mask_credential));
+        return Sucess(list);
     }
 
     /** 取凭据类型元信息（供设置页渲染动态表单） */
@@ -95,13 +97,14 @@ export class MountController {
             type: body.type as CredentialType,
             note: body.note ?? "",
             config: body.config ?? {},
+            accounts: mountService.normalize_accounts(body.accounts),
             enabled: body.enabled !== false,
             user_id: current_user_id(r),
         });
-        return Sucess(mask_credential(item));
+        return Sucess(item);
     }
 
-    /** 修改凭据（config 里留空的字段表示不修改，避免把密码清空） */
+    /** 修改凭据 */
     @Post("/credential/update")
     async credential_update(@Body() body: CredentialSaveReq, @Req() r) {
         userService.have_user_auth(r.headers.authorization, UserAuth.file_mount);
@@ -118,7 +121,10 @@ export class MountController {
         if (body.enabled !== undefined) {
             patch.enabled = body.enabled;
         }
-        return Sucess(mask_credential(mountService.update_credential(body.id, patch)));
+        if (body.accounts !== undefined) {
+            patch.accounts = mountService.normalize_accounts(body.accounts);
+        }
+        return Sucess(mountService.update_credential(body.id, patch));
     }
 
     /** 删除凭据（仍被挂载引用时会报错） */
@@ -312,9 +318,9 @@ export class MountController {
 
     /** 列出远程主机上的共享名（SMB 用，供表单下拉选择） */
     @Post("/share/list")
-    async share_list(@Body() body: { driver: MountDriverType; config: Record<string, any>; id?: string}, @Req() r) {
+    async share_list(@Body() body: { driver: MountDriverType; config: Record<string, any>; id?: string; path?: string; account_id?: string}, @Req() r) {
         userService.have_user_auth(r.headers.authorization, UserAuth.file_mount);
-        return Sucess(await mountService.list_shares(body.driver, body.config ?? {}, body.id));
+        return Sucess(await mountService.list_shares(body.driver, body.config ?? {}, body.id, body.path, body.account_id));
     }
 
     // ==================== 百度网盘授权 ====================
@@ -410,32 +416,3 @@ export class MountController {
     }
 }
 
-/** 凭据脱敏：去掉所有密码类字段与账号 token，避免返回给前端 */
-function mask_credential(item: CredentialItem): CredentialItem & {has_password?: boolean} {
-    const SECRET_KEYS = ["password", "private_key", "secret_key"];
-    const config: Record<string, any> = {};
-    let has_password = false;
-    for (const [k, v] of Object.entries(item.config ?? {})) {
-        if (SECRET_KEYS.includes(k)) {
-            // 只告诉前端「已设置」，不回传实际值（编辑时留空即表示不修改）
-            if (v) {
-                has_password = true;
-            }
-            continue;
-        }
-        config[k] = v;
-    }
-    // 账号里的 token / 密码属敏感信息，只保留「是否已授权」等展示字段
-    const accounts = (item.accounts ?? []).map(({token, password, ...rest}) => ({
-        ...rest,
-        authorized: Boolean(token?.access_token),
-        has_password: Boolean(password),
-        obtained_at: token?.obtained_at,
-    }));
-    return {
-        ...item,
-        config,
-        accounts,
-        has_password,
-    };
-}

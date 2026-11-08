@@ -24,14 +24,66 @@ function fingerprint(item: FileMountItem, cred: CredentialItem): string {
 
 /**
  * 把一个「挂载 + 凭据」组装成驱动需要的配置。
- * 凭据提供连接信息，挂载提供它自己的「起始目录」。
+ * 凭据提供连接信息，挂载提供它自己的「位置信息」。
+ *
+ * 位置信息在界面上是逐类型不同的控件，但都存在 root_dir 这一个字段里：
+ *  · smb  —— 共享名，可选「共享名/子路径」
+ *  · s3   —— 存储桶，可选「桶/前缀」
+ *  · 其它 —— 远端起始目录
  */
 function build_config(item: FileMountItem, cred: CredentialItem): any {
-    return {
+    const raw = String(item.root_dir ?? "").trim();
+    // SMB 的共享名、S3 的桶名是路径段，不能带首尾斜杠；远端目录（sftp/webdav/baidu）是绝对路径，原样保留
+    const segment_driver = item.driver === MountDriverType.smb || item.driver === MountDriverType.s3;
+    const root = segment_driver ? raw.replace(/^[/\\]+|[/\\]+$/g, "") : raw.replace(/\/+$/, "");
+    const config: Record<string, any> = {
         ...(cred.config ?? {}),
-        // 挂载自己的起始目录覆盖凭据里的（凭据里定位到根，挂载决定从哪开始）
-        root: item.root_dir ?? "",
+        root,
     };
+
+    // 凭据下的账号（账号密码、百度授权等）要并进配置：
+    // 一个凭据可存多个账号，挂载时用 account_id 选中其中一条。
+    const account = (cred.accounts ?? []).find((v) => v.id === item.account_id);
+    if (account) {
+        config.username = account.account_name;
+        config.password = account.password;
+        // S3 的密钥对：access_key 存 account_name，secret_key 单独存
+        if (account.secret_key) {
+            config.access_key = account.account_name;
+            config.secret_key = account.secret_key;
+        }
+        // 百度网盘按 uk 存 token，登录名不参与
+        if (account.token) {
+            config.account_id = account.id;
+            config.token = account.token;
+        }
+    }
+
+    // 百度应用凭据 id：token 按「应用凭据 + 账号」两段存，缺了取不到授权
+    if (item.driver === MountDriverType.baidu) {
+        config.account_key = cred.id;
+    }
+
+    if (item.driver === MountDriverType.smb) {
+        // 共享名是位置信息而不是认证信息，从 root_dir 的第一段取出
+        const [share, ...rest] = root.split("/");
+        config.share = share ?? "";
+        config.root = rest.join("/");
+    }
+
+    if (item.driver === MountDriverType.s3) {
+        // 存储桶同理：第一段是桶，后面是 Key 前缀
+        const [bucket, ...rest] = root.split("/");
+        config.bucket = bucket ?? "";
+        config.root = rest.join("/");
+    }
+
+    if (item.driver === MountDriverType.local) {
+        // 本地目录的 root_dir 是「映射名」，不是路径
+        config.root = String(item.root_dir ?? "").trim();
+    }
+
+    return config;
 }
 
 /** 按挂载 + 凭据创建驱动实例 */

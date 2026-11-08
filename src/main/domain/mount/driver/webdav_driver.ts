@@ -320,6 +320,12 @@ export class WebdavDriver implements FileDriver {
         if (base_path && s.toLowerCase().startsWith(base_path.toLowerCase())) {
             s = s.slice(base_path.length);
         }
+        // href 里的路径是 percent-encoded，中文名必须解码，否则比不过当前目录、也拼不出可用路径
+        try {
+            s = decodeURIComponent(s);
+        } catch (e) {
+            // 非法编码，保持原样
+        }
         return norm_mount_path(s);
     }
 }

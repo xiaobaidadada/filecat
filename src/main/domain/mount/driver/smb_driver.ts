@@ -289,8 +289,13 @@ export class SmbDriver implements FileDriver {
             // 文件不存在时 truncate 会失败，忽略即可（后续 write 会自动创建）
         }
         let offset = 0;
+        let got_chunk = false;
         for await (const chunk of data) {
             const buf = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+            if (buf.length === 0) {
+                continue;
+            }
+            got_chunk = true;
             let written = 0;
             while (written < buf.length) {
                 const part = buf.subarray(written);
@@ -301,6 +306,12 @@ export class SmbDriver implements FileDriver {
                 written += n;
                 offset += n;
             }
+        }
+        // 内容为空（新建空文件）：SMB 只有 WRITE 才会创建文件，
+        // 直接写 0 字节会崩在底层绑定里，所以先写 1 字节再截断成 0
+        if (!got_chunk) {
+            await client.write(abs, Buffer.from(" "), {offset: 0});
+            await client.truncate(abs);
         }
     }
 

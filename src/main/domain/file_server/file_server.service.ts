@@ -2,7 +2,7 @@ import * as path from "path";
 import {DataUtil} from "../data/DataUtil";
 import {data_common_key} from "../data/data_type";
 import {FileUtil} from "../file/FileUtil";
-import {FileServerItem, FileServerState, FileServerType, validate_file_server} from "./file_server.pojo";
+import {FileServerItem, FileServerState, FileServerType, get_all_shares, validate_file_server} from "./file_server.pojo";
 import {SftpServer} from "./sftp_server";
 import {WebdavServer} from "./webdav_server";
 import {SmbServer} from "./smb_server";
@@ -86,7 +86,7 @@ export class FileServerService {
         list[idx] = merged;
         this.save(list);
 
-        if (was_running && merged.enabled) {
+        if (was_running) {
             await this.start(id);
         }
         return merged;
@@ -109,19 +109,18 @@ export class FileServerService {
         if (!item) {
             throw new Error("file server not found");
         }
-        // 开启即视为启用，重启后自动拉起
-        if (item.enabled === false) {
-            this.set_enabled(id, true);
-            item.enabled = true;
-        }
+        this.set_enabled(id, true);
         if (this.running.has(id)) {
             return;
         }
 
-        // 根目录必须存在，否则各协议行为不一致
-        const st = await FileUtil.statSync(item.root_path).catch(() => null);
-        if (!st || !st.isDirectory()) {
-            throw new Error("root_path does not exist or is not a directory");
+        // 每条共享的目录都必须存在，否则各协议行为不一致
+        const shares = get_all_shares(item);
+        for (const share of shares) {
+            const st = await FileUtil.statSync(share.path).catch(() => null);
+            if (!st || !st.isDirectory()) {
+                throw new Error(`share ${share.name}: path does not exist or is not a directory`);
+            }
         }
 
         if (item.type === FileServerType.sftp) {
@@ -151,7 +150,6 @@ export class FileServerService {
 
     /** 停止一个服务 */
     async stop(id: string): Promise<void> {
-        // 关闭即视为禁用，重启后不再自动拉起
         this.set_enabled(id, false);
         const srv = this.running.get(id);
         if (!srv) {
@@ -161,11 +159,13 @@ export class FileServerService {
         this.running.delete(id);
     }
 
-    /** 只更新 enabled 字段，不启动/停止服务 */
-    private set_enabled(id: string, enabled: boolean) {
+    /** 只写入启用状态，不涉及运行实例 */
+    private set_enabled(id: string, enabled: boolean): void {
         const list = this.list();
         const item = list.find(v => v.id === id);
-        if (!item) return;
+        if (!item || item.enabled === enabled) {
+            return;
+        }
         item.enabled = enabled;
         this.save(list);
     }

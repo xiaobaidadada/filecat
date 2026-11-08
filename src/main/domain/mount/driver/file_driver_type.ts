@@ -81,23 +81,32 @@ export function mount_join(a: string, b: string): string {
  *
  * 注意：这里不再包含「连接配置字段」——那些属于凭据（Credential），
  * 在设置页统一管理；挂载时只需要选驱动类型 + 选一个凭据 +
- * 填一个「起始目录」（属于挂载本身，不属于凭据）。
+ * 填一个「位置」（属于挂载本身，不属于凭据）。
+ *
+ * 位置字段的形态各驱动不同：
+ *  · smb  —— 先选共享名，再可选共享内子路径
+ *  · s3   —— 先选存储桶，再可选 Key 前缀
+ *  · 其它 —— 一个远端起始目录
  */
 export interface DriverMeta {
     type: MountDriverType;
     name: string;
-    /** 该驱动是否有「起始目录」概念（百度网盘有，S3 的用桶代替所以不显示） */
+    /** 该驱动是否有「起始目录」概念（S3 的用桶代替所以不显示普通起始目录） */
     has_root: boolean;
+    /** 位置选择方式：share 可远程列出供挑选，dir 手填路径，local 从凭据的映射里挑 */
+    location: "dir" | "share" | "local" | "none";
+    /** 远程可列出时的列表语义（用于下拉框提示文案）：SMB 共享 / S3 存储桶 */
+    location_label?: "smb_share" | "s3_bucket";
 }
 
 export const DRIVER_META_LIST: DriverMeta[] = [
-    {type: MountDriverType.webdav, name: "WebDAV", has_root: true},
-    {type: MountDriverType.sftp, name: "SSH / SFTP", has_root: true},
-    {type: MountDriverType.smb, name: "SMB / Windows 共享", has_root: true},
-    {type: MountDriverType.s3, name: "S3 兼容对象存储", has_root: true},
-    {type: MountDriverType.baidu, name: "百度网盘", has_root: true},
-    {type: MountDriverType.local, name: "本地目录", has_root: true},
-    {type: MountDriverType.tcp_proxy, name: "内网穿透 FileCat", has_root: true},
+    {type: MountDriverType.webdav, name: "WebDAV", has_root: true, location: "dir"},
+    {type: MountDriverType.sftp, name: "SSH / SFTP", has_root: true, location: "dir"},
+    {type: MountDriverType.smb, name: "SMB / Windows 共享", has_root: true, location: "share", location_label: "smb_share"},
+    {type: MountDriverType.s3, name: "S3 兼容对象存储", has_root: true, location: "share", location_label: "s3_bucket"},
+    {type: MountDriverType.baidu, name: "百度网盘", has_root: true, location: "dir"},
+    {type: MountDriverType.local, name: "本地目录", has_root: true, location: "local"},
+    {type: MountDriverType.tcp_proxy, name: "内网穿透 FileCat", has_root: true, location: "dir"},
 ];
 
 /** 按类型取驱动元信息 */

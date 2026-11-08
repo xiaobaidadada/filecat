@@ -9,6 +9,8 @@ export function Folder(props: FileTree & {
     /** 当前打开文件的完整路径，与本节点 pre_path 相等时高亮该行 */
     active_path?: string,
     click?: (pojo: FileTree, set_children: (list: FileTree[]) => void, pre_path: string) => Promise<void>,
+    /** 仅「选中」不负责展开，用于目录选择器等场景 */
+    onSelect?: (pojo: FileTree, set_children: (list: FileTree[]) => void, pre_path: string) => void,
     handleContextMenu?: (event, name, path, isDir, toggleExpansion) => void
     fatherNowToggleExpansion?:()=>void,
     /** 重建后需要恢复展开的目录路径 */
@@ -28,6 +30,10 @@ export function Folder(props: FileTree & {
                     await props.click(props, set_children, props.pre_path);
                 }
                 setExpanded(!expanded);
+                // 目录选择器这类场景需要「点已展开的节点也算选中」
+                if (props.onSelect) {
+                    props.onSelect(props, set_children, props.pre_path);
+                }
             } else {
                 if (props.click) {
                     await props.click(props, set_children, props.pre_path);
@@ -83,7 +89,7 @@ export function Folder(props: FileTree & {
                     <div style={{marginLeft: 20}}>
                         {children.map((child, index) => (
                             <React.Fragment key={index}>
-                                {<Folder type={child.type} size={child.size} click={props.click} name={child.name} key={index}
+                                {<Folder type={child.type} size={child.size} click={props.click} onSelect={props.onSelect} name={child.name} key={index}
                                          children={child.children} pre_path={`${props.pre_path}${child.name}${child.type===FileTypeEnum.folder ? "/":""}`}
                                          handleContextMenu={props.handleContextMenu}
                                          active_path={props.active_path}

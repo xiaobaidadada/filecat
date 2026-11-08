@@ -22,17 +22,24 @@ export class SmbServer {
 
     async start(): Promise<void> {
         const port = String(this.item.port);
-        const root = path.resolve(this.item.root_path);
         const readonly = this.item.readonly ? "1" : "0";
-        const hostname = this.item.smb_hostname || "filecat";
+        const hostname = this.item.smb?.hostname || "filecat";
+        // 共享名 → 目录，用 JSON 传给子进程；账号是服务级的
+        const shares = (this.item.smb?.shares ?? []).map((s) => ({
+            name: s.share_name,
+            path: path.resolve(s.path),
+            readonly: this.item.readonly || s.readonly,
+        }));
 
         const child = spawn(process.execPath, ["-e", CHILD_SCRIPT], {
             env: {
                 ...process.env,
                 SMB_PORT: port,
-                SMB_ROOT: root,
                 SMB_READONLY: readonly,
                 SMB_HOSTNAME: hostname,
+                SMB_SHARES: JSON.stringify(shares),
+                SMB_USERNAME: this.item.smb?.username ?? "",
+                SMB_PASSWORD: this.item.smb?.password ?? "",
             },
             stdio: ["ignore", "inherit", "inherit", "ipc"],
         });
@@ -117,16 +124,18 @@ export class SmbServer {
 /** 子进程脚本：只负责把 SMB 服务拉起来并报告就绪 */
 const CHILD_SCRIPT = `
 const port = Number(process.env.SMB_PORT);
-const root = process.env.SMB_ROOT;
 const readonly = process.env.SMB_READONLY === "1";
 const hostname = process.env.SMB_HOSTNAME || "filecat";
-if (!port || !root) {
-    console.error("[smb-child] 缺少 SMB_PORT / SMB_ROOT");
+const shares = JSON.parse(process.env.SMB_SHARES || "[]");
+const username = process.env.SMB_USERNAME || "";
+const password = process.env.SMB_PASSWORD || "";
+if (!port || shares.length === 0) {
+    console.error("[smb-child] 缺少 SMB_PORT / SMB_SHARES");
     process.exit(1);
 }
 const { Smb2Server } = require("node-libsmb2");
 const server = new Smb2Server();
-server.start({ port, root, readonly, name: hostname });
+server.start({ port, name: hostname, shares, username, password });
 process.send && process.send({ type: "ready", port });
 process.on("message", (msg) => {
     if (msg && msg.type === "stop") {

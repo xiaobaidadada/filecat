@@ -9,6 +9,7 @@ import {use_auth_check} from "../../util/store.util";
 import {Role} from "./Role";
 import {PrivateEnv} from "./PrivateEnv";
 import {MountSetting} from "./MountSetting";
+import {CredentialSetting} from "./CredentialSetting";
 import {FileServerSetting} from "./FileServerSetting";
 import {routerConfig} from "../../../../common/RouterConfig";
 
@@ -27,6 +28,7 @@ export default function  Settings() {
         menuRots.push(     {index: 3, name: `${t("系统环境")}`, rto: "env_setting/",component: <Env />},)
     }
     if(check_user_auth(UserAuth.file_mount)) {
+        menuRots.push({index: 5, name:t("网盘凭据"),rto: "credential_setting/",component: <CredentialSetting />})
         menuRots.push({index: 5, name:t("网盘挂载"),rto: "mount_setting/",component: <MountSetting />})
     }
     if(check_user_auth(UserAuth.file_server)) {

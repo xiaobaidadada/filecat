@@ -820,11 +820,23 @@ export function to_remote_dir_path(full_path: string, mount?: any) {
     if (!remote || !mount_url_path) {
         return full_path;
     }
-    const prefix = mount_url_path.replace(/\/+$/, "") + "/";
-    if (!full_path.startsWith(prefix)) {
+    // full_path 与 url_path 都是 URL 编码态，直接在编码态下比较
+    const path_prefix = mount_url_path.replace(/\/+$/, "") + "/";
+    if (!full_path.startsWith(path_prefix)) {
         return full_path;
     }
-    return full_path.slice(prefix.length);
+    let rest = full_path.slice(path_prefix.length);
+    try {
+        rest = decodeURIComponent(rest);
+    } catch {
+        // 非法编码串按原样使用
+    }
+    // 挂载点不是对端根目录时，对端视角要在前面补上它自己的起始目录
+    const root_dir = String(mount?.root_dir ?? "").trim().replace(/^\/+|\/+$/g, "");
+    if (!root_dir) {
+        return rest;
+    }
+    return rest ? `${root_dir}/${rest}` : `${root_dir}/`;
 }
 
 /** 当前 URL 路径的对端视角版本（转发挂载下会去掉挂载点前缀） */

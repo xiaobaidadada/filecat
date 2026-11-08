@@ -21,10 +21,18 @@ import {norm_abs_path} from "../mount.pojo";
  * 安全：所有通过挂载传入的相对路径都必须落在源目录内，
  * 防止 "../.." 之类的越权访问逃逸到源目录之外。
  */
-export interface LocalDriverConfig {
-    /** 源目录绝对路径（来自凭据 config.path） */
+/** 本地目录的一条映射：名称 → 绝对路径 */
+export interface LocalSource {
+    /** 映射名，挂载时按它选源目录 */
+    name: string;
+    /** 源目录绝对路径 */
     path: string;
-    /** 起始目录（挂载自己配置，相对源目录；为空表示整个源目录） */
+}
+
+export interface LocalDriverConfig {
+    /** 该凭据登记的全部映射 */
+    sources?: LocalSource[];
+    /** 选中的映射名（挂载的 root_dir） */
     root?: string;
 }
 
@@ -50,19 +58,23 @@ export class LocalDriver implements FileDriver {
     private readonly source: string;
 
     constructor(config: LocalDriverConfig) {
-        const p = String(config?.path ?? "").trim();
+        const name = String(config?.root ?? "").trim();
+        if (!name) {
+            throw new Error("本地目录挂载请选择源目录");
+        }
+        const sources = Array.isArray(config?.sources) ? config.sources : [];
+        const hit = sources.find((s) => String(s?.name ?? "").trim() === name);
+        if (!hit) {
+            throw new Error(`本地目录挂载找不到源目录：${name}`);
+        }
+        const p = String(hit.path ?? "").trim();
         if (!p) {
-            throw new Error("本地目录挂载缺少源目录");
+            throw new Error(`本地目录映射「${name}」缺少路径`);
         }
         if (!path.isAbsolute(p)) {
-            throw new Error("源目录必须是绝对路径");
+            throw new Error(`本地目录映射「${name}」的路径必须是绝对路径`);
         }
         this.source = path.resolve(p);
-        // 起始目录拼到源目录后面
-        const root = String(config?.root ?? "").trim().replace(/^[/\\]+|[/\\]+$/g, "");
-        if (root) {
-            this.source = path.join(this.source, root);
-        }
     }
 
     /**

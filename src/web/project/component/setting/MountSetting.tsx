@@ -10,14 +10,12 @@ import {mountHttp} from "../../util/config";
 import {NotySuccess} from "../../util/noty";
 import {useAtom} from "jotai";
 import {$stroe} from "../../util/store";
-import CredentialPanel from "./mount/CredentialPanel";
 import MountPanel from "./mount/MountPanel";
 
 /**
  * 网盘挂载设置页（独立路由：设置 → 网盘挂载）。
  *
- * 两块卡片：凭证管理（含百度网盘）、挂载列表。
- * 每块卡片上方平铺输入框新增，下方表格列出已有项可编辑/删除。
+ * 只管理「把某个凭据挂到哪个路径」，凭据本身在「网盘凭据」页维护。
  */
 export function MountSetting() {
     const {t} = useTranslation();
@@ -78,12 +76,8 @@ export function MountSetting() {
                           onClick={toggle_mount}/>
         </HeaderPortal>
         <Dashboard>
-
             <Row>
-                <Column widthPer={50} maxWidth={"60rem"}>
-                    <CredentialPanel/>
-                </Column>
-                <Column widthPer={50} maxWidth={"60rem"}>
+                <Column widthPer={100} maxWidth={"90rem"}>
                     <MountPanel/>
                 </Column>
             </Row>

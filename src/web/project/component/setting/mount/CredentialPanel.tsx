@@ -2,17 +2,16 @@ import React, {useEffect, useState} from "react";
 import {useTranslation} from "react-i18next";
 import {useAtom} from "jotai";
 import {$stroe} from "../../../util/store";
-import {Card, TextTip} from "../../../../meta/component/Card";
+import {Card, CardFull, TextTip} from "../../../../meta/component/Card";
+import {Column, Dashboard, Row} from "../../../../meta/component/Dashboard";
 import {ActionButton} from "../../../../meta/component/Button";
 import {InputRadio, InputRow, InputText, Select} from "../../../../meta/component/Input";
 import {Table} from "../../../../meta/component/Table";
+import {InstanceItem} from "../../../../meta/component/InstanceList";
 import {mountHttp} from "../../../util/config";
 import {NotyFail, NotySuccess} from "../../../util/noty";
 import {using_confirm} from "../../prompts/prompt.util";
 import {CredentialField, CredentialMeta, CredentialRow, MountAccountRow, fmt_time, mount_enable_options} from "./mount_common";
-
-/** 密码类字段：编辑时留空表示不修改 */
-const SECRET_KEYS = ["password", "private_key", "secret_key"];
 
 /** 新增凭据的默认类型 */
 const DEFAULT_TYPE = "webdav";
@@ -25,15 +24,10 @@ const TCP_ACCOUNT_STEP = "@tcp_account";
 /**
  * 分步填写流程。
  * keys 是这一步要显示的字段（按顺序）；on_next 是点「下一步」时的动作：
- *  · load_shares —— 用已填的主机/账号去列共享目录，成功才进下一步
  *  · save_app    —— 先把应用配置存下来（授权链接需要它），成功才进下一步
  * 不在这里列出的类型就是单步，直接保存。
  */
-const STEP_FLOW: Record<string, { keys: string[]; on_next?: "load_shares" | "save_app" }[]> = {
-    smb: [
-        {keys: ["server", "username", "password"], on_next: "load_shares"},
-        {keys: ["share"]},
-    ],
+const STEP_FLOW: Record<string, { keys: string[]; on_next?: "save_app" }[]> = {
     baidu: [
         {keys: ["app_id", "app_key", "secret_key"], on_next: "save_app"},
         {keys: [AUTHORIZE_STEP]},
@@ -96,16 +90,21 @@ export default function CredentialPanel() {
     const [type, set_type] = useState(DEFAULT_TYPE);
     const [note, set_note] = useState("");
     const [config, set_config] = useState<Record<string, any>>({});
-    const [step, set_step] = useState(1);
-    /** 共享目录候选项（SMB 第 2 步的下拉） */
-    const [shared_options, set_shared_options] = useState<{ label: string; value: string }[]>([]);
     /** 穿透客户端候选项（tcp_proxy 的下拉），按 options_source 缓存 */
     const [field_options, set_field_options] = useState<Record<string, { label: string; value: string }[]>>({});
     /** 百度授权相关状态 */
     const [auth_mode, set_auth_mode] = useState<"one_click" | "oob">("oob");
     const [auth_code, set_auth_code] = useState("");
-    /** 内网穿透：正在编辑的对端账号（空 = 新增） */
-    const [tcp_acc, set_tcp_acc] = useState<{id?: string; note: string; account_name: string; password: string} | null>(null);
+    /** 多账号类型的账号列表（SMB/WebDAV/SFTP/S3 的认证信息） */
+    const [accounts, set_accounts] = useState<any[]>([]);
+    /** 类型变化时，账号列表默认给一条空的，避免出现「账号」区块空着没输入框 */
+    useEffect(() => {
+        if (metas.find(m => m.type === type)?.accounts !== true) {
+            return;
+        }
+        set_accounts((prev) => (prev.length ? prev : [{id: "", account_name: "", password: "", secret_key: ""}]));
+    }, [type, metas]);
+
     /** 凭据是否启用（列表行内的「使用」下拉） */
     const [enabled, set_enabled] = useState(true);
 
@@ -127,11 +126,44 @@ export default function CredentialPanel() {
     }, []);
 
     /** 当前类型需要的字段 */
-    const fields = metas.find(m => m.type === type)?.fields ?? [];
+    const meta = metas.find(m => m.type === type);
+    const fields = meta?.fields ?? [];
+    /** 该类型用「名称 → 路径」映射列表代替普通字段（本地目录） */
+    const use_sources = meta?.sources === true;
+    /** 该类型是否用账号列表（认证信息不在 config 里） */
+    const use_accounts = meta?.accounts === true;
+    const account_fields = meta?.account_fields ?? [];
+    /** 当前的映射列表 */
+    const sources: {name: string; path: string}[] = Array.isArray(config.sources) ? config.sources : [];
+
+    /** 改写映射列表的某一项 */
+    const update_source = (index: number, patch: {name?: string; path?: string}) => {
+        const next = sources.map((s, i) => (i === index ? {...s, ...patch} : s));
+        set_config({...config, sources: next});
+    };
+
+    const add_source = () => {
+        set_config({...config, sources: [...sources, {name: "", path: ""}]});
+    };
+
+    const remove_source = (index: number) => {
+        set_config({...config, sources: sources.filter((_, i) => i !== index)});
+    };
+
+    /** 账号列表操作：增删改，认证信息都存在 accounts 里 */
+    const add_account = () => {
+        set_accounts((prev) => [...prev, {id: "", account_name: "", password: "", secret_key: ""}]);
+    };
+
+    const change_account = (index: number, patch: any) => {
+        set_accounts((prev) => prev.map((v, i) => (i === index ? {...v, ...patch} : v)));
+    };
+
+    const remove_account = (index: number) => {
+        set_accounts((prev) => prev.filter((_, i) => i !== index));
+    };
     /** 当前类型的分步流程；单一类型没有 */
     const flow = STEP_FLOW[type];
-    /** 总步数 */
-    const step_count = flow?.length ?? 1;
 
     /** 关闭表单并清空 */
     const close_form = () => {
@@ -140,8 +172,7 @@ export default function CredentialPanel() {
         set_type(DEFAULT_TYPE);
         set_note("");
         set_config({});
-        set_step(1);
-        set_shared_options([]);
+        set_accounts([]);
         set_auth_code("");
         set_enabled(true);
     };
@@ -163,22 +194,6 @@ export default function CredentialPanel() {
             next[source] = (rsq?.data ?? []).map((v: any) => ({label: v.label, value: v.value}));
         }
         set_field_options(next);
-    };
-
-    /** 拉取远程主机的共享列表（目前仅 SMB 支持） */
-    const load_shares = async () => {
-        const rsq = await mountHttp.post("share/list", {
-            driver: type,
-            id: id || undefined,
-            config: {server: config.server, username: config.username, password: config.password},
-        });
-        const shares = rsq?.data ?? [];
-        if (!shares.length) {
-            NotyFail(t("没有找到共享"));
-            return false;
-        }
-        set_shared_options(shares.map((s: any) => ({label: s.name, value: s.name})));
-        return true;
     };
 
     /** 保存应用配置（百度第 1 步）。授权链接依赖它，必须先落库 */
@@ -212,35 +227,11 @@ export default function CredentialPanel() {
                 continue;
             }
             const val = String(config[f.key] ?? "").trim();
-            // 编辑时密码类字段留空表示不改
-            const filled = val || (id && SECRET_KEYS.includes(f.key));
-            if (f.required && !filled) {
+            if (f.required && !val) {
                 return t(f.label);
             }
         }
         return undefined;
-    };
-
-    /** 点「下一步」：先校验本步字段，再执行本步动作 */
-    const next_step = async () => {
-        const step_keys = flow?.[step - 1]?.keys ?? [];
-        const missing = check_required(step_keys);
-        if (missing) {
-            NotyFail(`${t("请填写")}${missing}`);
-            return;
-        }
-        const action = flow?.[step - 1]?.on_next;
-        try {
-            if (action === "load_shares" && !await load_shares()) {
-                return;
-            }
-            if (action === "save_app" && !await save_app()) {
-                return;
-            }
-            set_step(step + 1);
-        } catch (e) {
-            // Http 层已提示
-        }
     };
 
     const save = async () => {
@@ -249,12 +240,52 @@ export default function CredentialPanel() {
             NotyFail(`${t("请填写")}${missing}`);
             return;
         }
+        // 映射列表：至少一条，且名称与路径都要填、名称不能重复
+        if (use_sources) {
+            if (sources.length === 0) {
+                NotyFail(t("请至少添加一条源目录"));
+                return;
+            }
+            const seen = new Set<string>();
+            for (const src of sources) {
+                const nm = String(src.name ?? "").trim();
+                const pth = String(src.path ?? "").trim();
+                if (!nm || !pth) {
+                    NotyFail(t("源目录的名称和路径都不能为空"));
+                    return;
+                }
+                if (seen.has(nm)) {
+                    NotyFail(`${t("源目录名称重复")}：${nm}`);
+                    return;
+                }
+                seen.add(nm);
+            }
+        }
+        // 多账号类型：每个账号的必填字段都要有值
+        if (use_accounts) {
+            if (accounts.length === 0) {
+                NotyFail(t("请至少添加一个账号"));
+                return;
+            }
+            for (const acc of accounts) {
+                for (const f of account_fields) {
+                    if (!f.required) {
+                        continue;
+                    }
+                    if (!String(acc[f.key] ?? "").trim()) {
+                        NotyFail(`${t("请填写")}${t(f.label)}`);
+                        return;
+                    }
+                }
+            }
+        }
         try {
             await mountHttp.post(id ? "credential/update" : "credential/add", {
                 id: id || undefined,
                 type,
                 note,
                 config,
+                accounts: use_accounts ? accounts : undefined,
                 enabled,
             });
             NotySuccess(t("保存成功"));
@@ -271,24 +302,9 @@ export default function CredentialPanel() {
         set_type(item.type);
         set_note(item.note ?? "");
         set_config({...(item.config ?? {})});
+        set_accounts(item.accounts ?? []);
         set_auth_code("");
         set_enabled(item.enabled !== false);
-        // 分步类型的编辑直接进最后一步：前面的字段已填过，点「上一步」可回去改。
-        // 这里用 item.type 自己算步数，不能读 type —— set_type 是异步的，此时还是上一个类型的值
-        set_step(STEP_FLOW[item.type]?.length ?? 1);
-        // SMB 编辑时密码是脱敏的，带上 id 让后端用已保存的密码去列共享
-        if (item.type === "smb") {
-            mountHttp.post("share/list", {
-                driver: "smb",
-                id: item.id,
-                config: item.config ?? {},
-            }).then(rsq => {
-                const shares = rsq?.data ?? [];
-                set_shared_options(shares.map((s: any) => ({label: s.name, value: s.name})));
-            }).catch(() => {
-                // Http 层已提示
-            });
-        }
         // 有动态下拉字段的类型（tcp_proxy），编辑时也要把选项拉回来
         const edit_fields = metas.find(m => m.type === item.type)?.fields ?? [];
         if (edit_fields.some(f => f.options_source)) {
@@ -341,25 +357,21 @@ export default function CredentialPanel() {
         });
     };
 
-    /** 内网穿透：保存对端账号（密码留空 = 不修改） */
-    const save_tcp_account = async () => {
-        if (!tcp_acc) {
-            return;
-        }
-        if (!tcp_acc.account_name.trim()) {
+    /** 内网穿透：保存该行账号（密码留空 = 不修改） */
+    const save_tcp_account = async (acc: any) => {
+        if (!String(acc.account_name ?? "").trim()) {
             NotyFail(t("请填写对端账号"));
             return;
         }
         try {
-            await mountHttp.post("credential/account_save", {
+            const rsq = await mountHttp.post("credential/account_save", {
                 credential_id: id,
-                account_id: tcp_acc.id,
-                note: tcp_acc.note,
-                account_name: tcp_acc.account_name,
-                password: tcp_acc.password,
+                account_id: acc.id || undefined,
+                note: acc.note,
+                account_name: acc.account_name,
+                password: acc.password,
             });
             NotySuccess(t("已保存"));
-            set_tcp_acc(null);
             await load();
         } catch (e) {
             // Http 层已提示
@@ -367,15 +379,13 @@ export default function CredentialPanel() {
     };
 
     /** 内网穿透：验证对端账号能否登录（密码错了立刻能看出来） */
-    const verify_tcp_account = async (acc: MountAccountRow) => {
-        // 正在编辑该账号时，用输入框里的最新值验证；否则用已保存的值
-        const editing = tcp_acc?.id === acc.id;
+    const verify_tcp_account = async (acc: any) => {
         try {
             const rsq = await mountHttp.post("credential/account_verify", {
                 credential_id: id,
                 account_id: acc.id,
-                account_name: editing ? tcp_acc.account_name : acc.account_name,
-                password: editing ? tcp_acc.password : undefined,
+                account_name: acc.account_name,
+                password: acc.password,
             });
             const d = rsq?.data ?? {};
             if (d.ok) {
@@ -389,7 +399,12 @@ export default function CredentialPanel() {
     };
 
     /** 内网穿透：删除对端账号 */
-    const remove_tcp_account = (acc: MountAccountRow) => {
+    const remove_tcp_account = (acc: any) => {
+        if (!acc.id) {
+            // 还没落库的行，直接本地删掉
+            set_accounts((prev) => prev.filter((v: any) => v !== acc));
+            return;
+        }
         confirm_del({
             title: t("确认删除"),
             sub_title: acc.note || acc.account_name || acc.id,
@@ -405,52 +420,38 @@ export default function CredentialPanel() {
         });
     };
 
-    /** 内网穿透账号列表：读当前凭据的 accounts */
-    const tcp_accounts = (): MountAccountRow[] => {
-        return list.find(c => c.id === id)?.accounts ?? [];
-    };
-
     /** 第 2 步：对端账号管理（每个账号一行，可备注、可改密码、可验证、可删除） */
     const render_tcp_account = () => {
-        const accounts = tcp_accounts();
         return <React.Fragment key={TCP_ACCOUNT_STEP}>
-            {/* 编辑区：新增或修改一个对端账号 */}
             <div className={"div-row"}>
-                <InputRow label={t("备注")} label_width={"6rem"}>
-                    <InputText placeholder={t("便于辨认的名字")} value={tcp_acc?.note ?? ""}
-                               handleInputChange={(v) => set_tcp_acc({...(tcp_acc ?? {note: "", account_name: "", password: ""}), note: v})}/>
-                </InputRow>
+                <h3>{t("账号")}</h3>
+                <ActionButton icon={"add"} title={t("添加")} onClick={add_account}/>
             </div>
-            <div className={"div-row"}>
-                <InputRow label={t("对端账号")} label_width={"6rem"}>
-                    <InputText placeholder={t("对端 FileCat 登录名")} value={tcp_acc?.account_name ?? ""}
-                               handleInputChange={(v) => set_tcp_acc({...(tcp_acc ?? {note: "", account_name: "", password: ""}), account_name: v})}/>
-                </InputRow>
-                <InputRow label={t("对端密码")} label_width={"6rem"}>
-                    <InputText placeholder={t("留空表示不修改")} value={tcp_acc?.password ?? ""}
-                               handleInputChange={(v) => set_tcp_acc({...(tcp_acc ?? {note: "", account_name: "", password: ""}), password: v})}/>
-                </InputRow>
-            </div>
-            <div className={"div-row"}>
-                <ActionButton icon={"save"} title={t("保存账号")} onClick={save_tcp_account}/>
-                {tcp_acc && <ActionButton icon={"close"} title={t("取消")} onClick={() => set_tcp_acc(null)}/>}
-            </div>
-
-            {/* 账号列表 */}
-            {accounts.length > 0 && <Table headers={[t("备注"), t("对端账号"), t("密码"), t("操作")]}
-                   rows={accounts.map(acc => [
-                       <TextTip context={acc.note || acc.account_name || acc.id}/>,
-                       <TextTip context={acc.account_name || acc.id}/>,
-                       <TextTip context={acc.has_password ? t("已设置") : t("未设置")}/>,
-                       <div className={"div-row"}>
-                           <ActionButton icon={"network_check"} title={t("验证登录")}
-                                         onClick={() => verify_tcp_account(acc)}/>
-                           <ActionButton icon={"edit"} title={t("编辑")}
-                                         onClick={() => set_tcp_acc({id: acc.id, note: acc.note ?? "", account_name: acc.account_name ?? "", password: ""})}/>
-                           <ActionButton icon={"delete"} title={t("删除")}
-                                         onClick={() => remove_tcp_account(acc)}/>
-                       </div>,
-                   ])}/>}
+            {accounts.map((acc, index) => (
+                <InstanceItem key={index}
+                              title={`${t("账号")} #${index + 1}`}
+                              toolbar={<>
+                                  <ActionButton icon={"save"} title={t("保存")}
+                                                onClick={() => save_tcp_account(acc)}/>
+                                  <ActionButton icon={"network_check"} title={t("验证登录")}
+                                                onClick={() => verify_tcp_account(acc)}/>
+                                  <ActionButton icon={"delete"} title={t("删除")}
+                                                onClick={() => remove_tcp_account(acc)}/>
+                              </>}>
+                    <InputRow label={t("备注")} label_width={"6rem"}>
+                        <InputText placeholder={t("便于辨认的名字")} value={acc.note ?? ""}
+                                   handleInputChange={(v) => change_account(index, {note: v})}/>
+                    </InputRow>
+                    <InputRow label={t("对端账号")} label_width={"6rem"} required>
+                        <InputText placeholder={t("对端 FileCat 登录名")} value={acc.account_name ?? ""}
+                                   handleInputChange={(v) => change_account(index, {account_name: v})}/>
+                    </InputRow>
+                    <InputRow label={t("对端密码")} label_width={"6rem"}>
+                        <InputText type={"password"} value={acc.password ?? ""}
+                                   handleInputChange={(v) => change_account(index, {password: v})}/>
+                    </InputRow>
+                </InstanceItem>
+            ))}
         </React.Fragment>;
     };
 
@@ -489,16 +490,8 @@ export default function CredentialPanel() {
 
     const type_name = (v: string) => metas.find(m => m.type === v)?.name ?? v;
 
-    /** 本步要显示的字段 key；单步类型就是全部字段 */
-    const step_keys = flow?.[step - 1]?.keys ?? fields.map(f => f.key);
-    /** 本步是否包含授权 UI */
-    const show_authorize = step_keys.includes(AUTHORIZE_STEP);
-    /** 本步是否包含内网穿透账号 UI */
-    const show_tcp_account = step_keys.includes(TCP_ACCOUNT_STEP);
-    /** 是否最后一步（最后一步才有「保存」） */
-    const is_last = step === step_count;
-    /** 是否分步类型 */
-    const multi_step = step_count > 1;
+    /** 是否分步类型（这些类型的字段需要先落库才能做后续动作） */
+    const multi_step = (flow?.length ?? 1) > 1;
 
     /** 普通字段渲染 */
     const render_field = (f: CredentialField) => {
@@ -507,14 +500,6 @@ export default function CredentialPanel() {
             return <InputRow key={f.key} label={t(f.label)} label_width={"6rem"}>
                 <Select value={config[f.key] ?? ""}
                         options={field_options[f.options_source] ?? []}
-                        onChange={(v) => set_config({...config, [f.key]: v})}/>
-            </InputRow>;
-        }
-        // SMB 的共享目录用下拉（列表来自远程主机）
-        if (f.key === "share" && type === "smb") {
-            return <InputRow key={f.key} label={t(f.label)} label_width={"6rem"}>
-                <Select value={config[f.key] ?? ""}
-                        options={shared_options}
                         onChange={(v) => set_config({...config, [f.key]: v})}/>
             </InputRow>;
         }
@@ -559,79 +544,145 @@ export default function CredentialPanel() {
                     <ActionButton icon={"check"} title={t("完成授权")} onClick={submit_code}/>}
             </div>
 
-            {/* 账号列表：每个已授权账号一行，可备注、检测、删除 */}
-            {accounts.length > 0 && <Table headers={[t("账号名"), t("百度账号"), t("授权状态"), t("使用"), t("授权时间"), t("操作")]}
-                   rows={accounts.map(acc => [
-                       <TextTip context={acc.note || acc.account_name || acc.id}/>,
-                       <TextTip context={acc.account_name || acc.id}/>,
-                       <TextTip context={acc.authorized ? t("已授权") : t("未授权")}/>,
-                       <TextTip context={acc.enabled === false ? t("停用") : t("启用")}/>,
-                       <p>{acc.obtained_at ? fmt_time(acc.obtained_at) : "-"}</p>,
-                       <div>
-                           <ActionButton icon={"network_check"} title={t("授权检测")}
-                                         onClick={() => verify_account(id, acc.id)}/>
-                           <ActionButton icon={"delete"} title={t("删除")}
-                                         onClick={() => deauthorize_account(id, acc)}/>
-                       </div>,
-                   ])}/>}
+            {/* 账号列表：每个已授权账号一个实例项，与其它凭据的账号列表保持一致 */}
+            {accounts.map((acc, index) => (
+                <InstanceItem key={acc.id}
+                              title={`${t("账号")} #${index + 1}`}
+                              toolbar={<>
+                                  <ActionButton icon={"network_check"} title={t("授权检测")}
+                                                onClick={() => verify_account(id, acc.id)}/>
+                                  <ActionButton icon={"delete"} title={t("删除")}
+                                                onClick={() => deauthorize_account(id, acc)}/>
+                              </>}>
+                    <InputRow label={t("备注")} label_width={"6rem"}>
+                        <TextTip context={acc.note || "-"}/>
+                    </InputRow>
+                    <InputRow label={t("百度账号")} label_width={"6rem"}>
+                        <TextTip context={acc.account_name || acc.id}/>
+                    </InputRow>
+                    <InputRow label={t("授权状态")} label_width={"6rem"}>
+                        <p>{acc.token ? t("已授权") : t("未授权")}</p>
+                    </InputRow>
+                    <InputRow label={t("授权时间")} label_width={"6rem"}>
+                        <p>{acc.token?.obtained_at ? fmt_time(acc.token.obtained_at) : "-"}</p>
+                    </InputRow>
+                </InstanceItem>
+            ))}
         </React.Fragment>;
     };
 
-    return (
-        <Card self_title={<span className={" div-row "}><h2>{t("凭证管理")}</h2>
-            <ActionButton icon={"info"} title={t("信息")} onClick={mount_info_click}/></span>}
-              rightBottomCom={<div>
-                  {/* 未展开表单时只显示「+」开始新增 */}
-                  {!editing && <ActionButton icon={"add"} title={t("添加")} onClick={start_add}/>}
-                  {editing && <>
-                      {/* 不是第一步就能退回上一步改前面的字段 */}
-                      {multi_step && step > 1 &&
-                          <ActionButton icon={"arrow_back"} title={t("上一步")} onClick={() => set_step(step - 1)}/>}
-                      {/* 分步类型在前面的步骤只让「下一步」，最后一步才保存 */}
-                      {multi_step && !is_last &&
-                          <ActionButton icon={"arrow_forward"} title={t("下一步")} onClick={next_step}/>}
-                      {(!multi_step || is_last) &&
-                          <ActionButton icon={"save"} title={t("保存")} onClick={save}/>}
-                      <ActionButton icon={"cancel"} title={t("取消")} onClick={close_form}/>
-                  </>}
-              </div>}>
+    return (<Row>
+        {/* 左侧：凭据列表 */}
+        <Column widthPer={50} maxWidth={"40rem"}>
+            <Dashboard>
+                <CardFull self_title={<span className={" div-row "}><h2>{t("网盘凭据")}</h2>
+                    <ActionButton icon={"info"} title={t("信息")} onClick={mount_info_click}/></span>}
+                          rightTopCom={<div className={"div-row"}>
+                              <ActionButton icon={"add"} title={t("添加")} onClick={start_add}/>
+                          </div>}>
+                    <Table headers={[t("备注"), t("类型"), t("操作")]}
+                           rows={list.map(item => [
+                               <TextTip context={item.note || "-"}/>,
+                               <TextTip context={type_name(item.type)}/>,
+                               <div>
+                                   <ActionButton icon={"edit"} title={t("编辑")} onClick={() => edit(item)}/>
+                                   <ActionButton icon={"delete"} title={t("删除")} onClick={() => del(item)}/>
+                               </div>,
+                           ])}/>
+                </CardFull>
+            </Dashboard>
+        </Column>
 
-            {/* 表单只在新增/编辑时展开 */}
+        {/* 右侧：添加/编辑面板 */}
+        <Column widthPer={50} maxWidth={"40rem"}>
             {editing && <React.Fragment>
-                <InputText placeholder={t("备注")} value={note} handleInputChange={set_note}/>
-                <Select value={type} options={metas.map(m => ({title: m.name, value: m.type}))}
-                        onChange={(v) => {
-                            set_type(v);
-                            // 换类型时清掉旧字段，避免串类型
-                            set_config({});
-                            set_shared_options([]);
-                            set_field_options({});
-                            set_step(1);
-                            set_auth_code("");
-                            // 新类型若有动态下拉字段，立即拉取选项
-                            const next_fields = metas.find(m => m.type === v)?.fields ?? [];
-                            if (next_fields.some(f => f.options_source)) {
-                                load_field_options(next_fields);
-                            }
-                        }}/>
-                {/* 按当前步骤渲染字段；授权 / 穿透账号是特殊步骤，单独渲染 */}
-                {show_authorize
-                    ? render_authorize()
-                    : show_tcp_account
-                        ? render_tcp_account()
-                        : fields.filter(f => step_keys.includes(f.key)).map(render_field)}
-            </React.Fragment>}
+                <Dashboard>
+                    <Card self_title={<span className={" div-row "}><h2>{t("凭据")}</h2></span>}
+                          rightBottomCom={<div>
+                              <ActionButton icon={"save"} title={t("保存")} onClick={save}/>
+                              <ActionButton icon={"cancel"} title={t("取消")} onClick={close_form}/>
+                          </div>}>
+                        <InputText placeholder={t("备注")} value={note} handleInputChange={set_note}/>
+                        <Select value={type} options={metas.map(m => ({title: m.name, value: m.type}))}
+                                onChange={(v) => {
+                                    set_type(v);
+                                    // 换类型时清掉旧字段，避免串类型
+                                    set_config({});
+                                    set_field_options({});
+                                    set_auth_code("");
+                                    // 新类型若有动态下拉字段，立即拉取选项
+                                    const next_fields = metas.find(m => m.type === v)?.fields ?? [];
+                                    if (next_fields.some(f => f.options_source)) {
+                                        load_field_options(next_fields);
+                                    }
+                                }}/>
+                        {/* 认证类字段全部平铺，不再分步翻页 */}
+                        {use_sources
+                            ? <React.Fragment>
+                                <div className={"div-row"}>
+                                    <h3>{t("目录")}</h3>
+                                    <ActionButton icon={"add"} title={t("添加")} onClick={add_source}/>
+                                </div>
+                                {sources.map((src, index) => (
+                                    <InstanceItem key={index}
+                                                  title={`${t("目录")} #${index + 1}`}
+                                                  toolbar={<>
+                                                      <ActionButton icon={"delete"} title={t("删除")}
+                                                                    onClick={() => remove_source(index)}/>
+                                                  </>}>
+                                        <InputRow label={t("名称")} label_width={"6rem"}>
+                                            <InputText placeholder={t("便于辨认的名字")} value={src.name}
+                                                       handleInputChange={(v) => update_source(index, {name: v})}/>
+                                        </InputRow>
+                                        <InputRow label={t("目录")} label_width={"6rem"} required>
+                                            <InputText placeholder={t("本地绝对路径")} value={src.path}
+                                                       handleInputChange={(v) => update_source(index, {path: v})}/>
+                                        </InputRow>
+                                    </InstanceItem>
+                                ))}
+                            </React.Fragment>
+                            : <React.Fragment>
+                                {fields.map(render_field)}
+                                {use_accounts && <React.Fragment>
+                                    <div className={"div-row"}>
+                                        <h3>{t("账号")}</h3>
+                                        <ActionButton icon={"add"} title={t("添加")} onClick={add_account}/>
+                                    </div>
+                                    {accounts.map((acc, index) => (
+                                        <InstanceItem key={index}
+                                                      title={`${t("账号")} #${index + 1}`}
+                                                      toolbar={<>
+                                                          <ActionButton icon={"delete"} title={t("删除")}
+                                                                        onClick={() => remove_account(index)}/>
+                                                      </>}>
+                                            {account_fields.map(f => (
+                                                <InputRow key={f.key} label={t(f.label)} label_width={"7rem"}
+                                                          required={f.required}>
+                                                    <InputText type={f.type === "password" ? "password" : "text"}
+                                                               placeholder={f.placeholder ? t(f.placeholder) : ""}
+                                                               value={acc[f.key] ?? ""}
+                                                               handleInputChange={(v) => change_account(index, {[f.key]: v})}/>
+                                                </InputRow>
+                                            ))}
+                                        </InstanceItem>
+                                    ))}
+                                </React.Fragment>}
+                            </React.Fragment>}
+                    </Card>
+                </Dashboard>
 
-            {/* 列表只在未展开表单时显示，避免编辑中误点其它行的操作按钮 */}
-            {!editing && <Table headers={[t("备注"), t("类型"), t("操作")]}
-                   rows={list.map(item => [
-                       <TextTip context={item.note}/>,
-                       <TextTip context={type_name(item.type)}/>,
-                       <div>
-                           <ActionButton icon={"edit"} title={t("编辑")} onClick={() => edit(item)}/>
-                           <ActionButton icon={"delete"} title={t("删除")} onClick={() => del(item)}/>
-                       </div>,
-                   ])}/>}
-        </Card>
-    );
+                {/* 依赖凭据本身才能进行的内容，放到下方独立卡片里 */}
+                {flow?.[1]?.keys?.includes(AUTHORIZE_STEP) && <Dashboard>
+                    <Card self_title={<span className={" div-row "}><h2>{t("账号")}</h2></span>}>
+                        {render_authorize()}
+                    </Card>
+                </Dashboard>}
+
+                {flow?.[1]?.keys?.includes(TCP_ACCOUNT_STEP) && <Dashboard>
+                    <Card self_title={<span className={" div-row "}><h2>{t("账号")}</h2></span>}>
+                        {render_tcp_account()}
+                    </Card>
+                </Dashboard>}
+            </React.Fragment>}
+        </Column>    </Row>);
 }

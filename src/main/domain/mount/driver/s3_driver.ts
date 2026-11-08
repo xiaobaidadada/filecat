@@ -76,6 +76,39 @@ export class S3Driver implements FileDriver {
         return this._sdk;
     }
 
+    /**
+     * 列出账号下可见的存储桶，供挂载表单直接挑选。
+     * 桶属于位置信息，不放在凭据里。
+     */
+    static async list_buckets(config: { endpoint: string; region?: string; access_key: string; secret_key: string; force_path_style?: boolean }): Promise<{ name: string; remark: string }[]> {
+        if (!config?.endpoint || !config?.access_key) {
+            throw new Error("请先填写服务地址和 AccessKey");
+        }
+        const {S3Client, ListBucketsCommand} = load_s3();
+        const client = new S3Client({
+            endpoint: config.endpoint,
+            region: config.region || "us-east-1",
+            credentials: {
+                accessKeyId: config.access_key,
+                secretAccessKey: config.secret_key,
+            },
+            forcePathStyle: config.force_path_style === true,
+        });
+        try {
+            const rsp = await client.send(new ListBucketsCommand({}));
+            return (rsp?.Buckets ?? []).map((b: any) => ({
+                name: b.Name,
+                remark: b.CreationDate ? new Date(b.CreationDate).toISOString().slice(0, 10) : "",
+            }));
+        } finally {
+            try {
+                client.destroy?.();
+            } catch (e) {
+                // ignore
+            }
+        }
+    }
+
     private get client(): any {
         if (!this._client) {
             const {S3Client} = this.sdk;
