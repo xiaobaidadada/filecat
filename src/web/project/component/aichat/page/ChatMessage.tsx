@@ -70,7 +70,7 @@ function CallListRenderer({callList}: { callList?: ai_agent_tool_call_item[] }) 
                         return (
                         <div key={idx} className={`call-list-item ${itemRunning ? 'call-running' : (item.success ? 'call-success' : 'call-fail')}`}>
                             <div className="call-list-item-header">
-                                <Icon icon={itemRunning ? 'progress_activity' : (item.success ? 'check_circle' : 'error')}/>
+                                <Icon icon={itemRunning ? 'autorenew' : (item.success ? 'check_circle' : 'error')}/>
                                 <span className="call-list-tool-name">{item.tool_display_name || item.tool_name}</span>
                                 {!itemRunning && <span className="call-list-duration">{item.duration_ms}ms</span>}
                             </div>

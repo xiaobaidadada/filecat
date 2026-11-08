@@ -1315,6 +1315,12 @@
     color: var(--textSecondary);
 }
 
+/* 运行中的图标转起来，和头部转圈保持一致 */
+.call-list-item.call-running .icon {
+    animation: call-list-spin 0.9s linear infinite;
+    color: var(--primary);
+}
+
 .call-list-body {
     display: flex;
     flex-direction: column;
