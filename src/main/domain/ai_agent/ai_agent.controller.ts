@@ -204,7 +204,9 @@ export class Ai_AgentController {
                 live_messages: ai_agentService.getRunningChatLive(userId, session.id) ?? [],
             });
         }
-        return Sucess(session);
+        return Sucess({
+            ...session,
+        });
     }
 
     @Post("/session/delete")
@@ -580,56 +582,26 @@ export class Ai_AgentController {
         return '';
     }
 
-    @msg(CmdType.ai_confirm_cmd)
-    async confirmCmd(data: WsData<any>) {
+    /**
+     * 客户端确认某个 ask_user 交互卡片。
+     * body(context): { session_id: string, ask_id: string, answer: any }
+     *
+     * 处理流程：
+     *  1. 把对应 ask_user 的 confirmed 置为 true，记录 answer
+     *  2. 找到该 ask_user 之后、assistant 消息里悬空的 tool_call（没有 tool_call_ends 的）
+     *  3. 命令确认 → 真正执行并补 tool_call_ends；tool 确认 → 直接把用户答案作为结果补上
+     *  4. 落盘后继续跑这一轮
+     */
+    @msg(CmdType.ai_chat_confirm)
+    async aiChatConfirm(data: WsData<any>) {
         const ctx = data.context || {};
-        const { askId, approved } = ctx;
-        if (!askId) return '';
-        const pending = ai_agentService.pendingConfirmMap.get(askId);
-        if (pending) {
-            clearTimeout(pending.timeout);
-            pending.resolve(approved === true);
-            ai_agentService.pendingConfirmMap.delete(askId);
-            // 通知同一 token 的其他标签页关闭该 askId 的弹框（已被处理）
-            const dismissData = new WsData(CmdType.ai_confirm_cmd, {
-                askId,
-                dismiss: true,
-            });
-            const dismissEncoded = dismissData.encode();
-            // 通过 pending.wss.token 找到同一用户的所有连接
-            const token = pending.wss?.token;
-            if (token) {
-                const allWss = WsUtil.get_all_wss_by_token(token);
-                for (const w of allWss) {
-                    if (w !== data.wss) {
-                        w.sendData(dismissEncoded);
-                    }
-                }
-            }
-        }
-        // 当前连接关闭时，自动拒绝确认请求
-        const currentWss = data.wss as Wss;
-        currentWss.setClose(() => {
-            const pending_p = ai_agentService.pendingConfirmMap.get(askId);
-            if (pending_p) {
-                clearTimeout(pending_p.timeout);
-                pending_p.resolve(false);
-                ai_agentService.pendingConfirmMap.delete(askId);
-                // 通知其他标签页关闭该 askId 的弹框
-                const closeDismissData = new WsData(CmdType.ai_confirm_cmd, {
-                    askId,
-                    dismiss: true,
-                });
-                const closeDismissEncoded = closeDismissData.encode();
-                const token_p = pending_p.wss?.token;
-                if (token_p) {
-                    const closeAllWss = WsUtil.get_all_wss_by_token(token_p);
-                    for (const w of closeAllWss) {
-                        w.sendData(closeDismissEncoded);
-                    }
-                }
-            }
-        })
+        const wss = data.wss as Wss;
+        userService.have_user_auth(wss.token, UserAuth.ai_agent_page);
+        const user = userService.get_user_info_by_token(wss.token);
+        if (!user) throw new Error("user not found");
+        const { session_id, ask_id, answer } = ctx;
+        if (!session_id || !ask_id) return '';
+        await ai_agentService.confirmAsk(user.id, session_id, ask_id, answer, wss);
         return '';
     }
 

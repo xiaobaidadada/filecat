@@ -20,7 +20,6 @@ import { ai_agentHttp, settingHttp } from "../../../util/config";
 import { throttle } from "../../../../../common/fun.util";
 import { use_auth_check } from "../../../util/store.util";
 import { RCode } from "../../../../../common/Result.pojo";
-import { useCmdConfirm } from "../useCmdConfirm";
 import { $stroe } from "../../../util/store";
 import { InputText } from "../../../../meta/component/Input";
 import {
@@ -84,7 +83,6 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
     };
 
     const { check_user_auth } = use_auth_check();
-    useCmdConfirm();
 
     // ===== 全局/持久化状态 =====
     const [user_base_info] = useAtom($stroe.user_base_info);
@@ -270,6 +268,17 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
     const getRequestType = () => env_config.current?.ai_config?.request_type || 'completions';
 
     // ===== 发送 =====
+    /**
+     * 交互卡片（命令确认 / AI 提问）的确认。
+     *
+     * 不产生任何用户消息：后端收到 ai_chat_confirm 后会把对应工具补上结果继续执行。
+     */
+    const handleInteractiveSubmit = (text: string, meta?: {ask_id: string; answer: string | Record<string, any>}) => {
+        if (session_api.admin_all_mode) return;
+        if (!meta) return;
+        chatStream.confirmAsk(meta.ask_id, meta.answer);
+    };
+
     const handleSend = async () => {
         // 超管「所有用户会话」模式禁止发送：请求会以当前登录用户落库，跨用户会写错数据
         if (session_api.admin_all_mode) return;
@@ -617,6 +626,8 @@ export default function ChatPanel(props: ChatPanelProps = {}) {
                         onBatchDelete={msg.batchDeleteMessages}
                         // 只有「选了气泡、没选会话」时才显示气泡批量条
                         showBatchBar={msg.batchMode && msg.selectedMsgIds.size > 0 && selectedSessionIds.size === 0}
+                        on_interactive_resolved={msg.handleInteractiveResolved}
+                        on_interactive_submit={handleInteractiveSubmit}
                         t={t}
                     />
 

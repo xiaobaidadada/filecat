@@ -8,7 +8,6 @@ import {$stroe} from "../../util/store";
 // import {Shell} from "./Shell";
 import {ShellInitPojo} from "../../../../common/req/ssh.pojo";
 import {copyToClipboard} from "../../util/FunUtil";
-import {useCmdConfirm} from "../aichat/useCmdConfirm";
 import {to_remote_dir_path} from "../file/FileUtil";
 
 const ShellLazy = React.lazy(() => import("./ShellLazy"))
@@ -21,7 +20,6 @@ export default function FileShell(props) {
     const [file_shell_hidden,set_file_shell_hidden] = useAtom($stroe.file_shell_hidden);
     const [userInfo, setUserInfo] = useAtom($stroe.user_base_info);
     const color =  userInfo.user_data.theme?.includes("dark")?"#FFFFFF":"#000000";
-    useCmdConfirm();
     const initTerminal =  async () => {
         const terminal = new Terminal({
             // fontSize: 15,

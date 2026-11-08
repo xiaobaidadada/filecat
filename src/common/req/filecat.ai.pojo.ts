@@ -444,6 +444,75 @@ export type AI_Agent_Role =
     /** 工具输出消息，表示模型调用工具后的结果 */
     | 'tool';
 
+/**
+ * 消息类型（内部使用，不参与发给 AI 的序列化）
+ * - text：普通对话消息（默认）
+ * - ask_user：AI 主动向用户提问，等待用户填写/选择后才继续
+ */
+export type ai_agent_message_type = 'text' | 'ask_user';
+
+/** ask_user 输入项的类型 */
+export type ai_agent_ask_field_type =
+/** 单选：从 options 里选一个 */
+    'select'
+    /** 多选：从 options 里选多个 */
+    | 'checkbox'
+    /** 文本输入：自由填写 */
+    | 'text';
+
+/** ask_user 的单个输入项 */
+export class ai_agent_ask_field {
+    /** 字段标识，回答时按这个 key 回传给 AI */
+    key: string;
+    /** 展示给用户的标题 */
+    label: string;
+    /** 输入类型 */
+    type: ai_agent_ask_field_type;
+    /** select / checkbox 的候选项；text 类型忽略 */
+    options?: string[];
+    /** 是否必填 */
+    required?: boolean;
+    /** 输入框占位提示（text 类型用） */
+    placeholder?: string;
+    /** 是否多行文本（text 类型用） */
+    multiline?: boolean;
+}
+
+/**
+ * AI 主动向用户提问的消息体。
+ * 用户回答后，答案会被整理成一条 tool 结果回给模型。
+ */
+export class ai_agent_ask_user {
+    /** 本次提问的唯一 id */
+    ask_id: string;
+    /**
+     * 交互类型：
+     * - ask_user（默认）：AI 主动提问，用户填写后作为答案
+     * - confirm_cmd：命令确认，用户允许/拒绝
+     */
+    kind?: "ask_user" | "confirm_cmd";
+    /** 对话框标题（confirm_cmd 可为空） */
+    title: string;
+    /** 补充说明（可空） */
+    description?: string;
+    /** 需要用户填写的输入项列表（confirm_cmd 为空数组） */
+    fields: ai_agent_ask_field[];
+    /** confirm_cmd：待执行的命令 */
+    cmd?: string;
+    /**
+     * 是否已经确认过。
+     * 未确认（undefined/false）时前端渲染卡片、后端拒绝继续执行；
+     * 用户点确认后由后端置为 true 并落盘。
+     */
+    confirmed?: boolean;
+    /**
+     * 用户的确认结果。
+     * - confirm_cmd：'allow' 表示允许执行，'reject' 表示拒绝
+     * - ask_user：用户的填写内容，按字段 key 组织
+     */
+    answer?: string | Record<string, any>;
+}
+
 export class ai_agent_message_attachment_item {
     name: string;
     mime_type?: string;
@@ -496,6 +565,27 @@ export class ai_agent_message_item {
     attachments?: ai_agent_message_attachment_item[];
     tool_calls?: tool_call_type[]
 
+    /**
+     * 消息类型，仅内部使用，不会序列化给 AI。
+     * - 不填 / 'text'：普通对话消息
+     * - 'ask_user'：AI 主动向用户提问，内容在 ask_user 字段里，前端渲染成确认对话框
+     */
+    message_type?: ai_agent_message_type;
+
+    /** ask_user 类型的消息体（message_type === 'ask_user' 时有效） */
+    ask_user?: ai_agent_ask_user;
+
+    /**
+     * 用户对某次交互（ask_user / confirm_cmd）的处理回执。
+     * 只有 user 角色消息会带这个字段，用来把「用户点了哪个卡片、选了什么」
+     * 结构化地告诉后端，避免靠解析用户消息文本去猜。
+     */
+    ask_answer?: {
+        /** 对应的 ask_user.ask_id */
+        ask_id: string;
+        /** confirm_cmd 为 'allow' / 'reject'；ask_user 为填写内容 */
+        answer: string | Record<string, any>;
+    };
     // ============ 多模态结果字段（前端自判断） ============
     /** 图片生成结果（OpenAI 格式 images/generations 的 response.data） */
     images?: Array<{ url?: string; b64_json?: string; revised_prompt?: string }>;
@@ -678,6 +768,12 @@ export class ai_chat_send_message {
     message?: string;
     tool_call_ends?: ai_agent_tool_call_item[];
     once_messages_list?: ai_agent_message_item[];
+    /**
+     * 本轮是否是「确认后继续」的续跑。
+     * 续跑时本轮数据不含上一轮补好的工具结果，前端不能拿它重建尾部气泡，
+     * 应整份重载会话，否则工具卡片会消失。
+     */
+    is_continue?: boolean;
     _interrupted?: boolean;
     // 临时状态提示标记（正在调用/执行工具），前端据此覆盖显示而不追加正文
     notice?: boolean;

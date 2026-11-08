@@ -28,6 +28,8 @@ import {
 import {wss_interface} from "../../../common/frame/type";
 import {FileUtil} from "../file/FileUtil";
 import {pick_model_schema} from "./tools/session/pick_next_model";
+import {backgroundProcessManager} from "./background_process.manager";
+import {AskUserPending} from "./ask_user.pending";
 import {create_update_llm_prompt_schema} from "./tools/session/update_llm_prompt";
 import {is_image_tool_result, read_image_schema} from "./tools/file/read_image";
 import {aiAgentMemoryService} from "./ai_agent.memory";
@@ -121,6 +123,63 @@ function command_env_desc(command_env?: Record<string, string>): string {
 }
 
 /**
+ * 把当前会话正在运行的后台进程渲染成一段提示词。
+ *
+ * 每轮对话都重新读取，保证 AI 看到的是最新状态 —— 进程可能在上一轮之后
+ * 已经退出，或是在上一轮里刚被启动。没有进程时返回空串。
+ */
+function build_background_process_desc(session_id?: string): string {
+    const processes = backgroundProcessManager.listProcesses(
+        session_id && session_id !== "unknown" ? session_id : undefined
+    );
+    if (processes.length === 0) return "";
+    const lines = processes.map((p) => {
+        const cmd = p.cmd.replace(/[\r\n]+/g, " ");
+        return `  pid=${p.pid} running=${p.running ? "是" : "否"} cwd=${p.cwd} 命令=${cmd}`;
+    });
+    return [
+        "当前会话正在运行的后台进程（由 exec_cmd_background 启动）：",
+        ...lines,
+        "如果要查看某个进程的输出内容，使用 get_background_process_output 工具并传入对应 pid；" +
+        "要关闭某个进程，使用 kill_background_processes 工具并传入对应 pid。",
+    ].join("\n");
+}
+
+/**
+ * 找出会话历史里最后一个带 tool_call_ends 的 assistant 片段。
+ *
+ * 用于确认后恢复：confirmAsk 把工具结果直接写进了文件，
+ * 续跑时需要把这些结果推给前端，否则工具卡片要等本轮结束才出现。
+ */
+function find_restored_tool_ends(messages: ai_agent_message_list): any[] {
+    let last: any[] = [];
+    for (const msg of messages) {
+        for (const part of (msg.content_list ?? [])) {
+            if (part.tool_call_ends?.length) last = part.tool_call_ends;
+        }
+        if (msg.tool_call_ends?.length) last = msg.tool_call_ends;
+    }
+    return last;
+}
+
+/**
+ * 找出第一条还没确认的 ask_user 卡片。
+ * 只要存在，就说明会话被暂停在某个确认上，不能继续对话。
+ */
+function find_unconfirmed_ask(messages: ai_agent_message_list | undefined): ai_agent_message_item | null {
+    if (!messages?.length) return null;
+    for (const msg of messages) {
+        const parts = msg.content_list?.length ? msg.content_list : [msg];
+        for (const part of parts) {
+            if (part.message_type === 'ask_user' && part.ask_user && part.ask_user.confirmed !== true) {
+                return msg;
+            }
+        }
+    }
+    return null;
+}
+
+/**
  * 从 LLM 错误响应体中提取错误码。
  *
  * 各家格式不统一（OpenAI `error.code`、部分网关 `code`、豆包 `error.type`），
@@ -163,104 +222,61 @@ const CONTEXT_LENGTH_EXCEEDED = "context_length_exceeded";
 export class ChatCore {
 
     /**
-     * AI 命令确认 - 等待用户确认
-     * 通过 wss（WebSocket 连接）向当前用户的所有标签页推送确认请求
+     * 命令执行前向用户确认。
+     *
+     * 返回三种结果：
+     *  - 'allow'：直接允许（免确认配置 / 无 wss 连接 / 会话已开自动允许），命令立即执行
+     *  - 'pending'：需要用户确认。此时把一条 ask_user 消息写进本轮消息列表，本轮到此结束
+     *               （_interrupted = true）。用户下次确认后，命令会作为新一轮重新发起。
+     *
+     * 注意：这里不做任何等待、不存内存状态 —— 确认结果完全靠持久化的消息传递，
+     * 所以重启、刷新之后依然可以继续确认。
+     *
      * @param session_id 当前会话 ID（用于判断该会话是否开启了命令免确认）
      */
-    private async waitForCmdConfirm(user_id: string, cmd: string, wss?: wss_interface, session_id?: string): Promise<boolean> {
+    private async waitForCmdConfirm(user_id: string, cmd: string, wss?: wss_interface, session_id?: string): Promise<'allow' | 'pending'> {
         // 如果 dotenv 配置了直接执行，或者没有 wss 连接，跳过确认
         if (ai_agentService.opened_ai_config_env?.allow_exec_cmd_directly || wss == null) {
-            return true;
+            return 'allow';
         }
 
-        // 该会话开启了“命令免确认”（cmd_auto_allow），直接允许，不弹确认框
         if (session_id) {
             const session = await aiAgentMemoryService.get_session(user_id, session_id);
+            // 该会话开启了“命令免确认”（cmd_auto_allow），直接允许
             if (session?.cmd_auto_allow) {
-                return true;
+                return 'allow';
             }
         }
 
-        // 从 wss 对象上获取 token（用于查找该用户的所有标签页）
-        const token = wss.token;
-        if (!token) {
-            // 没有 token 的情况下，直接允许（兼容旧逻辑）
-            return true;
-        }
-
-        // 生成一个唯一的确认ID
-        const askId = `confirm_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-
-        // 先在 ai_agentService 中注册 pending 确认，供 WS handler 匹配
-        // 直接存储 wss 对象，后续通过 wss.token 找到同一用户的所有标签页
-        ai_agentService.pendingConfirmMap.set(askId, {
-            user_id,
-            cmd,
-            createdAt: Date.now(),
-            resolve: null as any,
-            timeout: null as any,
-            wss: wss,
-        });
-
-        return new Promise<boolean>((resolve) => {
-            const pending = ai_agentService.pendingConfirmMap.get(askId)!;
-            pending.resolve = resolve;
-
-            let resolved = false;
-            const safeResolve = (approved: boolean) => {
-                if (resolved) return;
-                resolved = true;
-                clearTimeout(pending.timeout);
-                ai_agentService.pendingConfirmMap.delete(askId);
-                resolve(approved);
-                // 通知所有标签页关闭该 askId 的弹框
-                const dismissData = new WsData(CmdType.ai_confirm_cmd, {
-                    askId,
-                    dismiss: true,
-                });
-                const dismissEncoded = dismissData.encode();
-                const allWssDismiss = WsUtil.get_all_wss_by_token(token);
-                for (const w of allWssDismiss) {
-                    w.sendData(dismissEncoded);
-                }
-            };
-
-            // 超时，默认拒绝
-            pending.timeout = setTimeout(() => {
-                safeResolve(false);
-            }, 60000);
-
-            // ===== 1. 向该用户的所有 WS 连接发送确认请求（同一 token 可能在多个标签页） =====
-            const allWss = WsUtil.get_all_wss_by_token(token);
-            if (!allWss || allWss.length === 0) {
-                // 没有活跃的 WebSocket 连接，直接允许
-                safeResolve(true);
-                return;
-            }
-            const data = new WsData(CmdType.ai_confirm_cmd, {
-                askId,
-                cmd,
-                user_id,
-                session_id,
-            });
-            const encoded = data.encode();
-            for (const w of allWss) {
-                w.sendData(encoded);
-            }
-        });
+        return 'pending';
     }
 
     // 检测权限 补充参数
-    private async permission_test(user_id, user: UserData, toolName:string, args: any, cwd:string,token?:string,wss?:wss_interface, session_id?:string) {
+    private async permission_test(user_id, user: UserData, toolName:string, args: any, cwd:string,token?:string,wss?:wss_interface, session_id?:string, on_msg?: (m:any)=>void, tool_call_id?: string) {
         switch (toolName) {
             case "exec_cmd_background":
             case "exec_cmd": {
                 args.cwd = args.cwd || cwd || process.cwd()// 默认这个就是允许的 工作目录 一次性的不会变得
                 // 不对命令做用户设置的命令检测了，因为ai执行的不仅仅是命令而是一个bash脚本，暂时无法高质量的有效限制脚本使用的所有风险语
                 // 执行命令前需要用户确认
-                const approved = await this.waitForCmdConfirm(user_id, args.cmd,wss, session_id);
-                if (!approved) {
-                    throw new Error(`用户拒绝了命令执行：${args.cmd}`);
+                const confirm = await this.waitForCmdConfirm(user_id, args.cmd, wss, session_id);
+                if (confirm === 'pending') {
+                    // 暂停：这条 tool_call 已经发在 assistant 消息里，暂时不给结果。
+                    // 落盘后用户确认，下一轮会检测到这个悬空的 tool_call 并真正执行它。
+                    throw new AskUserPending({
+                        role: "assistant",
+                        message_type: "ask_user",
+                        content: "",
+                        _interrupted: true,
+                        ask_user: {
+                            ask_id: `confirm_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+                            kind: "confirm_cmd",
+                            cmd: args.cmd,
+                            title: "",
+                            fields: [],
+                            confirmed: false,
+                        },
+                    }, tool_call_id ? [tool_call_id] : []);
                 }
                 break;
             }
@@ -437,6 +453,17 @@ export class ChatCore {
     }
 
     public async chat(options: ChatOptions) {
+        // 有一条还没确认的 ask_user 卡片时不允许继续对话：
+        // 必须先通过 ai_chat_confirm 把它确认掉，否则上下文里会同时存在
+        // 「悬空的 tool_call」和「用户新消息」，模型无法正确处理。
+        if (options.session_id) {
+            const s = await aiAgentMemoryService.get_session(options.user_id, options.session_id);
+            // todo 改为构建遍历的时候检测
+            const unconfirmed = find_unconfirmed_ask(s?.messages);
+            if (unconfirmed) {
+                throw new Error("还有未确认的操作卡片，请先处理后再继续对话");
+            }
+        }
         const {
             originMessages,
             token,
@@ -496,6 +523,7 @@ ${cwd ? `当前会话设置的服务器工作目录（cwd）是 ${cwd} .` : ''}
 当前系统登陆用户是 ${user.username}，用户的id为 ${user.user_id}，${user.note}。
 当前 execPath 的位置是${process.execPath}。
 当前会话id 为：${session_id}
+${build_background_process_desc(session_id)}
 ${command_env_desc(env.command_env)}
 
 你是一个服务器机器人，当前操作系统是 ${os.platform()}，
@@ -604,6 +632,23 @@ const workMessages: ai_agent_message_list = [
         controller.signal.addEventListener('abort', onAbort);
 
         try {
+        // 上一轮因等待确认而暂停时，工具结果是由 confirmAsk 直接补进会话文件的。
+        // 这里把它们捞出来先推一次，让前端立刻看到工具卡片 ——
+        // 否则要等本轮 LLM 跑完推新的 tool_call_ends 才出现，表现为“刷新后才有”。
+        // 注意要从原始会话里找：workMessages 已经被归一化摊平，tool_call_ends 不在了。
+        if (session_id) {
+            const raw = await aiAgentMemoryService.get_session(user_id, session_id);
+            const restored = find_restored_tool_ends(raw?.messages ?? []);
+            console.log('[restore_tool_ends] session=', session_id, 'count=', restored.length);
+            if (restored.length > 0) {
+                on_msg({
+                    text: "",
+                    chunk_index: globalChunkIndex,
+                    tool_call_ends: restored,
+                });
+                globalChunkIndex++;
+            }
+        }
         while (loopEnv.toolLoop-- > 0) {
 
             // 若已被取消，直接结束本轮（不再发起新的 LLM 请求）
@@ -825,6 +870,8 @@ const workMessages: ai_agent_message_list = [
                     let resultStr;
                     /** tool 消息的 content：字符串，或含图片的多模态数组 */
                     let tool_content: ai_agent_content = "";
+                    /** 本次工具没有真正执行（转为等待用户确认），不生成 tool 消息 */
+                    let ask_pending = false;
                     try {
                         const args = JSON.parse(call.function.arguments || "{}");
                         callItem.tool_args = args;
@@ -836,7 +883,8 @@ const workMessages: ai_agent_message_list = [
                             chunk_index: globalChunkIndex,
                             notice: true
                         });
-                        await this.permission_test(user_id, user, toolName, args, cwd,token,options.wss, session_id);
+                        // 需要用户确认时抛 AskUserPending，本轮由外层结束
+                        await this.permission_test(user_id, user, toolName, args, cwd,token,options.wss, session_id, on_msg, call.id);
 
                         if (enableLlmEditPrompt && matchedPromptIndex >= 0 && toolName === "update_llm_prompt") {
                             // 由 chat.core 内部处理：LLM 总结会话内容，通过下标写回系统提示词列表项的 llm_prompt
@@ -846,8 +894,7 @@ const workMessages: ai_agent_message_list = [
                             resultStr = updateResult.message;
                         } else {
                             result = await ai_agentService.callTool(toolName, args, user_id, session_id, options.wss, controller, env.command_env);
-                            // 图片类结果：模型支持图片时以 OpenAI 多模态格式（image_url）带给模型，
-                            // 让模型真正"看到"图；不支持时退化为纯文本说明。
+                            // 图片类结果：模型支持图片时以 OpenAI 多模态格式（image_url）带给模型，                            // 让模型真正"看到"图；不支持时退化为纯文本说明。
                             if (is_image_tool_result(result)) {
                                 if (env.image_understanding === false) {
                                     resultStr = `${result.text}\n（当前模型未开启 image_understanding，无法查看图片内容，图片数据已忽略。）`;
@@ -873,25 +920,38 @@ const workMessages: ai_agent_message_list = [
                             loopEnv.max_call_num = args.max_call_num??1
                         }
                     } catch (e) {
+                        // 需要用户确认/提问：不是错误，直接向上抛，由外层落盘并结束本轮
+                        if (e instanceof AskUserPending) {
+                            // ask_user 工具是自己抛出来的（不像 permission_test 那样在外面接），
+                            // 所以这里也要把待处理消息补进本轮，否则卡片不会出现在消息流里
+                            ask_pending = true;
+                            once_messages_list.push(e.ask_msg);
+                            // 这条 tool_call 已经写在 assistant 消息里，但暂时没有结果。
+                            // 不补占位结果：让它保持「悬空」，下一轮会自动执行它并补上真正的结果。
+                            _interrupted = true;
+                            throw e;
+                        }
                         const msg = get_error_str(e)
                         callItem.success = false;
                         callItem.error = msg;
                         console.log('tool执行失败，',`${toolName}，`,config?.model,call?.function?.arguments)
                     } finally {
                         callItem.duration_ms = Date.now() - startTime;
-                        // tool 消息在这里统一生成：此刻 duration_ms 才完整，
-                        // 成功/失败共用同一段组装逻辑，不必两处各写一遍。
-                        workMessages.push({
-                            role: "tool",
-                            tool_call_id: call.id,
-                            content: tool_content || tool_message_content({
-                                success: callItem.success,
-                                duration_ms: callItem.duration_ms,
-                                result: callItem.success ? callItem.tool_result : undefined,
-                                error: callItem.success ? undefined : callItem.error,
-                            })
-                        });
-                        assistantMessage.tool_call_ends.push(callItem)
+                        if (!ask_pending) {
+                            // tool 消息在这里统一生成：此刻 duration_ms 才完整，
+                            // 成功/失败共用同一段组装逻辑，不必两处各写一遍。
+                            workMessages.push({
+                                role: "tool",
+                                tool_call_id: call.id,
+                                content: tool_content || tool_message_content({
+                                    success: callItem.success,
+                                    duration_ms: callItem.duration_ms,
+                                    result: callItem.success ? callItem.tool_result : undefined,
+                                    error: callItem.success ? undefined : callItem.error,
+                                })
+                            });
+                            assistantMessage.tool_call_ends.push(callItem)
+                        }
                     }
                 })()
             }))
@@ -919,6 +979,12 @@ const workMessages: ai_agent_message_list = [
         // 工具循环耗尽（正常结束）：走 endOnce 收尾，向前端发送 ai_chat_end 并保存会话。
         endOnce(_interrupted);
         } catch (e) {
+            // 等待用户确认：本轮正常收尾（已经推过 ai_chat_end 就不重复），
+            // 由调用方保存会话即可，不当成错误处理。
+            if (e instanceof AskUserPending) {
+                endOnce(true);
+                return;
+            }
             // 异常退出（error_call 抛出的真实错误，如 API key 无效 / 限流 / 网络错误等）：
             // 只清理信号监听，不发送 ai_chat_end，而是把异常重新抛出给外层 chat_ws 的 catch，
             // 由它发送 ai_chat_error 并保存错误信息，避免「ai_chat_end 与 ai_chat_error」消息冲突。

@@ -1575,3 +1575,79 @@
     color: #9ca3af;
     pointer-events: none;
 }
+
+/* ===== 消息流内的交互卡片（命令确认 / AI 提问） ===== */
+.ai-interactive {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5em;
+    min-width: 20em;
+    max-width: 42em;
+}
+
+.ai-interactive--done {
+    color: var(--textSecondary);
+    font-size: 0.9em;
+}
+
+.ai-interactive-title {
+    font-weight: 600;
+    margin: 0;
+}
+
+.ai-interactive-desc {
+    margin: 0;
+    color: var(--textSecondary);
+    font-size: 0.9em;
+    line-height: 1.5;
+}
+
+.ai-interactive-cmd {
+    margin: 0;
+    max-height: 40vh;
+    overflow: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+    background: var(--surfaceSecondary);
+    padding: 0.75em;
+    border-radius: 0.5em;
+    font-family: monospace;
+    font-size: 0.9em;
+    line-height: 1.5;
+}
+
+.ai-ask-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35em;
+}
+
+.ai-ask-label {
+    margin: 0;
+    font-size: 0.9em;
+    color: var(--textSecondary);
+}
+
+.ai-ask-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35em;
+}
+
+.ai-ask-option {
+    display: flex !important;
+    align-items: center;
+    gap: 0.5em;
+    padding: 0.4em 0.6em;
+    border-radius: 0.4em;
+    cursor: pointer;
+}
+
+.ai-ask-option--on {
+    background: var(--primary-light);
+}
+
+.ai-ask-option input {
+    margin: 0;
+    cursor: pointer;
+}

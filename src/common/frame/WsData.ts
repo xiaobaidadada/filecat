@@ -130,7 +130,6 @@ export enum CmdType {
 
     tcp_forward_server_load,
 
-    ai_confirm_cmd, // AI 执行命令前需要用户确认
 
     // ===== AI 聊天（WebSocket 替代 SSE） =====
     ai_chat_req,      // 客户端发起 AI 聊天请求
@@ -139,6 +138,7 @@ export enum CmdType {
     ai_chat_error,    // 服务端推送 AI 错误信息
     ai_chat_abort,    // 客户端主动取消正在进行的 AI 聊天
     ai_chat_subscribe, // 客户端用当前 ws 连接订阅/退订某个正在运行的会话（切换/刷新会话时绑定，实现定向推送而非广播）
+    ai_chat_confirm,   // 客户端确认某个 ask_user 交互卡片：置为已确认、补工具结果、继续执行
 
     // ===== AI 后台进程管理 =====
     ai_bg_process_list_req,   // 客户端请求后台进程列表
@@ -265,7 +265,6 @@ export type ws_cmd_type_map = {
 
     [CmdType.tcp_forward_server_load]: [any, any],
 
-    [CmdType.ai_confirm_cmd]: [any, any],
 
     // ===== AI 聊天 WS 类型映射 =====
     [CmdType.ai_chat_req]: [any, any],
@@ -274,6 +273,7 @@ export type ws_cmd_type_map = {
     [CmdType.ai_chat_error]: [any, any],
     [CmdType.ai_chat_abort]: [any, any],
     [CmdType.ai_chat_subscribe]: [any, any],
+    [CmdType.ai_chat_confirm]: [any, any],
 
     // ===== AI 后台进程管理 WS 类型映射 =====
     [CmdType.ai_bg_process_list_req]: [any, any],

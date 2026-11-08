@@ -748,6 +748,58 @@ export class Ai_agentService {
     }
 
     /**
+     * 确认后继续这一轮：用空的新消息触发一次 chat_ws，
+     * 上下文完全由已落盘的会话历史重建（此时悬空 tool_call 已有结果）。
+     */
+    private async chat_continue(userId: string, sessionId: string, wss: any) {
+        const session = await aiAgentMemoryService.get_session(userId, sessionId);
+        if (!session) return;
+        // 直接复用 chat_ws：传空 messages，它会把 session.messages 作为上下文
+        await this.chat_ws([], wss.token, wss, sessionId, session.sys_prompt_id);
+    }
+    public async confirmAsk(userId: string, sessionId: string, askId: string, answer: any, wss?: any) {
+        // 一次事务内完成：标记确认 + 找到悬空调用
+        const info = await aiAgentMemoryService.confirm_ask(userId, sessionId, askId, answer);
+        if (!info) throw new Error("找不到对应的确认卡片");
+
+        // 补悬空 tool_call 的结果
+        for (const d of info.dangling) {
+            const started = Date.now();
+            let success = false;
+            let content = "";
+            let error: string | undefined;
+            try {
+                if (info.kind === 'ask_user') {
+                    // 用户填的答案本身就是这个工具的结果
+                    content = typeof answer === "string" ? answer : JSON.stringify(answer, null, 2);
+                    success = true;
+                } else if (answer === 'allow') {
+                    const result = await this.callTool(d.name, d.args, userId, sessionId, wss, undefined, this.opened_ai_config_env?.command_env);
+                    content = typeof result === "string" ? result : JSON.stringify(result, null, 2);
+                    success = true;
+                } else {
+                    error = "用户拒绝了该操作";
+                }
+            } catch (e) {
+                error = e?.message || String(e);
+            }
+            await aiAgentMemoryService.fill_tool_result(userId, sessionId, {
+                tool_call_id: d.id,
+                tool_name: d.name,
+                tool_display_name: d.name,
+                tool_args: d.args,
+                success,
+                tool_result: success ? content : undefined,
+                error,
+                duration_ms: Date.now() - started,
+            });
+        }
+
+        // 继续跑这一轮
+        await this.chat_continue(userId, sessionId, wss);
+    }
+
+    /**
      * 主动中断某个会话的聊天。
      * 注意：必须同时清理 runningChats，否则若 chat_core.chat 内部吞掉了 AbortError
      * （既不触发 on_end 也不抛错），列表会一直显示“执行中”转圈。
@@ -889,6 +941,9 @@ export class Ai_agentService {
 
         const userId = token_id;
         const incomingMessages = (originMessages ?? []).filter(it => it && (it.content || it.attachments?.length));
+        // 没有新用户消息说明这次是「确认后继续」触发的续跑，
+        // 上一轮补好的工具结果只在磁盘里，不在本轮的 once_messages_list 中
+        const is_continue = incomingMessages.length === 0;
         const latestUserMessage = [...incomingMessages].reverse().find(it => it.role === "user") ?? incomingMessages[incomingMessages.length - 1];
         const sessionTitle = getContentAsString(latestUserMessage?.content)?.trim()
             || formatAttachmentTitle(latestUserMessage?.attachments);
@@ -975,13 +1030,15 @@ export class Ai_agentService {
                         session_id: finalSessionId,
                         once_messages_list,
                         _interrupted: stats?._interrupted,
+                        // 确认后继续的轮次：本轮数据不含上一轮已补的工具结果，
+                        // 前端不能用它重建尾部气泡（会抹掉工具卡片），应整份重载会话
+                        is_continue,
                     }, true);
                     // 保存会话记录
                     const assistantText = once_messages_list
                         .map(it => getContentAsString(it.content))
                         .filter(Boolean)
-                        .join("\n\n");
-                    const assistantMessage: ai_agent_message_item = {
+                        .join("\n\n");                    const assistantMessage: ai_agent_message_item = {
                         role: "assistant",
                         content: assistantText,
                         content_list: once_messages_list,
@@ -1253,23 +1310,6 @@ export class Ai_agentService {
         return toolName.startsWith('call_model_');
     }
 
-    // ============ AI 命令确认管理 ============
-
-    /**
-     * 待用户确认的命令映射
-     * key: askId
-     * value: { user_id, cmd, createdAt, resolve, timeout }
-     */
-    public pendingConfirmMap = new Map<string, {
-        user_id: string;
-        cmd: string;
-        createdAt: number;
-        resolve: (approved: boolean) => void;
-        timeout: any;
-        /** 发起确认请求的 wss 连接（通过 wss.token 可以找到同一用户的所有标签页） */
-        wss?: wss_interface;
-    }>();
-
     // ============ 插件工具管理 ============
 
     /**
@@ -1360,7 +1400,13 @@ export class Ai_agentService {
         // 内置工具统一调用：第一个参数是运行上下文，第二个是工具自身参数
         const builtinTool = Ai_agentTools[toolName as Ai_agentTools_type];
         if (builtinTool) {
-            return builtinTool.fn({session_id, command_env}, args);
+            return builtinTool.fn({
+                session_id,
+                command_env,
+                user_id,
+                wss,
+                controller: externalController,
+            }, args);
         }
         // 检查是否是插件工具
         const pluginHandler = this.getPluginToolHandler(toolName);

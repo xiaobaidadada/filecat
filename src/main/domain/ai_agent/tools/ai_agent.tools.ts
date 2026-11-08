@@ -7,6 +7,7 @@ import {search_in_files_schema, search_in_files_tool} from "./file/search_in_fil
 import {create_fs_entry_schema, create_fs_entry_tool} from "./file/create_fs_entry";
 import {exec_cmd_background_schema, exec_cmd_background_tool} from "./command/exec_cmd_background";
 import {list_background_processes_schema, list_background_processes_tool} from "./command/list_background_processes";
+import {ask_user_schema, ask_user_tool} from "./command/ask_user";
 import {
     get_background_process_output_schema,
     get_background_process_output_tool
@@ -30,6 +31,12 @@ export type Ai_agent_tool_ctx = {
     session_id: string;
     /** 由当前供应商配置的 command_env，只有需要启动进程的工具才会用到 */
     command_env?: Record<string, string>;
+    /** 当前用户的 id，需要按用户推送消息的工具（如 ask_user）使用 */
+    user_id?: string;
+    /** 当前聊天所属的 WebSocket 连接，需要主动推送到前端时使用 */
+    wss?: any;
+    /** 本轮聊天的中断控制器，工具内部需要感知中断时使用 */
+    controller?: AbortController;
 };
 
 /**
@@ -67,6 +74,7 @@ export type Ai_agentTools_type =
     | "exec_cmd"
     | "exec_cmd_background"
     | "list_background_processes"
+    | "ask_user"
     | "get_background_process_output"
     | "search_docs"
     | "http_request"
@@ -104,6 +112,8 @@ export const Ai_agentTools: Record<Ai_agentTools_type, Ai_agent_tool_item> = {
     exec_cmd_background: {fn: exec_cmd_background_tool, schema: exec_cmd_background_schema},
     // 获取后台进程列表
     list_background_processes: {fn: list_background_processes_tool, schema: list_background_processes_schema},
+    // 向用户提问并等待回答
+    ask_user: {fn: ask_user_tool, schema: ask_user_schema},
     // 获取后台进程输出
     get_background_process_output: {fn: get_background_process_output_tool, schema: get_background_process_output_schema},
     // 搜索本地知识库
@@ -147,6 +157,12 @@ export const tools_des_map: Record<Ai_agentTools_type, {
     list_background_processes: {
         get_name: () => "list bg proc",
         get_params: () => ""
+    },
+    ask_user: {
+        get_name: () => "ask user",
+        get_params: (args) => {
+            return ` ${args.title ?? ""}`
+        }
     },
     get_background_process_output: {
         get_name: () => "get bg output",

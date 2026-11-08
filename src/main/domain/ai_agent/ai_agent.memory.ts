@@ -80,6 +80,15 @@ function llm_normalizeMessage_one(message: ai_agent_message_item, image_understa
         // tool_call_id: message.tool_call_id,
         attachments: (message.attachments ?? []).map(normalizeAttachment),
     };
+    // 内部使用的消息类型与 ask_user 内容必须原样保留，
+    // 否则持久化后前端刷新就认不出这是一条待确认消息了。
+    // 发给模型时由 llm_normalizeMessage 统一过滤掉，不会泄漏到上下文里。
+    if (message.message_type) {
+        normalized.message_type = message.message_type;
+    }
+    if (message.ask_user) {
+        normalized.ask_user = message.ask_user;
+    }
     if (message.tool_calls?.length) {
         normalized.tool_calls = message.tool_calls
         // normalized.tool_calls = message.tool_calls.map(v=>{
@@ -117,8 +126,16 @@ function llm_normalizeMessage_one(message: ai_agent_message_item, image_understa
 function llm_normalizeMessage(message: ai_agent_message_item, _interrupted:boolean, maxToolContentChars?: number, image_understanding?: boolean) {
     const toolContentLimit = maxToolContentChars ?? DEFAULT_MAX_TOOL_CONTENT_CHARS;
     const list:ai_agent_message_item[] = []
+    // ask_user 是纯前端确认消息，没有任何内容，绝不发给模型
+    if (message.message_type === 'ask_user') {
+        return list;
+    }
     if(message.content_list?.length) {
         for (const it of message.content_list) {
+            // 历史会话里 ask_user 可能被存在 content_list 中（旧格式），不能带进模型上下文
+            if (it.message_type === 'ask_user') {
+                continue;
+            }
             list.push(...llm_normalizeMessage(it, _interrupted, toolContentLimit, image_understanding))
         }
         return list;
@@ -386,8 +403,12 @@ export class AiAgentMemoryService {
         const store = this.read_index_of_session();
         const meta = this.user_meta_index_by_store(store, userId).sessions.find(it => it.id === sessionId);
         if (!meta) return null;
-        const session = await this.read_session(userId, meta);
-        return session ? cloneSession(session) : null;
+        // 走同一把会话锁：避免读到 appendTurn 写一半的数据，
+        // 也保证「用户刚确认完、下一轮立刻读」时读到的是最新结果
+        return session_lock.run(sessionId, async () => {
+            const session = await this.read_session(userId, meta);
+            return session ? cloneSession(session) : null;
+        });
     }
 
     public async create_session(userId: string, title :string, source: "web" | "cli" | "robot_qq" | "robot_dingtalk" | "robot_wecom" | "robot_lark" | "robot_wecom" | "robot_lark" = "web",sys_prompt_id?:string,sessionId?:string, file_cwd_path?: string) {
@@ -639,6 +660,101 @@ export class AiAgentMemoryService {
         return {session,meta,store};
     }
 
+
+    /**
+     * 把某个 ask_user 置为已确认，并返回它对应的悬空 tool_call 列表。
+     *
+     * 悬空 tool_call = 最后一条 assistant 消息里有 tool_calls、但 tool_call_ends 里没有对应结果的那些。
+     * 一次加锁完成读取和标记，避免并发下重复处理。
+     */
+    public async confirm_ask(userId: string, sessionId: string, askId: string, answer: any) {
+        return session_lock.run(sessionId, async () => {
+            const r = await this.get_origin_session(userId, sessionId);
+            if (!r) return null;
+            const {session, meta, store} = r;
+
+            let kind: 'confirm_cmd' | 'ask_user' | null = null;
+            for (const msg of session.messages) {
+                const parts = msg.content_list?.length ? msg.content_list : [msg];
+                for (const part of parts) {
+                    if (part.ask_user?.ask_id === askId) {
+                        part.ask_user.confirmed = true;
+                        part.ask_user.answer = answer;
+                        kind = part.ask_user.kind;
+                    }
+                }
+            }
+            if (!kind) return null;
+
+            // 已产生结果的 tool_call id
+            const answered = new Set<string>();
+            for (const m of session.messages) {
+                for (const end of m.tool_call_ends ?? []) {
+                    if (end.tool_call_id) answered.add(end.tool_call_id);
+                }
+                for (const part of (m.content_list ?? [])) {
+                    for (const end of part.tool_call_ends ?? []) {
+                        if (end.tool_call_id) answered.add(end.tool_call_id);
+                    }
+                }
+            }
+
+            // 带 tool_calls 的那条消息可能在顶层，也可能在 content_list 里
+            // （chat 落盘时把本轮所有片段放进 assistantMessage.content_list）。
+            const holders: ai_agent_message_item[] = [];
+            for (const m of session.messages) {
+                if (m.tool_calls?.length) holders.push(m);
+                for (const part of (m.content_list ?? [])) {
+                    if (part.tool_calls?.length) holders.push(part);
+                }
+            }
+            const dangling: Array<{id: string; name: string; args: any}> = [];
+            for (const holder of holders) {
+                for (const call of holder.tool_calls ?? []) {
+                    if (!call.id || answered.has(call.id)) continue;
+                    let args: any = {};
+                    try {
+                        args = JSON.parse(call.function?.arguments || "{}");
+                    } catch {
+                        // 参数不是合法 JSON 时按空对象处理
+                    }
+                    dangling.push({id: call.id, name: call.function?.name ?? "", args});
+                }
+            }
+
+            session.updated_at = Date.now();
+            const fileName = await this.writeSession(userId, session, meta.file_name);
+            this.upsertMeta(store, userId, session, fileName);
+            return {kind, dangling};
+        });
+    }
+
+    /**
+     * 把工具执行结果挂到最后一条带 tool_calls 的 assistant 消息上并落盘。
+     */
+    public async fill_tool_result(userId: string, sessionId: string, end: any) {
+        return session_lock.run(sessionId, async () => {
+            const r = await this.get_origin_session(userId, sessionId);
+            if (!r) return;
+            const {session, meta, store} = r;
+            // 带 tool_calls 的消息可能在顶层，也可能在 content_list 里
+            const holders: ai_agent_message_item[] = [];
+            for (const m of session.messages) {
+                if (m.tool_calls?.length) holders.push(m);
+                for (const part of (m.content_list ?? [])) {
+                    if (part.tool_calls?.length) holders.push(part);
+                }
+            }
+            const holder = holders[holders.length - 1];
+            if (!holder) return;
+            holder.tool_call_ends = holder.tool_call_ends ?? [];
+            holder.tool_call_ends.push(end);
+            session.updated_at = Date.now();
+            const fileName = await this.writeSession(userId, session, meta.file_name);
+            this.upsertMeta(store, userId, session, fileName);
+        });
+    }
+
     /**
      * 仅追加一条消息到会话（轻量写入）
      * 与 appendTurn 不同：不做 token 统计、不触发压缩、不改标题、不提取长期记忆，
@@ -673,16 +789,18 @@ export class AiAgentMemoryService {
         for (const message of session.messages) {
             message._interrupted = false
         }
-        session.messages.push(userMessage);
-        session.messages.push(assistantMessage);
-        session.updated_at = Date.now();
+        // 续跑（确认后继续）没有新的用户消息，只存 assistant 结果
+        if (userMessage) {
+            session.messages.push(userMessage);
+        }
+        session.messages.push(assistantMessage);        session.updated_at = Date.now();
 
         // 预计算消息 token 并写入字段，持久化后压缩判断直接读
         // close_token_count 开启后完全跳过统计
         if (!env?.close_token_count) {
             // turnStats 有值说明开启了 usage_request_param 且服务商返回了真实 usage，
             // 此时用真实数据；否则退回本地估算。
-            if (turnStats?.input_tokens === undefined) {
+            if (turnStats?.input_tokens === undefined && userMessage) {
                 userMessage.token_count = await estimateTokenCount(this.getMessageText(userMessage));
             }
             if (turnStats?.output_tokens === undefined) {
@@ -699,7 +817,7 @@ export class AiAgentMemoryService {
             stats.turns = (stats.turns || 0) + 1;
 
             // 优先用 turnStats 的真实数据，没有才用本地估算值
-            const inputTokens = turnStats?.input_tokens ?? userMessage.token_count ?? 0;
+            const inputTokens = turnStats?.input_tokens ?? userMessage?.token_count ?? 0;
             const outputTokens = turnStats?.output_tokens ?? assistantMessage.token_count ?? 0;
 
             stats.input_tokens = (stats.input_tokens || 0) + inputTokens;
@@ -708,7 +826,7 @@ export class AiAgentMemoryService {
             stats.recent_output_tokens = outputTokens;
         }
 
-        if (!session.title) {
+        if (!session.title && userMessage) {
             session.title = this.createTitle(getContentAsString(userMessage.content));
         }
         await this.compressIfNeeded(session, env);

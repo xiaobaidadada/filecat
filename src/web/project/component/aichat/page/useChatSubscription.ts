@@ -123,7 +123,7 @@ export function useChatSubscription(deps: Deps) {
         };
 
         /** 会话结束（正常结束与报错共用） */
-        const handleEnd = (sessionId: string, once_messages_list?: ai_agent_message_item[]) => {
+        const handleEnd = (sessionId: string, once_messages_list?: ai_agent_message_item[], is_continue?: boolean) => {
             // 通知外层：本轮真的结束了，可以清掉"暂停中"状态
             on_chat_end?.(sessionId);
             // 结束通知会发给该用户所有连接（含未订阅本会话的连接），
@@ -147,7 +147,7 @@ export function useChatSubscription(deps: Deps) {
                     return;
                 }
 
-                if (once_messages_list?.length) {
+                if (once_messages_list?.length && !is_continue) {
                     // once_messages_list 是本轮权威数据（只含 assistant）。
                     // 全局路径不掌握本轮起点，采取保守策略：只替换末尾连续的 bot 气泡，
                     // 不跨过 user 边界，绝不触碰已有历史。
@@ -177,7 +177,7 @@ export function useChatSubscription(deps: Deps) {
             const ctx = data?.context || {};
             if (!ctx.session_id) return;
             // running 标记由 handleEnd 统一处理（含非当前会话）
-            handleEnd(ctx.session_id, ctx.once_messages_list);
+            handleEnd(ctx.session_id, ctx.once_messages_list, ctx.is_continue);
         };
         const handleChatError = (data: any) => {
             const ctx = data?.context || {};

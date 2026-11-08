@@ -156,6 +156,18 @@ export function useMessageList(deps: Deps) {
     };
 
     // ===== 消息操作 =====
+    /**
+     * 交互卡片处理完成（回答/允许/拒绝）后，把该气泡标记为已处理。
+     * 只改前端展示状态，后端已经通过 WS 收到答案并继续执行本轮。
+     */
+    const handleInteractiveResolved = (ask_id: string) => {
+        setMessages(prev => prev.map(m =>
+            m.interactive?.ask_id === ask_id
+                ? { ...m, interactive: { ...m.interactive, resolved: true } }
+                : m
+        ));
+    };
+
     const handleDelete = (id: number) => {
         confirm_dell_all({
             sub_title: t("cf_one"),
@@ -270,6 +282,7 @@ export function useMessageList(deps: Deps) {
         isNearBottom, scrollToBottom, request_scroll_bottom,
         apply_session,
         handleDelete, handleCopy, handleCopyAll,
+        handleInteractiveResolved,
         handleBatchCopy, toggleBatchMode, toggleMsgSelect, batchDeleteMessages,
     };
 }

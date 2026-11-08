@@ -23,6 +23,27 @@ export interface Message {
     msg_type?: 'text' | 'tool_start' | 'tool_end';
     /** 本轮 AI 回复耗时（毫秒），仅 bot 消息有值；用于气泡底部显示耗时 */
     elapsed_ms?: number;
+    /**
+     * 交互请求：命令确认 / AI 提问。
+     * 有值时这个气泡渲染成交互卡片（确认按钮 / 表单），而不是普通文本。
+     */
+    interactive?: {
+        /** 请求类型 */
+        kind: 'confirm_cmd' | 'ask_user';
+        /** 唯一 id，回传答案时带上 */
+        ask_id: string;
+        /** 所属会话，回传时一并带上 */
+        session_id?: string;
+        /** 命令确认：待执行的命令 */
+        cmd?: string;
+        /** ask_user：标题与说明 */
+        title?: string;
+        description?: string;
+        /** ask_user：要用户填写的字段 */
+        fields?: any[];
+        /** 用户已处理完成（回答/允许/拒绝/超时），卡片转为只读展示 */
+        resolved?: boolean;
+    };
 }
 
 /**

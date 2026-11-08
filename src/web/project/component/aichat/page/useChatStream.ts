@@ -335,12 +335,29 @@ export function useChatStream(opts: UseChatStreamOptions) {
         setPausing(true);
     };
 
+    /**
+     * 确认某个交互卡片。
+     * 走后端 ai_chat_confirm：置为已确认、补上对应工具结果，然后继续执行。
+     * 不需要插入任何用户文本消息。
+     *
+     * 不需要额外订阅：chat_ws 启动时会把当前连接自动加入订阅者集合。
+     */
+    const confirmAsk = (ask_id: string, answer: string | Record<string, any>) => {
+        const sid = getActiveSessionId();
+        if (!sid) return;
+        // 不设 local_owner：确认后由后端续跑，本轮结束时不走 useChatStream 收尾，
+        // 而是让订阅层用 reload_session 重载完整会话（含已补的工具结果）
+        setSending(true);
+        ws.sendData(CmdType.ai_chat_confirm, { session_id: sid, ask_id, answer });
+    };
+
     return {
         startChatStream,
         processPendingQueue,
         enqueueMessage,
         getQueueLength,
         abort,
+        confirmAsk,
         pausing,
         setPausing,
     };

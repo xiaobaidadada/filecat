@@ -8,6 +8,7 @@
 import React, { useMemo, useState } from "react";
 import { Message } from "./chatTypes";
 import { renderMessageByType } from "./RequestTypeRenderers";
+import InteractiveCard from "../InteractiveCard";
 import { format_duration_ms } from "../../../../../common/StringUtil";
 
 interface ChatMessageListProps {
@@ -30,6 +31,10 @@ interface ChatMessageListProps {
     onBatchDelete: () => void;
     /** 顶部批量操作条是否显示（选中的都是聊天气泡、没选会话时） */
     showBatchBar: boolean;
+    /** 交互卡片处理完成（回答/允许/拒绝）后回调，把该气泡转成只读 */
+    on_interactive_resolved: (ask_id: string) => void;
+    /** 把交互卡片的回答作为一条消息发出去，开启新一轮 */
+    on_interactive_submit: (text: string) => void;
     t: (key: string) => string;
 }
 
@@ -58,6 +63,8 @@ const ChatMessageList: React.FC<ChatMessageListProps> = ({
     onBatchCopy,
     onBatchDelete,
     showBatchBar,
+    on_interactive_resolved,
+    on_interactive_submit,
     t,
 }) => {
     // 记录当前处于折叠状态的消息 id 集合
@@ -117,8 +124,11 @@ const ChatMessageList: React.FC<ChatMessageListProps> = ({
                             />
                         )}
 
-                        {/* 加载中的气泡：显示三点跳动动画 */}
-                        {msg.is_loading ? (
+                        {/* 交互卡片：命令确认 / AI 提问，就地渲染在气泡里 */}
+                        {msg.interactive ? (
+                            <InteractiveCard interactive={msg.interactive} on_resolved={on_interactive_resolved}
+                                             on_submit={on_interactive_submit}/>
+                        ) : msg.is_loading ? (
                             <div className="ai-loading-bubble">
                                 <div className="ai-loading-dots">
                                     <span className="ai-loading-dot" />
