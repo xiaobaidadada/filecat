@@ -623,6 +623,12 @@ export default function FileList() {
     return (
         <React.Fragment>
             <HeaderPortal>
+                                {/* 移动端：整个搜索框隐藏，只留一个放大镜按钮，点击打开深度搜索。
+                                    与右侧 AI/右键/FileMenu 的按钮形态保持一致 */}
+                                <div className="mobile-deep-search-btn">
+                                    <ActionButton icon={"search"} title={t("搜索")}
+                                                  onClick={open_deep_search}/>
+                                </div>
                                 <InputTextIcon handleEnterPress={searchHanle} placeholder={t("搜索当前目录")}
                                                                   icon={"search"} value={""}
                                                                   mobile_hidden

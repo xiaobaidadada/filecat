@@ -343,8 +343,18 @@
     display: none;
 }
 
+/* 移动端专用的深度搜索入口按钮：桌面端隐藏，窄屏只显示这个，
+   替代会消失的整个搜索框 */
+.mobile-deep-search-btn {
+    display: none;
+}
+
 @media (max-width: 736px) {
     .mobile-context-btn {
+        display: inline-block;
+    }
+
+    .mobile-deep-search-btn {
         display: inline-block;
     }
 }

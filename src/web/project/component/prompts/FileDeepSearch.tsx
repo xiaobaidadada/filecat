@@ -211,6 +211,7 @@ export function FileDeepSearch(props: { base_path: string }) {
             <button className="button button--flat" onClick={searching ? cancel : search}>
                 {searching ? t("取消") : t("搜索")}
             </button>
+            <ActionButton icon={"close"} title={t("关闭")} onClick={close}/>
         </div>
         {/* 搜索方式切换：文件名匹配走 fast-glob，内容匹配走 ripgrep */}
         <div className="file-deep-search__tabs">

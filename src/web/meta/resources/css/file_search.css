@@ -31,6 +31,11 @@
     color: var(--textSecondary, #757575);
 }
 
+/* 顶栏右侧按钮不收缩，输入框吃掉剩余宽度 */
+.file-deep-search__bar .button {
+    flex-shrink: 0;
+}
+
 /* 命中数量，跟在「范围」右侧 */
 .file-deep-search__count {
     flex-shrink: 0;
@@ -131,9 +136,10 @@
     font-size: 0.85em;
 }
 
-/* 显示匹配行时结果行高变大，容器高度跟着放宽一点 */
+/* 显示匹配行时结果行高变大，容器不再单独加高：
+   否则从文件名切到文件内容时弹窗会突然长高，观感上很跳，内容多了滚动即可 */
 .file-deep-search__body--line {
-    height: 30em;
+    height: 24em;
 }
 
 .file-deep-search__name {
@@ -236,6 +242,9 @@
 .file-deep-search__results {
     display: flex;
     flex-direction: column;
+    /* 宽度跟随容器，不让长路径把列表撑宽 */
+    width: 100%;
+    min-width: 0;
 }
 
 .file-deep-search__row {
@@ -434,4 +443,101 @@
 
 .search-ignore-setting__footer {
     margin-top: 0.3em;
+}
+
+/* ===== 移动端适配 ===== */
+/* 窄屏下弹窗要占满可用宽度，结果行改成上下两段布局：
+   上段文件名 + 路径，下段操作按钮靠右，避免路径和按钮在窄屏挤成一团。 */
+@media (max-width: 46rem) {
+    /* 弹窗撑满可用宽度，但不能设 max-width: none ——
+       父级 .card.floating 有 min-width: 400px，失去约束后长路径会把弹窗撑得比屏幕还宽 */
+    .file-deep-search {
+        width: 100%;
+        max-width: 100%;
+        gap: 0.5rem;
+    }
+
+    /* 搜索框 + 按钮在窄屏下分行：输入框独占一行，按钮在第二行左侧 */
+    .file-deep-search__bar {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .file-deep-search__bar .filecat-search-box {
+        flex-basis: 100%;
+        min-width: 0;
+    }
+
+    /* 搜索按钮不占满剩余宽度，只按内容宽度 */
+    .file-deep-search__bar .button {
+        flex: 0 0 auto;
+    }
+
+    /* 范围一行放不下时省略，不要把过滤按钮挤出去 */
+    .file-deep-search__hint {
+        flex-wrap: wrap;
+        row-gap: 0.4em;
+    }
+
+    /* 范围独占一行，右侧的过滤/计数挪到下一行，避免都挤在一起被截断 */
+    .file-deep-search__hint > span:first-child {
+        flex-basis: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .file-deep-search__hint-right {
+        flex-basis: 100%;
+        justify-content: flex-start;
+        flex-wrap: wrap;
+        row-gap: 0.4em;
+    }
+
+    /* 高度按视口算，避免小屏上下都被截断 */
+    .file-deep-search__body {
+        height: calc(100vh - 20em);
+        min-height: 12em;
+    }
+
+    .file-deep-search__body--line {
+        height: calc(100vh - 20em);
+        min-height: 12em;
+    }
+
+    /* 结果行改成纵向：名称占满宽度，操作按钮另起一行靠右 */
+    .file-deep-search__row {
+        flex-direction: column;
+        gap: 0.4em;
+        /* 行宽不能被子元素内容撑开，否则窄屏会出现横向溢出 */
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .file-deep-search__row .file-deep-search__name {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .file-deep-search__actions {
+        align-self: flex-end;
+    }
+
+    /* 排除面板两栏在窄屏放不下，改为上下排列 */
+    .search-exclude {
+        flex-direction: column;
+        gap: 0.8em;
+    }
+
+    .search-exclude__list {
+        height: 8em;
+    }
+
+    /* PromptCard 的通用弹窗容器在窄屏会因 min-width: 400px 超出屏幕，
+       这里只收紧承载深搜的那一个，不影响其他弹窗 */
+    .card.floating:has(.file-deep-search) {
+        min-width: 0;
+        width: calc(100vw - 2em);
+        max-width: calc(100vw - 2em);
+    }
 }
