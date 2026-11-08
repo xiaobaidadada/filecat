@@ -351,7 +351,7 @@ export async function llmImagesGenerate(
     const body = buildImagesBody({
         ...params,
         model: cfg.model,
-        extraParams: parseExtraParams(cfg),
+        extraParams: parseExtraParams(envCfg),
     });
     const url = resolveRequestUrl(cfg, 'images');
     const headers = buildHeaders(cfg, "application/json");
@@ -377,7 +377,7 @@ export async function llmAudioSpeech(
     const body = buildAudioSpeechBody({
         ...params,
         model: cfg.model,
-        extraParams: parseExtraParams(cfg),
+        extraParams: parseExtraParams(envCfg),
     });
     const url = resolveRequestUrl(cfg, 'audio_speech');
     const headers = buildHeaders(cfg, "application/json");
@@ -402,7 +402,7 @@ export async function llmEmbeddings(
     const body = buildEmbeddingsBody({
         ...params,
         model: cfg.model,
-        extraParams: parseExtraParams(cfg),
+        extraParams: parseExtraParams(envCfg),
     });
     const url = resolveRequestUrl(cfg, 'embeddings');
     const headers = buildHeaders(cfg, "application/json");
@@ -410,18 +410,13 @@ export async function llmEmbeddings(
 }
 
 /**
- * 解析 extraParams（来自 json_params 配置）
+ * 取请求额外参数（来自 YAML 的 request_param）
  */
-function parseExtraParams(config?: ai_agent_Item): Record<string, any> | undefined {
-    try {
-        const cfg = config || ai_agentService.opened_ai_config;
-        if (cfg.json_params) {
-            const obj = JSON.parse(cfg.json_params);
-            // 对于非 completions 类型，stream 等参数不适用
-            return obj;
-        }
-    } catch {
-        // ignore
+function parseExtraParams(env?: ai_agent_item_dotenv): Record<string, any> | undefined {
+    const envCfg = env || ai_agentService.opened_ai_config_env;
+    const param = envCfg?.request_param;
+    if (param && typeof param === 'object' && !Array.isArray(param)) {
+        return param;
     }
     return undefined;
 }

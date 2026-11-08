@@ -108,14 +108,7 @@ export class ai_agent_Item {
     model: string;
     /** 请求类型，默认 completions 现在只用于动态拼凑 llm 的 url */
     request_type?: LLMRequestType;
-    json_params?: string;
     sys_prompt?: string;
-
-    /**
-     * @deprecated 旧的 ini 风格额外参数，已不再读取。
-     * 保留字段只为兼容历史数据，新配置请使用 env（YAML）。
-     */
-    dotenv?: string = '';
 
     /** 额外参数（YAML 格式），字段定义见 ai_agent_item_dotenv */
     yaml_env?: string = '';
@@ -184,6 +177,13 @@ export class ai_agent_item_dotenv extends ai_agent_option_item_extra {
 
     /** 是否关闭 token 数量统计。开启后不再估算 token，usage_stats 也不累加。 */
     close_token_count = false;
+
+    /**
+     * 请求体里额外合并的参数，k-v 结构。
+     * 例如 temperature、top_p、thinking 等，直接并进发给模型的 JSON 请求体。
+     * 供应商的 request_param 会覆盖全局的同名 key。
+     */
+    request_param?: Record<string, any> = {};
 }
 
 export const ai_agent_item_dotenv_default = `
@@ -260,27 +260,25 @@ image_understanding: true
 
 # 是否允许 AI 通过 set_command_env 工具修改上面的 command_env
 command_env_tool: false
+
+# ===== 请求参数（request_param）=====
+# 这里的 k-v 会直接合并进发给模型的 JSON 请求体。
+# 供应商里配置的同名 key 会覆盖全局，其余继承全局。
+request_param:
+  stream: true
+  thinking:
+    type: disabled
 `
 
 /**
  * AI 全局配置（对所有供应商生效的「默认」设置）。
  * 每个供应商里的同名字段与这里是「合并 + 覆盖」关系，不是整段覆盖：
  * - sys_prompt：字符串拼接，全局在前、供应商在后
- * - json_params：k-v 合并，供应商的同名 k 覆盖全局
- * - yaml_env：YAML 文本，供应商整体覆盖全局
+ * - yaml_env：YAML 文本，供应商整体覆盖全局，但其中的 request_param 是逐 key 合并
  */
 export class ai_agent_global_setting {
     /** 全局系统提示词，会拼在所有供应商 prompt 的前面 */
     sys_prompt?: string;
-
-    /** 全局请求参数 JSON，作为所有供应商的默认参数 */
-    json_params?: string;
-
-    /**
-     * @deprecated 旧的 ini 风格额外参数，已不再读取。
-     * 保留字段只为兼容历史数据，新配置请使用 yaml_env。
-     */
-    dotenv?: string;
 
     /** 全局额外参数（YAML 格式），字段定义见 ai_agent_item_dotenv */
     yaml_env?: string;
@@ -299,20 +297,17 @@ export function merge_sys_prompt(global_prompt?: string, item_prompt?: string): 
 }
 
 /**
- * 把「全局 + 供应商」的 JSON 请求参数字符串合并成一个对象。
- * 供应商的同名 k 覆盖全局；任一段解析失败只跳过那一段，不抛错。
+ * 把「全局 + 供应商」的 request_param 合并成一个对象。
+ * 供应商的同名 k 覆盖全局。
  */
-export function merge_json_params(global_json?: string, item_json?: string): Record<string, any> {
+export function merge_request_param(
+    global_param?: Record<string, any>,
+    item_param?: Record<string, any>,
+): Record<string, any> {
     const result: Record<string, any> = {};
-    for (const raw of [global_json, item_json]) {
-        if (!raw) continue;
-        try {
-            const obj = JSON.parse(raw);
-            if (obj && typeof obj === 'object' && !Array.isArray(obj)) {
-                Object.assign(result, obj);
-            }
-        } catch {
-            // 单段格式错误不影响另一段，静默跳过
+    for (const obj of [global_param, item_param]) {
+        if (obj && typeof obj === 'object' && !Array.isArray(obj)) {
+            Object.assign(result, obj);
         }
     }
     return result;
@@ -320,16 +315,15 @@ export function merge_json_params(global_json?: string, item_json?: string): Rec
 
 /**
  * 把全局配置合并进一个供应商配置，返回新的对象（不改原对象）。
- * - sys_prompt：字符串拼接
- * - json_params：k-v 合并（供应商覆盖全局）
- * - dotenv：不在这里处理（env 需要单独加载），由调用方先全局后供应商加载到同一对象
+ * - sys_prompt：字符串拼接（字段本身由调用方在解析 YAML 时合并）
+ * - request_param：k-v 合并（供应商覆盖全局）
+ * - yaml_env：整体覆盖，由调用方处理
  */
 export function apply_global_config(item: ai_agent_Item, global_cfg?: ai_agent_global_setting): ai_agent_Item {
     if (!global_cfg) return item;
     return {
         ...item,
         sys_prompt: merge_sys_prompt(global_cfg.sys_prompt, item.sys_prompt),
-        json_params: JSON.stringify(merge_json_params(global_cfg.json_params, item.json_params)),
     };
 }
 
@@ -375,11 +369,6 @@ export class ai_mcp_server_tool_group {
 export class ai_mcp_setting {
     list: ai_mcp_server_item[];
 }
-
-export const json_params_default = JSON.stringify({
-    "stream": true,
-    "thinking": {"type": "disabled"}
-})
 
 export class ai_system_prompt_item {
     prompt: string;

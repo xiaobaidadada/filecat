@@ -521,6 +521,67 @@ export class DataMigration {
                 // DataUtil.del("https_setting" as any);
             },
         },
+        {
+            /*
+             * AI 请求参数从 json_params 迁移到 yaml_env 的 request_param。
+             *
+             * 旧版把 OpenAI 请求体参数存成独立字段 json_params（JSON 字符串），
+             * 与「额外参数设置」的 yaml_env 分两处，用户改一个参数要纠结用哪个框。
+             * 新版统一放进 yaml_env 的 request_param 段，删除 json_params 字段。
+             *
+             * 迁移要点：
+             * 1. json_params 解析失败就丢弃，不阻断迁移。
+             * 2. yaml_env 里已经有 request_param 时，json_params 作为默认值垫底，
+             *    已有的同名 key 优先，避免覆盖用户新写的配置。
+             * 3. 全局配置和每个供应商配置都要处理。
+             */
+            version: data_version_type.ai_json_params_to_request_param,
+            name: "ai 请求参数 json_params 迁移到 yaml_env.request_param",
+            run: () => {
+                /** 把一条配置的 json_params 搬进 yaml_env.request_param，返回是否有改动 */
+                const migrate_one = (item: any): boolean => {
+                    if (!item || typeof item !== "object" || item.json_params === undefined) {
+                        return false;
+                    }
+                    let old_param: Record<string, any> = {};
+                    try {
+                        const parsed = JSON.parse(item.json_params);
+                        if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+                            old_param = parsed;
+                        }
+                    } catch {
+                        // 旧数据格式坏了就丢弃，不让它阻断迁移
+                    }
+                    delete item.json_params;
+
+                    const env: any = parse_yaml(item.yaml_env ?? "") ?? {};
+                    const existing: any = env.request_param;
+                    // 已有的 request_param 优先，旧 json_params 只补空缺
+                    env.request_param = {...old_param, ...(existing && typeof existing === "object" ? existing : {})};
+                    item.yaml_env = stringify_yaml(env);
+                    return true;
+                };
+
+                const setting: any = DataUtil.get(data_common_key.ai_agent_model_setting, file_key.ai_setting_data);
+                if (setting) {
+                    let changed = false;
+                    const models: any[] = Array.isArray(setting.models) ? setting.models : [];
+                    for (const item of models) {
+                        if (migrate_one(item)) {
+                            changed = true;
+                        }
+                    }
+                    if (changed) {
+                        DataUtil.set(data_common_key.ai_agent_model_setting, setting, file_key.ai_setting_data);
+                    }
+                }
+
+                const global_cfg: any = DataUtil.get(data_common_key.ai_agent_global_setting, file_key.ai_setting_data);
+                if (global_cfg && migrate_one(global_cfg)) {
+                    DataUtil.set(data_common_key.ai_agent_global_setting, global_cfg, file_key.ai_setting_data);
+                }
+            },
+        },
     ];
 
     private static is_data_version_type(value) {

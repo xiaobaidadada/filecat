@@ -1052,19 +1052,12 @@ const workMessages: ai_agent_message_list = [
             model: props.config.model,
         };
 
-        // 合并自定义配置参数
-        try {
-            if (props.config.json_params) {
-                const obj = JSON.parse(props.config.json_params);
-                Object.assign(json_body, obj);
-            }
-        } catch (err) {
-            console.error("解析 ai_config.json_params 失败", err);
-        }
+        // 合并自定义配置参数（来自 YAML 的 request_param）
+        Object.assign(json_body, props.env.request_param ?? {});
 
         // 开启后让接口在流末尾返回 usage，含 cached_tokens / reasoning_tokens，
         // 有了真实数据就不必再估算 token。
-        // 放在 json_params 合并之后，避免被用户自定义参数覆盖掉。
+        // 放在 request_param 合并之后，避免被用户自定义参数覆盖掉。
         if (props.env.usage_request_param) {
             json_body.stream_options = {...(json_body.stream_options ?? {}), include_usage: true};
         }

@@ -31,13 +31,12 @@ import {
     ai_mcp_server_item,
     ai_mcp_server_tool_group,
     ai_system_prompt_item,
-    json_params_default
 } from "../../../../common/req/filecat.ai.pojo";
 
 const tip_text = `
 1. Only OpenAI-style AI APIs are supported. Fill in the FULL endpoint path (not just the domain), e.g. https://ark.cn-beijing.volces.com/api/v3/chat/completions
 2. The longer the conversation history, the more expensive the LLM token cost. Currently, there is no long-term memory simplification capability. You can set the system prompt to make the AI answer more concisely to save tokens
-3. When writing the model request parameter JSON, you can only write JSON in it, to configure the attributes supported by OpenAI-style AI, such as temperature, thinking (Doubao's deep thinking toggle), etc.
+3. Request parameters (temperature, thinking, etc.) are now set in the YAML "Additional Parameters" editor, under the request_param section.
 4. You can enable "stream": true in the model request parameters to improve response speed.
 5. Deep thinking currently affects output speed. It is recommended to set { "thinking" : { "type":"disabled" } } to disable it (Doubao example).
 6. To use the AI feature to query server information, the AI needs to be able to know some commands. You need to first set command permissions for the user in user settings. It is recommended to set * to allow all commands, and then set the dangerous commands that are not allowed to be executed in the settings
@@ -205,7 +204,7 @@ export default function AIAgentChatSetting() {
         setRows(list);
     }
     const add = ()=>{
-        setRows([...rows,{note:"",open:false,path:"",yaml_env:ai_agent_item_dotenv_default,json_params : json_params_default}]);
+        setRows([...rows,{note:"",open:false,path:"",yaml_env:ai_agent_item_dotenv_default}]);
     }
     const add_docs = ()=>{
         set_docs_list([...docs_list,{note:"",auto_load:false,dir:""}]);
@@ -512,21 +511,6 @@ export default function AIAgentChatSetting() {
                                     })
                                     editor_data.set_value_temp(global_cfg.sys_prompt ?? '');
                                 }}/>
-                                <ActionButton icon={"edit_attributes"} title={t("全局")+" "+t("model请求参数json编写")}  onClick={() => {
-                                    setEditorSetting({
-                                        model: "ace/mode/json",
-                                        open: true,
-                                        fileName: "",
-                                        save: async (context) => {
-                                            global_cfg.json_params = context;
-                                            set_global_cfg({...global_cfg});
-                                            editor_data.set_value_temp('');
-                                            await save_global({...global_cfg, json_params: context});
-                                        },
-                                        can_format: true
-                                    })
-                                    editor_data.set_value_temp(global_cfg.json_params ?? '');
-                                }}/>
                                 <ActionButton icon={"settings"} title={t("全局")+" "+t("额外参数设置")}  onClick={() => {
                                     setEditorSetting({
                                         model: "ace/mode/yaml",
@@ -575,22 +559,6 @@ export default function AIAgentChatSetting() {
                                                         save(rows)
                                                         // console.log(context)
                                                     }
-                                                })
-                                            }}/>
-                                            <ActionButton icon={"edit_attributes"} title={"model请求参数json编写"} onClick={() => {
-                                                editor_data.set_value_temp(rows[index].json_params)
-                                                setEditorSetting({
-                                                    model: "ace/mode/json",
-                                                    open: true,
-                                                    fileName: "",
-                                                    save:async (context)=>{
-                                                        rows[index].json_params = context
-                                                        setRows(rows)
-                                                        editor_data.set_value_temp('')
-                                                        save(rows)
-                                                        // console.log(context)
-                                                    },
-                                                    can_format:true
                                                 })
                                             }}/>
                                             <ActionButton icon={"settings"} title={"额外参数设置"} onClick={() => {

@@ -39,6 +39,7 @@ import {
     ai_docs_load_info,
     ai_docs_setting_param,
     getContentAsString, ai_chat_send_message,
+    merge_request_param,
 } from "../../../common/req/filecat.ai.pojo";
 import {llmAudioSpeech, llmEmbeddings, llmImagesGenerate, llmPost, readLlmResponse} from "./llm_request";
 import {robotService} from "./api_robot/robotService";
@@ -631,9 +632,17 @@ export class Ai_agentService {
      * 把「全局 + 供应商」的额外参数合并进 target。
      * 两段都是 YAML 文本，先解析全局、再解析供应商，后者同名 key 覆盖前者。
      * 旧字段 dotenv（ini 风格）已废弃，不再参与合并。
+     *
+     * request_param 要单独处理：其它字段是标量/数组，整体覆盖没问题；
+     * 但 request_param 是 k-v 对象，若也整体覆盖，供应商只写一个 temperature
+     * 就会把全局的其它参数全冲掉，用户预期是「供应商覆盖同名 key，其余继承全局」。
      */
     private load_merged_env(target: ai_agent_item_dotenv, global_env?: string, item_env?: string): void {
-        Object.assign(target, parse_yaml(global_env ?? ""), parse_yaml(item_env ?? ""));
+        const g: any = parse_yaml(global_env ?? "");
+        const i: any = parse_yaml(item_env ?? "");
+        const merged_param = merge_request_param(g?.request_param, i?.request_param);
+        Object.assign(target, g, i);
+        target.request_param = merged_param;
     }
 
     /**
@@ -1287,17 +1296,10 @@ export class Ai_agentService {
             model: modelItem.model,
         };
 
-        // 合并自定义参数
-        try {
-            if (modelItem.json_params) {
-                const obj = JSON.parse(modelItem.json_params);
-                // 非流式请求，去掉 stream
-                delete obj.stream;
-                Object.assign(json_body, obj);
-            }
-        } catch (err) {
-            console.error("解析 model tool json_params 失败", err);
-        }
+        // 合并自定义参数（来自 YAML 的 request_param）
+        Object.assign(json_body, modelEnv?.request_param ?? {});
+        // 非流式请求，去掉 stream
+        delete json_body.stream;
 
         const res = await llmPost(json_body, modelItem, modelEnv);
         return (await readLlmResponse(res)) || "模型未返回内容";

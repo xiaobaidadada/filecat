@@ -132,6 +132,7 @@ export enum data_version_type {
     control_env_yaml = 11, // 环境控制配置 control_env_str 从 env 语法迁移为 yaml 语法
     ai_agent_yaml_env = 12, // ai 供应商额外参数从 ini(dotenv) 迁移为 yaml(yaml_env)，并抽出 command_env
     https_to_control_env = 13, // HTTPS 证书配置合并进 control_env 的 https 段（旧 key 为 https_setting）
+    ai_json_params_to_request_param = 14, // AI 请求参数从 json_params(JSON 字符串) 迁移为 yaml_env 里的 request_param 对象
 }
 
 
