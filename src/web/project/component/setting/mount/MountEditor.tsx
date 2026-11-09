@@ -8,6 +8,7 @@ import {using_tip} from "../../prompts/prompts.util";
 import {NotyFail, NotySuccess} from "../../../util/noty";
 import {
     CredentialRow,
+    LocalSourceRow,
     credential_options,
     account_options,
     need_account_of,
@@ -97,10 +98,7 @@ export default function MountEditor(props: Props) {
     /** 位置从凭据里的「名称 → 路径」映射中挑（本地目录） */
     const use_local_source = meta?.location === "local";
     /** 当前凭据登记的本地源目录映射 */
-    const local_sources: {name: string; path: string}[] = (() => {
-        const cfg = creds.find(c => c.id === row.credential_id)?.config;
-        return Array.isArray(cfg?.sources) ? cfg.sources : [];
-    })();
+    const local_sources: LocalSourceRow[] = creds.find(c => c.id === row.credential_id)?.local_sources ?? [];
     const local_options = local_sources.map(v => ({title: `${v.name}（${v.path}）`, value: v.name}));
     /** 位置第一段（共享名 / 桶名），与 row.root_dir 的第一段同步 */
     const location_name = String(row.root_dir ?? "").split("/")[0] ?? "";
@@ -137,8 +135,7 @@ export default function MountEditor(props: Props) {
         try {
             const rsq = await mountHttp.post("share/list", {
                 driver: driver_type ?? row.driver,
-                config: creds.find(c => c.id === cred_id)?.config ?? {},
-                id: cred_id,
+                credential_id: cred_id,
                 account_id: acc,
             });
             const list = Array.isArray(rsq?.data) ? rsq.data : [];
@@ -266,7 +263,6 @@ export default function MountEditor(props: Props) {
                 credential_id={row.credential_id}
                 account_id={row.account_id}
                 require_account={need_account}
-                config={creds.find(c => c.id === row.credential_id)?.config ?? {}}
                 value={row.root_dir} onChange={(v) => set_row({...row, root_dir: v})}/>}
         <InputText placeholder={t("备注")} value={row.note}
                    handleInputChange={(v) => set_row({...row, note: v})}/>

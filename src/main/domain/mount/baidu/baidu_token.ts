@@ -70,7 +70,15 @@ export class BaiduTokenStore {
 
     /** 取应用配置 */
     get_config(): BaiduCredConfig {
-        return (this.get_item()?.config ?? {}) as BaiduCredConfig;
+        const item = this.get_item();
+        if (!item) {
+            return {} as BaiduCredConfig;
+        }
+        return {
+            app_id: item.baidu_app_id,
+            app_key: item.baidu_app_key,
+            secret_key: item.baidu_secret_key,
+        } as BaiduCredConfig;
     }
 
     /** 取当前账号（未指定 account_id 或账号不存在时返回 undefined） */

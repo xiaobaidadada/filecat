@@ -12,6 +12,7 @@ import {NotyFail, NotySuccess} from "../../../util/noty";
 import {using_confirm} from "../../prompts/prompt.util";
 import {
     CredentialRow,
+    LocalSourceRow,
     credential_options,
     account_options,
     need_account_of,
@@ -208,10 +209,7 @@ export default function MountPanel() {
     /** 位置从凭据里的「名称 → 路径」映射中挑（本地目录） */
     const use_local_source = driver_meta?.location === "local";
     /** 当前凭据登记的本地源目录映射 */
-    const local_sources: {name: string; path: string}[] = (() => {
-        const cfg = creds.find(c => c.id === credential_id)?.config;
-        return Array.isArray(cfg?.sources) ? cfg.sources : [];
-    })();
+    const local_sources: LocalSourceRow[] = creds.find(c => c.id === credential_id)?.local_sources ?? [];
     const local_options = local_sources.map(v => ({title: `${v.name}（${v.path}）`, value: v.name}));
 
     return (<Row>
@@ -285,7 +283,6 @@ export default function MountPanel() {
                                                 label_width={"6rem"} required>
                     <RemotePathPicker driver={driver} credential_id={credential_id} account_id={account_id}
                                       require_account={need_account}
-                                      config={creds.find(c => c.id === credential_id)?.config ?? {}}
                                       value={root_dir} onChange={set_root_dir}/>
                     {driver === "smb" && <InputText value={String(root_dir ?? "").split("/")[0] ?? ""}
                                       placeholder={t("或直接输入共享名")}
@@ -303,7 +300,6 @@ export default function MountPanel() {
                 {!use_location_list && !use_local_source && <InputRow label={t(dir_label())} label_width={"6rem"}>
                     <RemotePathPicker driver={driver} credential_id={credential_id} account_id={account_id}
                                       require_account={need_account}
-                                      config={creds.find(c => c.id === credential_id)?.config ?? {}}
                                       value={root_dir} onChange={set_root_dir}/>
                 </InputRow>}
                 <InputRow label={t("备注")} label_width={"6rem"}>

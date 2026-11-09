@@ -123,7 +123,7 @@ export function current_mount_info(abs_path: string): {
     const forward_to_remote = Boolean(m.forward_to_remote);
     let forward_client_num_id: number | null = null;
     if (forward_to_remote) {
-        const raw = cred?.config?.client_num_id;
+        const raw = cred?.tcp_client_num_id;
         const num = parseInt(String(raw ?? ""), 10);
         forward_client_num_id = isNaN(num) ? null : num;
     }

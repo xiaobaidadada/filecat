@@ -27,12 +27,38 @@ export interface CredentialRow {
     type: string;
     /** 备注（便于挂载时辨认） */
     note: string;
-    config: Record<string, any>;
     /** 子账号列表；「一凭据多账号」的类型才有（百度、内网穿透） */
     accounts?: MountAccountRow[];
     enabled?: boolean;
     /** 前端标记：新加的行，尚未保存 */
     is_new?: boolean;
+
+    // WebDAV
+    webdav_url?: string;
+    // SSH / SFTP
+    ssh_host?: string;
+    ssh_port?: number;
+    ssh_private_key?: string;
+    // SMB
+    smb_server?: string;
+    // S3
+    s3_endpoint?: string;
+    s3_region?: string;
+    s3_force_path_style?: boolean;
+    // 百度网盘（应用配置）
+    baidu_app_id?: string;
+    baidu_app_key?: string;
+    baidu_secret_key?: string;
+    // 本地目录
+    local_sources?: LocalSourceRow[];
+    // 内网穿透
+    tcp_client_num_id?: string;
+}
+
+/** 本地目录凭据下的一条「名称 → 路径」映射 */
+export interface LocalSourceRow {
+    name: string;
+    path: string;
 }
 
 /** 凭据类型元信息 */

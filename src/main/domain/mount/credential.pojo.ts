@@ -53,11 +53,6 @@ export interface CredentialItem {
     type: CredentialType;
     /** 备注（用户自己起的，便于在挂载时辨认） */
     note: string;
-    /**
-     * 连接配置（含密码等敏感信息，明文存储）。
-     * 百度这里只放应用配置（app_id/app_key/secret_key），账号信息在 accounts 里。
-     */
-    config: Record<string, any>;
     /** 子账号列表；「一凭据多账号」的类型才有（百度、内网穿透） */
     accounts?: MountAccount[];
     /** 是否启用；停用后引用它的挂载不可用 */
@@ -65,6 +60,49 @@ export interface CredentialItem {
     /** 创建者用户 id */
     user_id?: string;
     created_at?: number;
+
+    // ========== WebDAV ==========
+    /** 服务地址，如 https://example.com/dav */
+    webdav_url?: string;
+
+    // ========== SSH / SFTP ==========
+    /** 主机名或 IP */
+    ssh_host?: string;
+    /** 端口，默认 22 */
+    ssh_port?: number;
+    /** 私钥内容（PEM），与账号密码二选一 */
+    ssh_private_key?: string;
+
+    // ========== SMB / Windows 共享 ==========
+    /** 主机名或 IP */
+    smb_server?: string;
+
+    // ========== S3 兼容对象存储 ==========
+    /** 服务地址，如 https://s3.amazonaws.com */
+    s3_endpoint?: string;
+    /** 区域，如 us-east-1 */
+    s3_region?: string;
+    /** 强制路径风格（MinIO 通常需要） */
+    s3_force_path_style?: boolean;
+
+    // ========== 百度网盘（应用配置） ==========
+    baidu_app_id?: string;
+    baidu_app_key?: string;
+    baidu_secret_key?: string;
+
+    // ========== 本地目录 ==========
+    /** 名称 → 本地绝对路径 的映射列表，挂载时挑一个 */
+    local_sources?: LocalSource[];
+
+    // ========== 内网穿透 FileCat ==========
+    /** 穿透客户端 id（对应 tcp_proxy_server_client 里的 id） */
+    tcp_client_num_id?: string;
+}
+
+/** 本地目录凭据下的一个「名称 → 路径」映射 */
+export interface LocalSource {
+    name: string;
+    path: string;
 }
 
 /**
@@ -85,9 +123,10 @@ export type CredentialType =
 
 /** 凭据字段描述（供设置页动态渲染表单） */
 export interface CredentialField {
+    /** 对应 CredentialItem 上的字段名 */
     key: string;
     label: string;
-    type: "text" | "password";
+    type: "text" | "password" | "switch";
     required?: boolean;
     placeholder?: string;
     tip?: string;
@@ -132,7 +171,7 @@ export const CREDENTIAL_META_LIST: CredentialMeta[] = [
         type: "webdav",
         name: "WebDAV",
         fields: [
-            {key: "url", label: "服务地址", type: "text", required: true, placeholder: "https://example.com/dav"},
+            {key: "webdav_url", label: "服务地址", type: "text", required: true, placeholder: "https://example.com/dav"},
         ],
         accounts: true,
         account_key: "account_name",
@@ -145,22 +184,22 @@ export const CREDENTIAL_META_LIST: CredentialMeta[] = [
         type: "ssh",
         name: "SSH / SFTP",
         fields: [
-            {key: "host", label: "主机", type: "text", required: true},
-            {key: "port", label: "端口", type: "text", placeholder: "默认 22"},
+            {key: "ssh_host", label: "主机", type: "text", required: true},
+            {key: "ssh_port", label: "端口", type: "text", placeholder: "默认 22"},
+            {key: "ssh_private_key", label: "私钥内容", type: "password", tip: "与账号密码二选一"},
         ],
         accounts: true,
         account_key: "account_name",
         account_fields: [
             {key: "account_name", label: "用户名", type: "text", required: true},
-            {key: "password", label: "密码", type: "password", tip: "与私钥二选一"},
-            {key: "private_key", label: "私钥内容", type: "password", tip: "与密码二选一"},
+            {key: "password", label: "密码", type: "password", tip: "填了私钥可留空"},
         ],
     },
     {
         type: "smb",
         name: "SMB / Windows 共享",
         fields: [
-            {key: "server", label: "主机", type: "text", required: true, placeholder: "192.168.1.10 或 nas.local"},
+            {key: "smb_server", label: "主机", type: "text", required: true, placeholder: "192.168.1.10 或 nas.local"},
         ],
         accounts: true,
         account_key: "account_name",
@@ -174,15 +213,15 @@ export const CREDENTIAL_META_LIST: CredentialMeta[] = [
         name: "S3 兼容对象存储",
         fields: [
             {
-                key: "endpoint",
+                key: "s3_endpoint",
                 label: "服务地址",
                 type: "text",
                 required: true,
                 placeholder: "https://s3.amazonaws.com",
                 tip: "阿里云OSS/腾讯COS/MinIO 等填各自的 endpoint",
             },
-            {key: "region", label: "区域", type: "text", placeholder: "us-east-1"},
-            {key: "force_path_style", label: "强制路径风格", type: "text", placeholder: "填 1 开启（MinIO 通常需要）"},
+            {key: "s3_region", label: "区域", type: "text", placeholder: "us-east-1"},
+            {key: "s3_force_path_style", label: "强制路径风格", type: "switch", tip: "MinIO 通常需要开启"},
         ],
         accounts: true,
         account_key: "account_name",
@@ -196,9 +235,9 @@ export const CREDENTIAL_META_LIST: CredentialMeta[] = [
         type: "baidu",
         name: "百度网盘",
         fields: [
-            {key: "app_id", label: "AppID", type: "text"},
-            {key: "app_key", label: "AppKey", type: "text", required: true},
-            {key: "secret_key", label: "SecretKey", type: "password", required: true},
+            {key: "baidu_app_id", label: "AppID", type: "text"},
+            {key: "baidu_app_key", label: "AppKey", type: "text", required: true},
+            {key: "baidu_secret_key", label: "SecretKey", type: "password", required: true},
         ],
     },
     {
@@ -214,7 +253,7 @@ export const CREDENTIAL_META_LIST: CredentialMeta[] = [
         name: "内网穿透 FileCat",
         fields: [
             {
-                key: "client_num_id",
+                key: "tcp_client_num_id",
                 label: "穿透客户端",
                 type: "text",
                 required: true,

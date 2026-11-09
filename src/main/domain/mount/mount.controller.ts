@@ -28,17 +28,8 @@ export interface MountSaveReq {
     forward_to_remote?: boolean;
 }
 
-/** 凭据保存请求体 */
-export interface CredentialSaveReq {
-    id?: string;
-    type?: CredentialType;
-    /** 备注（便于挂载时辨认） */
-    note?: string;
-    config?: Record<string, any>;
-    /** 账号列表（多账号类型：SMB/WebDAV/SFTP/S3） */
-    accounts?: MountAccount[];
-    enabled?: boolean;
-}
+/** 凭据保存请求体：除 id 外的凭据字段都是可选的，按类型填 */
+export type CredentialSaveReq = Partial<CredentialItem> & {id?: string};
 
 /** 取当前请求的用户 id（用于归属） */
 function current_user_id(r: any): string | undefined {
@@ -93,14 +84,17 @@ export class MountController {
     @Post("/credential/add")
     async credential_add(@Body() body: CredentialSaveReq, @Req() r) {
         userService.have_user_auth(r.headers.authorization, UserAuth.file_mount);
+        if (!body.type) {
+            throw new Error("缺少凭据类型");
+        }
         const item = mountService.add_credential({
-            type: body.type as CredentialType,
+            ...body,
+            type: body.type,
             note: body.note ?? "",
-            config: body.config ?? {},
             accounts: mountService.normalize_accounts(body.accounts),
             enabled: body.enabled !== false,
             user_id: current_user_id(r),
-        });
+        } as Omit<CredentialItem, "id" | "created_at">);
         return Sucess(item);
     }
 
@@ -111,16 +105,7 @@ export class MountController {
         if (!body.id) {
             throw new Error("缺少凭据 id");
         }
-        const patch: Partial<CredentialItem> = {};
-        if (body.note !== undefined) {
-            patch.note = body.note;
-        }
-        if (body.config !== undefined) {
-            patch.config = body.config;
-        }
-        if (body.enabled !== undefined) {
-            patch.enabled = body.enabled;
-        }
+        const patch: Partial<CredentialItem> = {...body};
         if (body.accounts !== undefined) {
             patch.accounts = mountService.normalize_accounts(body.accounts);
         }
@@ -135,12 +120,17 @@ export class MountController {
         return Sucess(true);
     }
 
-    /** 测试凭据可用性（不保存，直接用传入的配置试连一次） */
+    /** 测试凭据可用性（不保存，直接用传入的凭据试连一次） */
     @Post("/credential/test")
-    async credential_test(@Body() body: CredentialSaveReq & {driver?: MountDriverType}, @Req() r) {
+    async credential_test(@Body() body: CredentialSaveReq & {driver?: MountDriverType; account_id?: string}, @Req() r) {
         userService.have_user_auth(r.headers.authorization, UserAuth.file_mount);
         // 凭据测试需要知道用哪个驱动，前端会带上
-        return Sucess(await mountService.test_credential(body));
+        return Sucess(await mountService.test_credential({
+            type: body.type,
+            credential: body,
+            driver: body.driver,
+            account_id: body.account_id,
+        }));
     }
 
     /**
@@ -213,14 +203,18 @@ export class MountController {
         if (!acc) {
             return Sucess({ok: false, error: "账号不存在"});
         }
-        // 前端传了新密码就用新的，否则用已保存的密码
+        // 把要验证的那个账号放进凭据，驱动才能拿到账号密码
         const rs = await mountService.test_credential({
             type: "tcp_proxy",
-            config: {
-                client_num_id: cred.config?.client_num_id,
-                username: body.account_name || acc.account_name,
-                password: body.password || acc.password,
+            credential: {
+                tcp_client_num_id: cred.tcp_client_num_id,
+                accounts: [{
+                    id: acc.id,
+                    account_name: body.account_name || acc.account_name,
+                    password: body.password || acc.password,
+                }],
             },
+            account_id: acc.id,
         });
         return Sucess(rs);
     }
@@ -318,9 +312,9 @@ export class MountController {
 
     /** 列出远程主机上的共享名（SMB 用，供表单下拉选择） */
     @Post("/share/list")
-    async share_list(@Body() body: { driver: MountDriverType; config: Record<string, any>; id?: string; path?: string; account_id?: string}, @Req() r) {
+    async share_list(@Body() body: { driver: MountDriverType; credential_id: string; path?: string; account_id?: string }, @Req() r) {
         userService.have_user_auth(r.headers.authorization, UserAuth.file_mount);
-        return Sucess(await mountService.list_shares(body.driver, body.config ?? {}, body.id, body.path, body.account_id));
+        return Sucess(await mountService.list_shares(body.driver, body.credential_id, body.path, body.account_id));
     }
 
     // ==================== 百度网盘授权 ====================

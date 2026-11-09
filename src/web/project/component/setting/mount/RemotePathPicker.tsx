@@ -21,8 +21,6 @@ export default function RemotePathPicker(props: {
     account_id?: string;
     /** 该凭据类型是否必须选账号，未选时不去拉目录 */
     require_account?: boolean;
-    /** 凭据配置（占位，后端以已保存的为准） */
-    config: Record<string, any>;
     /** 已选定的路径；空串表示远端根 */
     value: string;
     /** 路径变化回调 */
@@ -48,8 +46,7 @@ export default function RemotePathPicker(props: {
     const load_dir = async (dir: string): Promise<FileTree[]> => {
         const rsp = await mountHttp.post("share/list", {
             driver: props.driver,
-            config: props.config,
-            id: props.credential_id,
+            credential_id: props.credential_id,
             account_id: props.account_id,
             path: normalize(dir),
         });

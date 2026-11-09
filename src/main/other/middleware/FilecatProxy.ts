@@ -20,7 +20,7 @@ async function get_forward_token(client_num_id: number): Promise<string> {
             continue;
         }
         const cred = mountService.get_credential(mount.credential_id);
-        if (parseInt(String(cred?.config?.client_num_id ?? ""), 10) !== client_num_id) {
+        if (parseInt(String(cred?.tcp_client_num_id ?? ""), 10) !== client_num_id) {
             continue;
         }
         try {

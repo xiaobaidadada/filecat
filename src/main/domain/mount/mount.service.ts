@@ -54,8 +54,7 @@ export class MountService {
     }
 
     /**
-     * 规范化账号列表：没 id 的生成一个（新增的账号），
-     * 密码类字段留空表示沿用已保存的值（编辑时前端不回显明文密码）。
+     * 规范化账号列表：没 id 的生成一个（新增的账号）
      */
     normalize_accounts(accounts?: MountAccount[]): MountAccount[] | undefined {
         if (!accounts) {
@@ -83,7 +82,7 @@ export class MountService {
         return full;
     }
 
-    /** 修改凭据；config 为部分更新（密码留空表示不改） */
+    /** 修改凭据 */
     update_credential(id: string, patch: Partial<CredentialItem>): CredentialItem {
         const list = this.list_credentials();
         const i = list.findIndex(v => v.id === id);
@@ -91,27 +90,14 @@ export class MountService {
             throw new Error("凭据不存在");
         }
         const old = list[i];
-        // config 做合并：新值里为空字符串的字段保留旧值（避免编辑时把密码清空）
-        let config = old.config;
-        if (patch.config) {
-            config = {...old.config};
-            for (const [k, v] of Object.entries(patch.config)) {
-                if (v === "" || v === undefined || v === null) {
-                    continue;
-                }
-                config[k] = v;
-            }
-        }
         list[i] = {
             ...old,
-            note: patch.note ?? old.note,
-            enabled: patch.enabled ?? old.enabled,
-            config,
-            // 账号列表整份替换：用户删掉的账号要真的消失，不能按字段合并
-            accounts: patch.accounts ?? old.accounts,
+            ...patch,
+            id: old.id,
+            type: old.type,
         };
         this.set_credentials(list);
-        // 凭据变了：引用它的挂载驱动都要重建
+        // 凭据改了：引用它的挂载驱动都要重建
         this.dispose_by_credential(id);
         return list[i];
     }
@@ -370,7 +356,7 @@ export class MountService {
             throw new Error("本地目录挂载请选择源目录");
         }
         const cred = this.get_credential(credential_id);
-        const sources: LocalSource[] = Array.isArray(cred?.config?.sources) ? cred.config.sources : [];
+        const sources: LocalSource[] = cred?.local_sources ?? [];
         const hit = sources.find((s) => String(s?.name ?? "").trim() === source_name);
         if (!hit) {
             throw new Error(`该本地目录凭据里没有映射：${source_name}`);
@@ -440,10 +426,7 @@ export class MountService {
         if (exist) {
             exist.note = req.note ?? exist.note;
             exist.account_name = account_name;
-            // 密码留空表示沿用原密码
-            if (req.password) {
-                exist.password = req.password;
-            }
+            exist.password = req.password ?? "";
             saved = exist;
         } else {
             saved = {
@@ -458,7 +441,7 @@ export class MountService {
         }
         this.set_credentials(list);
         // 账号信息变了，旧登录缓存作废
-        clear_tcp_proxy_token(cred.config?.client_num_id);
+        clear_tcp_proxy_token(cred.tcp_client_num_id);
         return saved;
     }
 
@@ -476,7 +459,7 @@ export class MountService {
         cred.accounts = (cred.accounts ?? []).filter(v => v.id !== account_id);
         this.set_credentials(list);
         // 账号被删，旧登录缓存作废
-        clear_tcp_proxy_token(cred.config?.client_num_id);
+        clear_tcp_proxy_token(cred.tcp_client_num_id);
     }
 
     /** 驱动元信息（挂载类型下拉用） */
@@ -551,69 +534,46 @@ export class MountService {
      *  · S3    —— 存储桶
      *  · 其它  —— 指定目录下的子目录（用于逐步选起始目录）
      *
-     * 传 id 时用已保存的凭据补齐没填的字段（编辑场景密码是脱敏的）。
-     * 传 account_id 时用该账号的账号密码建连接（一个凭据可存多个账号）。
+     * 连接信息和账号都从凭据里取，按 account_id 选中其中一个账号。
      */
-    async list_shares(driver: MountDriverType, config: Record<string, any>, id?: string, path?: string,
+    async list_shares(driver: MountDriverType, credential_id: string, path?: string,
                       account_id?: string): Promise<{name: string; remark: string}[]> {
-        const merged: Record<string, any> = {...(config ?? {})};
-        if (id) {
-            const old = this.get_credential(id);
-            for (const [k, v] of Object.entries(old?.config ?? {})) {
-                if (merged[k] === "" || merged[k] === undefined || merged[k] === null) {
-                    merged[k] = v;
-                }
-            }
-            // 账号密码在 accounts 里，按 account_id 取出来并进配置
-            const account = (old?.accounts ?? []).find(v => v.id === account_id);
-            if (account) {
-                if (!merged.username) {
-                    merged.username = account.account_name;
-                }
-                if (!merged.password) {
-                    merged.password = account.password;
-                }
-                if (account.token) {
-                    merged.account_id = account.id;
-                    merged.token = account.token;
-                }
-            }
+        const cred = this.get_credential(credential_id);
+        if (!cred) {
+            throw new Error("凭据不存在");
         }
+        const account = (cred.accounts ?? []).find(v => v.id === account_id);
         // 传了 path 说明已经选好共享/桶，接下来是挑里面的子目录，走下面共用的列举逻辑
         if (!path && driver === MountDriverType.smb) {
             return SmbDriver.list_shares({
-                server: merged.server,
-                username: merged.username,
-                password: merged.password,
+                server: cred.smb_server,
+                username: account?.account_name,
+                password: account?.password,
             });
         }
         if (!path && driver === MountDriverType.s3) {
             return S3Driver.list_buckets({
-                endpoint: merged.endpoint,
-                region: merged.region,
-                access_key: merged.access_key,
-                secret_key: merged.secret_key,
-                force_path_style: merged.force_path_style === "1" || merged.force_path_style === "true",
+                endpoint: cred.s3_endpoint,
+                region: cred.s3_region,
+                access_key: account?.account_name,
+                secret_key: account?.secret_key,
+                force_path_style: cred.s3_force_path_style === true,
             });
         }
 
         // 其余协议：把远端目录下的子目录列出来，供逐层挑选起始目录
-        const cred: any = {id, config: merged, accounts: []};
-        // 百度按 (应用凭据, 账号) 定位 token，账号要从表单里透传进来
-        if (account_id) {
-            cred.config.account_id = account_id;
-        }
-        const mount: any = {
+        const mount: FileMountItem = {
+            id: "list_shares",
             driver,
             // SMB 的共享名 / S3 的桶名也是位置的一部分，要一起给驱动，否则列不到
             root_dir: path && path.trim() ? path.trim() : "",
             account_id,
-            credential_id: id,
+            credential_id,
+            mount_path: "",
         };
         const d = create_test_driver(mount, cred);
         try {
-            const dir = "/";
-            const items = await d.list(dir);
+            const items = await d.list("/");
             return items
                 .filter((it) => it.type === FileTypeEnum.folder)
                 .map((it) => ({
@@ -630,14 +590,15 @@ export class MountService {
     }
 
     /**
-     * 测试凭据：用一份「尚未保存」的凭据配置试连一次。
+     * 测试凭据：用一份「尚未保存」的凭据试连一次。
      * 凭据本身不含挂载信息，所以需要一个驱动类型才能试（默认用对应类型 + 根目录）。
+     * account_id 指定用凭据里的哪个账号，多账号类型（内网穿透、SMB 等）必须传。
      */
     async test_credential(req: {
-        id?: string;
         type?: CredentialType;
-        config?: Record<string, any>;
+        credential?: Partial<CredentialItem>;
         driver?: MountDriverType;
+        account_id?: string;
     }): Promise<{ok: boolean; error?: string; count?: number}> {
         try {
             const type = req.type ?? (req.driver ? DRIVER_CREDENTIAL_TYPE[req.driver] : undefined);
@@ -650,33 +611,19 @@ export class MountService {
             if (!driver_type) {
                 return {ok: false, error: "该凭据类型暂不支持测试"};
             }
-            // 编辑已有凭据时，未填的密码类字段要用已保存的值补齐
-            let config = req.config ?? {};
-            if (req.id) {
-                const old = this.get_credential(req.id);
-                if (old) {
-                    const merged = {...old.config};
-                    for (const [k, v] of Object.entries(config)) {
-                        if (v === "" || v === undefined || v === null) {
-                            continue;
-                        }
-                        merged[k] = v;
-                    }
-                    config = merged;
-                }
-            }
             const mount: FileMountItem = {
                 id: "test_credential",
                 driver: driver_type,
                 mount_path: "",
                 credential_id: "",
                 root_dir: "",
+                account_id: req.account_id,
             };
             const cred: CredentialItem = {
+                ...(req.credential ?? {}),
                 id: "test_credential",
                 type,
                 note: "test",
-                config,
             };
             const driver = create_test_driver(mount, cred);
             const items = await driver.list("/");

@@ -11,7 +11,7 @@ import {InstanceItem} from "../../../../meta/component/InstanceList";
 import {mountHttp} from "../../../util/config";
 import {NotyFail, NotySuccess} from "../../../util/noty";
 import {using_confirm} from "../../prompts/prompt.util";
-import {CredentialField, CredentialMeta, CredentialRow, MountAccountRow, fmt_time, mount_enable_options} from "./mount_common";
+import {CredentialField, CredentialMeta, CredentialRow, LocalSourceRow, MountAccountRow, fmt_time, mount_enable_options} from "./mount_common";
 
 /** 新增凭据的默认类型 */
 const DEFAULT_TYPE = "webdav";
@@ -29,12 +29,12 @@ const TCP_ACCOUNT_STEP = "@tcp_account";
  */
 const STEP_FLOW: Record<string, { keys: string[]; on_next?: "save_app" }[]> = {
     baidu: [
-        {keys: ["app_id", "app_key", "secret_key"], on_next: "save_app"},
+        {keys: ["baidu_app_id", "baidu_app_key", "baidu_secret_key"], on_next: "save_app"},
         {keys: [AUTHORIZE_STEP]},
     ],
     // 内网穿透：先选客户端存下来，再管理该客户端下的对端账号（可多个）
     tcp_proxy: [
-        {keys: ["client_num_id"], on_next: "save_app"},
+        {keys: ["tcp_client_num_id"], on_next: "save_app"},
         {keys: [TCP_ACCOUNT_STEP]},
     ],
 };
@@ -89,7 +89,7 @@ export default function CredentialPanel() {
     const [id, set_id] = useState("");
     const [type, set_type] = useState(DEFAULT_TYPE);
     const [note, set_note] = useState("");
-    const [config, set_config] = useState<Record<string, any>>({});
+    const [config, set_config] = useState<Partial<CredentialRow>>({});
     /** 穿透客户端候选项（tcp_proxy 的下拉），按 options_source 缓存 */
     const [field_options, set_field_options] = useState<Record<string, { label: string; value: string }[]>>({});
     /** 百度授权相关状态 */
@@ -151,20 +151,19 @@ export default function CredentialPanel() {
     const use_accounts = meta?.accounts === true;
     const account_fields = meta?.account_fields ?? [];
     /** 当前的映射列表 */
-    const sources: {name: string; path: string}[] = Array.isArray(config.sources) ? config.sources : [];
+    const sources: LocalSourceRow[] = config.local_sources ?? [];
 
     /** 改写映射列表的某一项 */
     const update_source = (index: number, patch: {name?: string; path?: string}) => {
-        const next = sources.map((s, i) => (i === index ? {...s, ...patch} : s));
-        set_config({...config, sources: next});
+        set_config({...config, local_sources: sources.map((s, i) => (i === index ? {...s, ...patch} : s))});
     };
 
     const add_source = () => {
-        set_config({...config, sources: [...sources, {name: "", path: ""}]});
+        set_config({...config, local_sources: [...sources, {name: "", path: ""}]});
     };
 
     const remove_source = (index: number) => {
-        set_config({...config, sources: sources.filter((_, i) => i !== index)});
+        set_config({...config, local_sources: sources.filter((_, i) => i !== index)});
     };
 
     /** 账号列表操作：增删改，认证信息都存在 accounts 里 */
@@ -220,7 +219,7 @@ export default function CredentialPanel() {
                 id: id || undefined,
                 type,
                 note,
-                config,
+                ...config,
                 enabled,
             });
             // 新建时后端会分配 id，第 2 步的授权要带上它
@@ -243,7 +242,7 @@ export default function CredentialPanel() {
             if (keys.includes(f.key) === false) {
                 continue;
             }
-            const val = String(config[f.key] ?? "").trim();
+            const val = String((config as Record<string, any>)[f.key] ?? "").trim();
             if (f.required && !val) {
                 return t(f.label);
             }
@@ -259,10 +258,10 @@ export default function CredentialPanel() {
         }
         // 映射列表：至少一条，且名称与路径都要填、名称不能重复
         if (use_sources) {
-            if (sources.length === 0) {
-                NotyFail(t("请至少添加一条源目录"));
-                return;
-            }
+            // if (sources.length === 0) {
+            //     NotyFail(t("请至少添加一条源目录"));
+            //     return;
+            // }
             const seen = new Set<string>();
             for (const src of sources) {
                 const nm = String(src.name ?? "").trim();
@@ -280,10 +279,10 @@ export default function CredentialPanel() {
         }
         // 多账号类型：每个账号的必填字段都要有值
         if (use_accounts) {
-            if (accounts.length === 0) {
-                NotyFail(t("请至少添加一个账号"));
-                return;
-            }
+            // if (accounts.length === 0) {
+            //     NotyFail(t("请至少添加一个账号"));
+            //     return;
+            // }
             for (const acc of accounts) {
                 for (const f of account_fields) {
                     if (!f.required) {
@@ -301,7 +300,7 @@ export default function CredentialPanel() {
                 id: id || undefined,
                 type,
                 note,
-                config,
+                ...config,
                 accounts: use_accounts ? accounts : undefined,
                 enabled,
             });
@@ -318,7 +317,21 @@ export default function CredentialPanel() {
         set_id(item.id);
         set_type(item.type);
         set_note(item.note ?? "");
-        set_config({...(item.config ?? {})});
+        set_config({
+            webdav_url: item.webdav_url,
+            ssh_host: item.ssh_host,
+            ssh_port: item.ssh_port,
+            ssh_private_key: item.ssh_private_key,
+            smb_server: item.smb_server,
+            s3_endpoint: item.s3_endpoint,
+            s3_region: item.s3_region,
+            s3_force_path_style: item.s3_force_path_style,
+            baidu_app_id: item.baidu_app_id,
+            baidu_app_key: item.baidu_app_key,
+            baidu_secret_key: item.baidu_secret_key,
+            local_sources: item.local_sources,
+            tcp_client_num_id: item.tcp_client_num_id,
+        });
         set_accounts(item.accounts ?? []);
         set_auth_code("");
         set_enabled(item.enabled !== false);
@@ -374,7 +387,7 @@ export default function CredentialPanel() {
         });
     };
 
-    /** 内网穿透：保存该行账号（密码留空 = 不修改） */
+    /** 内网穿透：保存该行账号 */
     const save_tcp_account = async (acc: any) => {
         if (!String(acc.account_name ?? "").trim()) {
             NotyFail(t("请填写对端账号"));
@@ -512,20 +525,28 @@ export default function CredentialPanel() {
 
     /** 普通字段渲染 */
     const render_field = (f: CredentialField) => {
+        const value = (config as Record<string, any>)[f.key];
         // 动态下拉字段（如穿透客户端）：选项来自后端
         if (f.options_source) {
             return <InputRow key={f.key} label={t(f.label)} label_width={"6rem"}>
-                <Select value={config[f.key] ?? ""}
+                <Select value={String(value ?? "")}
                         options={field_options[f.options_source] ?? []}
                         onChange={(v) => set_config({...config, [f.key]: v})}/>
             </InputRow>;
         }
-        const is_secret = f.type === "password";
+        // 开关字段
+        if (f.type === "switch") {
+            return <InputRow key={f.key} label={t(f.label)} label_width={"6rem"}>
+                <Select value={value === true ? "on" : "off"}
+                        options={[{title: t("开启"), value: "on"}, {title: t("关闭"), value: "off"}]}
+                        onChange={(v) => set_config({...config, [f.key]: v === "on"})}/>
+            </InputRow>;
+        }
         return <React.Fragment key={f.key}>
             <InputText
-                type={is_secret ? "password" : "text"}
+                type={f.type === "password" ? "password" : "text"}
                 placeholder={f.label}
-                value={config[f.key] ?? ""}
+                value={String(value ?? "")}
                 handleInputChange={(v) => set_config({...config, [f.key]: v})}/>
         </React.Fragment>;
     };
