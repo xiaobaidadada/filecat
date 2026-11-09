@@ -1384,5 +1384,8 @@
   "运行中": "En cours",
   "主机名": "Nom d'hôte",
   "smb_known_issue_tip": "SMB présente actuellement trois problèmes connus :\n\n- L'Explorateur Windows ne prend en charge que le port par défaut 445. Pour un autre port, utilisez \\\\hôte:port.\n- Certains clients (ex. Fichiers iOS, Explorateur Windows) peuvent lister les fichiers mais échouent à les ouvrir ou les créer.\n- L’énumération des partages n’est pas prise en charge. Utilisez l’adresse complète \\\\hôte\\\\partage ; \\\\hôte seul ne liste rien.\n\nSFTP et WebDAV ne sont pas concernés.",
-  "留空则不验证身份": "Laisser vide pour ignorer l'authentification"
+  "留空则不验证身份": "Laisser vide pour ignorer l'authentification",
+    "path_ph": "Saisir un chemin (vide pour la racine)",
+    "src_dir_ph": "Ou saisir le nom du répertoire source",
+    "sftp_path_ph": "Un / initial indique un chemin absolu sur le serveur, sinon relatif au répertoire de connexion"
 }

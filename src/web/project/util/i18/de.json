@@ -1384,5 +1384,8 @@
   "运行中": "Läuft",
   "主机名": "Hostname",
   "smb_known_issue_tip": "SMB hat derzeit drei bekannte Probleme:\n\n- Der Windows-Explorer unterstützt nur den Standardport 445. Bei anderen Ports muss \\\\host:port verwendet werden.\n- Einige Clients (z. B. iOS Dateien, Windows-Explorer) können Dateien auflisten, aber nicht öffnen oder erstellen.\n- Die Freigabeliste wird nicht unterstützt. Zugriff über die vollständige Adresse \\\\host\\\\freigabe; \\\\host allein listet keine Freigaben auf.\n\nSFTP und WebDAV sind nicht betroffen.",
-  "留空则不验证身份": "Leer lassen, um die Anmeldung zu überspringen"
+  "留空则不验证身份": "Leer lassen, um die Anmeldung zu überspringen",
+    "path_ph": "Pfad eingeben (leer für Stammverzeichnis)",
+    "src_dir_ph": "Oder Quellverzeichnisnamen eingeben",
+    "sftp_path_ph": "Ein führendes / bedeutet absoluten Serverpfad, sonst relativ zum Anmeldeverzeichnis"
 }

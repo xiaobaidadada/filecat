@@ -278,28 +278,26 @@ export default function MountPanel() {
                     <InputText placeholder={t("被挂载的本地绝对路径")} value={mount_path}
                                handleInputChange={set_mount_path}/>
                 </InputRow>
-                {/* 位置：用目录树选择；SMB 列不出共享时可在下面直接填共享名 */}
+                {/* 位置：所有驱动都同时支持「列表/目录树挑选」和「直接手填」 */}
                 {use_location_list && <InputRow label={t(driver_meta?.location_label === "s3_bucket" ? "存储桶" : "共享目录")}
                                                 label_width={"6rem"} required>
                     <RemotePathPicker driver={driver} credential_id={credential_id} account_id={account_id}
-                                      require_account={need_account}
+                                      require_account={need_account} editable
                                       value={root_dir} onChange={set_root_dir}/>
-                    {driver === "smb" && <InputText value={String(root_dir ?? "").split("/")[0] ?? ""}
-                                      placeholder={t("或直接输入共享名")}
-                                      handleInputChange={(v) => {
-                                          const sub = String(root_dir ?? "").split("/").slice(1).join("/");
-                                          const name = v.trim();
-                                          set_root_dir(name ? (sub ? `${name}/${sub}` : name) : "");
-                                      }}/>}
                 </InputRow>}
                 {use_local_source && <InputRow label={t("源目录")} label_width={"6rem"} required>
                     <Select value={root_dir} options={local_options}
                             placeholder={t("选择源目录")}
                             onChange={(v) => set_root_dir(v)}/>
+                    <InputText value={String(root_dir ?? "")} placeholder={t("src_dir_ph")}
+                               handleInputChange={(v) => set_root_dir(String(v ?? "").trim())}/>
                 </InputRow>}
                 {!use_location_list && !use_local_source && <InputRow label={t(dir_label())} label_width={"6rem"}>
                     <RemotePathPicker driver={driver} credential_id={credential_id} account_id={account_id}
-                                      require_account={need_account}
+                                      require_account={need_account} editable
+                                      editable_placeholder={driver === "sftp"
+                                          ? t("sftp_path_ph")
+                                          : undefined}
                                       value={root_dir} onChange={set_root_dir}/>
                 </InputRow>}
                 <InputRow label={t("备注")} label_width={"6rem"}>

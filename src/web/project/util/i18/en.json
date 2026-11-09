@@ -1388,5 +1388,8 @@
   "运行中": "Running",
   "主机名": "Hostname",
   "smb_known_issue_tip": "SMB currently has three known issues:\n\n- Windows Explorer only supports the default port 445. For any other port, connect using \\\\host:port.\n- Some clients (e.g. iOS Files, Windows Explorer) may list files but fail to open or create them.\n- Share enumeration is not supported. Connect with the full \\\\host\\\\share address; \\\\host alone cannot list shares.\n\nSFTP and WebDAV are not affected.",
-  "留空则不验证身份": "Leave empty to skip authentication"
+  "留空则不验证身份": "Leave empty to skip authentication",
+    "path_ph": "Enter path (leave empty for root)",
+    "src_dir_ph": "Or type the source directory name",
+    "sftp_path_ph": "A leading / means an absolute server path, otherwise relative to the login directory"
 }

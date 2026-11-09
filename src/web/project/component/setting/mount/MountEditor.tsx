@@ -78,11 +78,6 @@ export default function MountEditor(props: Props) {
                             enabled: item.enabled !== false,
                             forward_to_remote: Boolean(item.forward_to_remote),
                         });
-                        // 位置是「可远程列出」的类型时，打开表单就得把可选列表拉好，
-                        // 否则下拉里是空的，用户只能看到已存的那个值却换不了
-                        if (item.credential_id) {
-                            void fetch_locations(item.credential_id, item.driver, item.account_id);
-                        }
                     }
                 } catch (e) {
                     // ignore
@@ -100,51 +95,6 @@ export default function MountEditor(props: Props) {
     /** 当前凭据登记的本地源目录映射 */
     const local_sources: LocalSourceRow[] = creds.find(c => c.id === row.credential_id)?.local_sources ?? [];
     const local_options = local_sources.map(v => ({title: `${v.name}（${v.path}）`, value: v.name}));
-    /** 位置第一段（共享名 / 桶名），与 row.root_dir 的第一段同步 */
-    const location_name = String(row.root_dir ?? "").split("/")[0] ?? "";
-    /** 位置第二段（共享内子路径 / Key 前缀） */
-    const location_sub = String(row.root_dir ?? "").split("/").slice(1).join("/");
-
-    /** 拼回 root_dir：name 为空表示整个位置，sub 为空表示位置根 */
-    const make_root_dir = (name: string, sub: string) => {
-        const n = name.trim();
-        const b = sub.trim().replace(/^\/+|\/+$/g, "");
-        if (!n) {
-            return "";
-        }
-        return b ? `${n}/${b}` : n;
-    };
-
-    /** 远程可列出的位置（SMB 共享名 / S3 存储桶） */
-    const [locations, set_locations] = useState<{title: string; value: string}[]>([]);
-    const [loading_locations, set_loading_locations] = useState(false);
-
-    /** 拉取远程可选位置；credential / driver 传入时用它们（打开表单时 row 还没更新） */
-    const fetch_locations = async (credential?: string, driver_type?: string, acc_id?: string) => {
-        const cred_id = credential ?? row.credential_id;
-        if (!cred_id) {
-            return;
-        }
-        const acc = acc_id ?? row.account_id;
-        set_loading_locations(true);
-        try {
-            const rsq = await mountHttp.post("share/list", {
-                driver: driver_type ?? row.driver,
-                credential_id: cred_id,
-                account_id: acc,
-            });
-            const list = Array.isArray(rsq?.data) ? rsq.data : [];
-            set_locations(list.map((v: any) => ({
-                title: v.remark ? `${v.name}（${v.remark}）` : v.name,
-                value: v.name,
-            })));
-        } catch (e) {
-            // Http 层已提示；保持空列表让用户可手填
-            set_locations([]);
-        } finally {
-            set_loading_locations(false);
-        }
-    };
 
     /** 当前驱动类型可选的凭据来源 */
     const cred_options = () => credential_options(row.driver, creds);
@@ -211,51 +161,39 @@ export default function MountEditor(props: Props) {
                 options={drivers.map(d => ({title: d.name, value: d.type}))}
                 onChange={(v) => {
                     set_row({...row, driver: v, credential_id: "", account_id: "", root_dir: ""});
-                    set_locations([]);
                 }}/>
         <Select value={row.credential_id} options={cred_options()}
                 placeholder={t("选择凭据")}
-                onChange={async (v) => {
+                onChange={(v) => {
                     set_row({...row, credential_id: v, account_id: ""});
-                    // 换凭据后位置列表要重拉：不同账号能看到的共享/桶不同
-                    set_locations([]);
-                    if (v) {
-                        await fetch_locations();
-                    }
                 }}/>
         {/* 有账号的凭据才需要选具体账号；留空即匿名访问 */}
         {need_account && <Select value={row.account_id} options={cur_account_options}
                 placeholder={t("选择账号")}
-                onChange={async (v) => {
+                onChange={(v) => {
                     set_row({...row, account_id: v, root_dir: ""});
-                    set_locations([]);
-                    if (v) {
-                        await fetch_locations(row.credential_id, row.driver, v);
-                    }
                 }}/>}
-        {/* 位置：优先用下拉里列出的共享名/存储桶；SMB 拿不到共享列表时可在下面直接填 */}
-        {use_location_list && <>
-            <Select value={location_name} options={locations}
-                    placeholder={loading_locations
-                        ? t("加载中")
-                        : (meta?.location_label === "s3_bucket" ? t("选择存储桶") : t("选择共享目录"))}
-                    onChange={(v) => set_row({...row, root_dir: make_root_dir(v, location_sub)})}/>
-            <InputText value={location_sub}
-                       placeholder={meta?.location_label === "s3_bucket" ? t("前缀（可留空）") : t("子路径（可留空）")}
-                       handleInputChange={(v) => set_row({...row, root_dir: make_root_dir(location_name, v)})}/>
-            {/* SMB 有时列不出共享列表，这里允许直接填共享名，填了就优先用它 */}
-            {row.driver === "smb" && <InputText value={location_name}
-                       placeholder={t("或直接输入共享名")}
-                       handleInputChange={(v) => set_row({...row, root_dir: make_root_dir(v, location_sub)})}/>}
+        {/* 位置：所有驱动都同时支持「列表/目录树挑选」和「直接手填」 */}
+        {use_location_list && <RemotePathPicker driver={row.driver}
+                credential_id={row.credential_id}
+                account_id={row.account_id}
+                require_account={need_account} editable
+                value={row.root_dir ?? ""} onChange={(v) => set_row({...row, root_dir: v})}/>}
+        {use_local_source && <>
+            <Select value={row.root_dir} options={local_options}
+                    placeholder={t("选择源目录")}
+                    onChange={(v) => set_row({...row, root_dir: v})}/>
+            <InputText value={String(row.root_dir ?? "")} placeholder={t("src_dir_ph")}
+                       handleInputChange={(v) => set_row({...row, root_dir: String(v ?? "").trim()})}/>
         </>}
-        {use_local_source && <Select value={row.root_dir} options={local_options}
-                placeholder={t("选择源目录")}
-                onChange={(v) => set_row({...row, root_dir: v})}/>}
         {!use_location_list && !use_local_source && <RemotePathPicker driver={row.driver}
                 credential_id={row.credential_id}
                 account_id={row.account_id}
-                require_account={need_account}
-                value={row.root_dir} onChange={(v) => set_row({...row, root_dir: v})}/>}
+                require_account={need_account} editable
+                editable_placeholder={row.driver === "sftp"
+                    ? t("sftp_path_ph")
+                    : undefined}
+                value={row.root_dir ?? ""} onChange={(v) => set_row({...row, root_dir: v})}/>}
         <InputText placeholder={t("备注")} value={row.note}
                    handleInputChange={(v) => set_row({...row, note: v})}/>
         <InputText placeholder={t("标识色，如 #4a9eff")} value={row.color}

@@ -42,7 +42,9 @@ function root_of(item: FileMountItem): string {
     if (item.driver === MountDriverType.smb || item.driver === MountDriverType.s3) {
         return raw.replace(/^[/\\]+|[/\\]+$/g, "");
     }
-    return raw.replace(/\/+$/, "");
+    // 单独一个 / 表示服务器根，去掉尾斜杠会变空串，语义就丢了
+    const trimmed = raw.replace(/\/+$/, "");
+    return trimmed === "" && raw !== "" ? "/" : trimmed;
 }
 
 /** 取凭据下被选中的账号 */

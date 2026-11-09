@@ -123,11 +123,13 @@ export class SftpDriver implements FileDriver {
                     // 连接意外断开时清空，下次操作自动重连
                     client.on("close", () => this.clear_conn());
                     client.on("end", () => this.clear_conn());
-                    // 求出远程的初始目录，方便把用户的「起始目录」拼成绝对路径
+                    // 求出远程的初始目录，方便把用户的「起始目录」拼成绝对路径。
+                    // root 以 / 开头表示服务器上的绝对路径，否则相对登录目录，
+                    // realpath 两种都能解析成绝对路径。
                     const root = (this.config.root ?? "").trim();
                     sftp.realpath(root || ".", (e: any, abs: string) => {
-                        // realpath 失败就退回用配置里的值
-                        this.remote_root = e ? root : abs;
+                        // 解析失败也别退回相对路径，那样后面拼出来的全是野路径
+                        this.remote_root = abs || root || "/";
                         this.touch_idle();
                         resolve(sftp);
                     });

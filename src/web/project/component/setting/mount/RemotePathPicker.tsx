@@ -33,14 +33,31 @@ export default function RemotePathPicker(props: {
     manual_name?: { label: string; placeholder: string };
     /** 手填名字下方的子路径输入框占位文案 */
     sub_placeholder?: string;
+    /**
+     * 是否在列表/目录树之上始终显示一个手填输入框。
+     * 打开后既能从列表挑，也能直接打路径，两者改的是同一个 root_dir。
+     */
+    editable?: boolean;
+    /** 手填框的占位提示，驱动有特殊路径语义时（如 SFTP 的绝对路径）用它覆盖默认文案 */
+    editable_placeholder?: string;
 }) {
     const {t} = useTranslation();
     /** 根目录下的条目 */
     const [list, set_list] = useState<FileTreeList>([]);
     const [loading, set_loading] = useState(false);
 
-    /** 去掉首尾斜杠，根为空串 */
-    const normalize = (p: string) => String(p ?? "").replace(/^\/+|\/+$/g, "");
+    /**
+     * 去掉首尾斜杠。SFTP 的 root 允许以 / 开头表示服务器绝对路径，
+     * 那种情况只去尾部斜杠，前导的 / 必须留着（单独一个 / 就是根，不能被清成空串）。
+     */
+    const normalize = (p: string) => {
+        const s = String(p ?? "").trim();
+        if (props.driver === "sftp") {
+            const v = s.replace(/\/+$/g, "");
+            return v === "" && s !== "" ? "/" : v;
+        }
+        return s.replace(/^\/+|\/+$/g, "");
+    };
 
     /** 列某个目录下的子目录；只看目录，文件不参与选择 */
     const load_dir = async (dir: string): Promise<FileTree[]> => {
@@ -79,9 +96,9 @@ export default function RemotePathPicker(props: {
         }
     };
 
-    // 换凭据/账号/驱动时重新拉根；手填名字模式不请求列表
+    // 换凭据/账号/驱动时重新拉根；纯手填模式不请求列表
     useEffect(() => {
-        if (props.manual_name) {
+        if (props.manual_name && !props.editable) {
             return;
         }
         void load_root();
@@ -102,8 +119,8 @@ export default function RemotePathPicker(props: {
 
     const current = normalize(props.value);
 
-    // 手填名字模式：输入共享名/桶名 + 可选子路径，不请求任何列表
-    if (props.manual_name) {
+    // 手填名字模式：输入名字 + 可选子路径，不请求任何列表
+    if (props.manual_name && !props.editable) {
         const name = current.split("/")[0] ?? "";
         const sub = current.split("/").slice(1).join("/");
         const join = (n: string, s: string) => {
@@ -123,9 +140,14 @@ export default function RemotePathPicker(props: {
     }
 
     return (<div className={"rpp"}>
+        {/* 手填框：既能从下面挑，也能直接打全路径，改的是同一个值 */}
+        {props.editable && <InputText value={current}
+                                      placeholder={props.editable_placeholder ?? props.manual_name?.placeholder ?? t("path_ph")}
+                                      handleInputChange={(v) => props.onChange(normalize(v))}/>}
         <div className={"rpp-head div-row"}>
             <span className={"rpp-label"}>{t("当前")}</span>
-            <span className={"rpp-path"}>/{current}</span>
+            {/* SFTP 的值本身就是绝对路径，别的驱动是相对路径才需要补前导 / */}
+            <span className={"rpp-path"}>{props.driver === "sftp" ? (current || "/") : `/${current}`}</span>
             <button type={"button"} className={"rpp-reset"} onClick={() => props.onChange("")}>
                 {t("根目录")}
             </button>
