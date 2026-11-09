@@ -32,6 +32,8 @@ export interface TcpProxyDriverConfig {
     username?: string;
     /** 对端 FileCat 的登录密码 */
     password?: string;
+    /** 对端 FileCat 的 base_url 前缀（如 /pre）；为空表示对端没配 */
+    base_url?: string;
     /** 起始目录（挂载自己配置，相对对端根目录；为空表示整个根） */
     root?: string;
 }
@@ -92,6 +94,8 @@ export class TcpProxyDriver implements FileDriver {
     private readonly username: string;
     /** 对端登录密码 */
     private readonly password: string;
+    /** 对端 base_url 前缀，已规范成「无尾斜杠、为空表示无前缀」 */
+    private readonly base_url: string;
     /** 起始目录前缀（不带前后斜杠，空表示根） */
     private readonly root: string;
 
@@ -106,6 +110,8 @@ export class TcpProxyDriver implements FileDriver {
         if (!this.username || !this.password) {
             throw new Error("内网穿透挂载需要填写对端 FileCat 的账号密码");
         }
+        // 对端可能配了 base_url（接口在 /pre/api 下），统一规范成 /pre 形式
+        this.base_url = String(config?.base_url ?? "").trim().replace(/^[/\\]+|[/\\]+$/g, "");
         this.root = String(config?.root ?? "").trim().replace(/^[/\\]+|[/\\]+$/g, "");
     }
 
@@ -144,12 +150,19 @@ export class TcpProxyDriver implements FileDriver {
     /**
      * 通过隧道发起一次 HTTP 请求。
      * 隧道是原始 TCP 流，这里直接在上面跑标准 HTTP 协议。
+     *
+     * url_path 一律传对端「不带 base_url 前缀」的路径（如 /api/user/login），
+     * 前缀在这里统一补，避免每个调用点都要拼一次。
      */
     private async request(
         method: string,
         url_path: string,
         options?: {body?: any; stream?: Readable; headers?: Record<string, string>; timeout?: number},
     ): Promise<{status: number; headers: http.IncomingHttpHeaders; body: Buffer}> {
+        // 对端开了 base_url 时，接口实际在 /pre/api/... 下
+        if (this.base_url) {
+            url_path = `/${this.base_url}${url_path}`;
+        }
         const client = this.get_client();
         const socket_id = tcpForwardService.get_socket_id();
         const tunnelStream = new TunnelDuplexStream(client, socket_id);

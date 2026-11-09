@@ -24,3 +24,4 @@ reset_root_password=
 #用于重新修改root账号
 reset_root_username=
 
+# base_url=/pre

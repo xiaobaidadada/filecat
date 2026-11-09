@@ -100,25 +100,11 @@ export function loadWasm() {
 let sys_pre:string; // 后端
 let base_url:string; // 前后端
 
-let parsed = false
 async function  init_pre_path() {
-    if(!parsed) {
-        Env.parseArgs()
-        parsed = true
-    }
-    if (process.env.NODE_ENV === "production") {
-        base_url = Env.base_url || process.env.base_url || "";
-        sys_pre = `${base_url}/api`;
-
-    } else {
-        try {
-            base_url = Env.base_url || require("../../../../shell/config/env").base_url || "";
-            sys_pre = `${base_url}/api`;
-        } catch (e) {
-            sys_pre = "/api"
-            base_url = "";
-        }
-    }
+    Env.parseArgs()
+    // dev 与 production 一致：--env 指定的文件已由 Env.parseArgs 载入 Env.base_url
+    base_url = Env.base_url || process.env.base_url || "";
+    sys_pre = `${base_url}/api`;
 }
 
 

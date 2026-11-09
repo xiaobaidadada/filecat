@@ -97,6 +97,8 @@ export interface CredentialItem {
     // ========== 内网穿透 FileCat ==========
     /** 穿透客户端 id（对应 tcp_proxy_server_client 里的 id） */
     tcp_client_num_id?: string;
+    /** 对端 FileCat 的 base_url（对端开了 base_url 时必须填，否则接口地址对不上） */
+    tcp_base_url?: string;
 }
 
 /** 本地目录凭据下的一个「名称 → 路径」映射 */
@@ -259,6 +261,13 @@ export const CREDENTIAL_META_LIST: CredentialMeta[] = [
                 required: true,
                 options_source: "tcp_client",
                 tip: "从内网穿透客户端列表里选择",
+            },
+            {
+                key: "tcp_base_url",
+                label: "对端 base_url",
+                type: "text",
+                placeholder: "/pre",
+                tip: "对端 FileCat 配了 base_url 才需要填，不填表示没有前缀",
             },
         ],
     },

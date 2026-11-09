@@ -53,6 +53,7 @@ export interface CredentialRow {
     local_sources?: LocalSourceRow[];
     // 内网穿透
     tcp_client_num_id?: string;
+    tcp_base_url?: string;
 }
 
 /** 本地目录凭据下的一条「名称 → 路径」映射 */

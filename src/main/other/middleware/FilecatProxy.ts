@@ -29,7 +29,7 @@ async function get_forward_token(client_num_id: number): Promise<string> {
                 return await driver.get_forward_token();
             }
         } catch (e) {
-            console.error('[WS穿透] 取对端 token 失败:', e?.message ?? e);
+            // console.error('[WS穿透] 取对端 token 失败:', e?.message ?? e);
         }
     }
     return "";

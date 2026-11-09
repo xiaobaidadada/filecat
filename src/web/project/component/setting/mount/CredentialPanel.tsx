@@ -327,6 +327,7 @@ export default function CredentialPanel() {
             baidu_secret_key: item.baidu_secret_key,
             local_sources: item.local_sources,
             tcp_client_num_id: item.tcp_client_num_id,
+            tcp_base_url: item.tcp_base_url,
         });
         set_accounts(item.accounts ?? []);
         set_auth_code("");

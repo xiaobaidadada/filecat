@@ -142,6 +142,7 @@ function build_config(item: FileMountItem, cred: CredentialItem): DriverConfig {
                     client_num_id: cred.tcp_client_num_id ?? "",
                     username: account?.account_name,
                     password: account?.password,
+                    base_url: cred.tcp_base_url,
                     root,
                 },
             };

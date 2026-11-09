@@ -56,8 +56,11 @@ export class Env {
 
     // public static watch: boolean = false;
     public static installMode: boolean = false;
+    private static _parsed: boolean = false;
 
     public static  parseArgs() {
+            if (this._parsed) return;
+            this._parsed = true;
             const args = process.argv.slice(2);
             const result = {};
 
@@ -134,16 +137,16 @@ export class Env {
                         execSync(`sudo systemctl daemon-reload`);
                         console.log("卸载完成")
                         process.exit();
-                    } else if (key === "env") {
-                        if (this.env) {
-                            const envData = fs.readFileSync(this.env, 'utf8');
-                            this.load(envData,result);
-                        }
                     }
                 }
             }
             for (const key of Object.keys(result)) {
                 this[key] = result[key];
+            }
+            // 必须在参数合并之后读：this.env 是上面循环里由 result 赋值的
+            if (this.env) {
+                const envData = fs.readFileSync(this.env, 'utf8');
+                this.load(envData, this);
             }
     }
 
