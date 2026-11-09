@@ -136,21 +136,29 @@ export function credential_options(driver: string, creds: CredentialRow[]) {
 
 /**
  * 某个凭据可选的具体账号。
- * 除本地目录（用 sources 描述多个目录）外，其余凭据都是「一份连接信息 + 若干账号」，
- * 挂载时必须指定其中一个账号。
+ * 除本地目录（用 sources 描述多个目录）外，其余凭据都是「一份连接信息 + 若干账号」。
+ * 账号可以为空：SMB/WebDAV 服务端允许匿名，此时不选账号也能连。
  */
 export function account_options(credential_id: string, creds: CredentialRow[]) {
     const cred = creds.find(c => c.id === credential_id);
-    return (cred?.accounts ?? []).map(a => ({
+    const list = (cred?.accounts ?? []).map(a => ({
         title: a.note || a.account_name || a.nickname || a.id,
         value: a.id,
     }));
+    // 有账号可选时，额外给一个「不使用账号」项，用于免密服务
+    return list.length ? [{title: "not use account", value: ""}, ...list] : list;
 }
 
-/** 该凭据类型的挂载是否需要选账号：本地目录用 sources，其余都必须选 */
+/**
+ * 该凭据类型的挂载是否需要选账号。
+ * 本地目录用 sources 选目录，不需要账号；其余凭据有账号才需要选，没有账号就是匿名访问。
+ */
 export function need_account_of(credential_id: string, creds: CredentialRow[]) {
     const cred = creds.find(c => c.id === credential_id);
-    return cred ? cred.type !== "local" : false;
+    if (!cred) {
+        return false;
+    }
+    return cred.type !== "local" && (cred.accounts ?? []).length > 0;
 }
 
 /** 挂载目录默认标识色 */

@@ -1387,5 +1387,6 @@
   "已停止": "Stopped",
   "运行中": "Running",
   "主机名": "Hostname",
-  "smb_known_issue_tip": "SMB currently has three known issues:\n\n- Windows Explorer only supports the default port 445. For any other port, connect using \\\\host:port.\n- Some clients (e.g. iOS Files, Windows Explorer) may list files but fail to open or create them.\n- Share enumeration is not supported. Connect with the full \\\\host\\\\share address; \\\\host alone cannot list shares.\n\nSFTP and WebDAV are not affected."
+  "smb_known_issue_tip": "SMB currently has three known issues:\n\n- Windows Explorer only supports the default port 445. For any other port, connect using \\\\host:port.\n- Some clients (e.g. iOS Files, Windows Explorer) may list files but fail to open or create them.\n- Share enumeration is not supported. Connect with the full \\\\host\\\\share address; \\\\host alone cannot list shares.\n\nSFTP and WebDAV are not affected.",
+  "留空则不验证身份": "Leave empty to skip authentication"
 }

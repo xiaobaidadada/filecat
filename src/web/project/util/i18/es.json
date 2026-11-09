@@ -1383,5 +1383,6 @@
   "已停止": "Detenido",
   "运行中": "En ejecución",
   "主机名": "Nombre de host",
-  "smb_known_issue_tip": "SMB tiene actualmente tres problemas conocidos:\n\n- El Explorador de Windows solo admite el puerto predeterminado 445. Para otro puerto, use \\\\host:puerto.\n- Algunos clientes (p. ej. Archivos de iOS, Explorador de Windows) pueden listar archivos pero no abrirlos ni crearlos.\n- No se admite la enumeración de recursos. Conecte con la dirección completa \\\\host\\\\recurso; \\\\host por sí solo no lista recursos.\n\nSFTP y WebDAV no se ven afectados."
+  "smb_known_issue_tip": "SMB tiene actualmente tres problemas conocidos:\n\n- El Explorador de Windows solo admite el puerto predeterminado 445. Para otro puerto, use \\\\host:puerto.\n- Algunos clientes (p. ej. Archivos de iOS, Explorador de Windows) pueden listar archivos pero no abrirlos ni crearlos.\n- No se admite la enumeración de recursos. Conecte con la dirección completa \\\\host\\\\recurso; \\\\host por sí solo no lista recursos.\n\nSFTP y WebDAV no se ven afectados.",
+  "留空则不验证身份": "Dejar vacío para omitir la autenticación"
 }

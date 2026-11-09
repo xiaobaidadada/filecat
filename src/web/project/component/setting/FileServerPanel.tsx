@@ -318,12 +318,13 @@ export default function FileServerPanel() {
                         <Switch checked={readonly} onChange={set_readonly}/>
                     </InputRow>
 
-                    {/* WebDAV 服务级账号：一个账号可访问全部共享 */}
+                    {/* WebDAV 服务级账号：一个账号可访问全部共享；留空即匿名访问 */}
                     {type === "webdav" && <React.Fragment>
-                        <InputRow label={t("用户名")} label_width={"7rem"} required>
-                            <InputText value={webdav_username} handleInputChange={set_webdav_username}/>
+                        <InputRow label={t("用户名")} label_width={"7rem"}>
+                            <InputText placeholder={t("留空则不验证身份")} value={webdav_username}
+                                       handleInputChange={set_webdav_username}/>
                         </InputRow>
-                        <InputRow label={t("密码")} label_width={"7rem"} required>
+                        <InputRow label={t("密码")} label_width={"7rem"}>
                             <InputText type={"password"} value={webdav_password}
                                        handleInputChange={set_webdav_password}/>
                         </InputRow>
@@ -334,10 +335,11 @@ export default function FileServerPanel() {
                         <InputRow label={t("主机名")} label_width={"7rem"}>
                             <InputText value={smb_hostname} handleInputChange={set_smb_hostname}/>
                         </InputRow>
-                        <InputRow label={t("用户名")} label_width={"7rem"} required>
-                            <InputText value={smb_username} handleInputChange={set_smb_username}/>
+                        <InputRow label={t("用户名")} label_width={"7rem"}>
+                            <InputText placeholder={t("留空则不验证身份")} value={smb_username}
+                                       handleInputChange={set_smb_username}/>
                         </InputRow>
-                        <InputRow label={t("密码")} label_width={"7rem"} required>
+                        <InputRow label={t("密码")} label_width={"7rem"}>
                             <InputText type={"password"} value={smb_password}
                                        handleInputChange={set_smb_password}/>
                         </InputRow>

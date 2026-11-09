@@ -24,19 +24,20 @@ export class WebdavServer {
     async start(): Promise<void> {
         const v2 = webdav_lib.v2;
 
-        // 只允许配置里这一个账号登录
+        const username = this.item.webdav?.username ?? "";
+        const password = this.item.webdav?.password ?? "";
+
+        // 没配密码 = 匿名访问，不走 Basic 认证
         const user_manager = new v2.SimpleUserManager();
-        const user = user_manager.addUser(
-            this.item.webdav?.username ?? "",
-            this.item.webdav?.password ?? "",
-            false,
-        );
+        const user = user_manager.addUser(username, password, false);
 
         const privilege_manager = new v2.SimplePathPrivilegeManager();
         privilege_manager.setRights(user, "/", ["all"]);
 
         const webdav_server = new v2.WebDAVServer({
-            httpAuthentication: new v2.HTTPBasicAuthentication(user_manager, "filecat"),
+            httpAuthentication: password
+                ? new v2.HTTPBasicAuthentication(user_manager, "filecat")
+                : new AnonymousAuthentication(user),
             privilegeManager: privilege_manager,
         });
 
@@ -98,6 +99,25 @@ export class WebdavServer {
                 next();
             });
         }
+    }
+}
+
+/**
+ * 匿名认证：任何请求都直接放行，返回同一个用户。
+ *
+ * webdav-server 的 HTTPAuthentication 接口只有两个方法：
+ * getUser 拿到用户即视为通过，askForAuthentication 只在需要 401 时才被调用。
+ * 免密模式下请求不会带 Authorization 头，这里不看头，直接给用户。
+ */
+class AnonymousAuthentication {
+    constructor(private user: any) {}
+
+    askForAuthentication(): {[name: string]: string} {
+        return {};
+    }
+
+    getUser(ctx: any, callback: (error: Error | null, user?: any) => void): void {
+        callback(null, this.user);
     }
 }
 

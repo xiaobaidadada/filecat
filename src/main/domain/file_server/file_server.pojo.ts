@@ -181,20 +181,11 @@ export function validate_file_server(item: Partial<FileServerItem>): string | nu
     }
 
     if (item.type === FileServerType.webdav) {
-        if (!item.webdav?.username) {
-            return "webdav username is required";
-        }
-        if (!item.webdav?.password) {
-            return "webdav password is required";
-        }
-    }
-
-    if (item.type === FileServerType.smb) {
-        if (!item.smb?.username) {
-            return "smb username is required";
-        }
-        if (!item.smb?.password) {
-            return "smb password is required";
+        // 账号密码留空即匿名访问，两者要么都填要么都空
+        const has_user = !!item.webdav?.username;
+        const has_pass = !!item.webdav?.password;
+        if (has_user !== has_pass) {
+            return "webdav username and password must be set together, or both left empty for anonymous access";
         }
     }
 

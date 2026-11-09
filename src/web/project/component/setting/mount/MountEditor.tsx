@@ -126,11 +126,6 @@ export default function MountEditor(props: Props) {
             return;
         }
         const acc = acc_id ?? row.account_id;
-        // 账号还没选就先不拉目录，避免直接报错
-        if (need_account_of(cred_id, creds) && !acc) {
-            set_locations([]);
-            return;
-        }
         set_loading_locations(true);
         try {
             const rsq = await mountHttp.post("share/list", {
@@ -187,17 +182,14 @@ export default function MountEditor(props: Props) {
             NotyFail(t("请选择凭据"));
             return;
         }
-        if (need_account && !row.account_id) {
-            NotyFail(t("请选择账号"));
-            return;
-        }
+        // 账号留空表示匿名访问（SMB/WebDAV 服务端免密），允许保存
         try {
             await mountHttp.post(props.mount_id ? "update" : "add", {
                 id: props.mount_id,
                 driver: row.driver,
                 mount_path: props.mount_path,
                 credential_id: row.credential_id,
-                account_id: need_account ? row.account_id : undefined,
+                account_id: row.account_id || undefined,
                 root_dir: row.root_dir,
                 note: row.note,
                 color: row.color,
@@ -231,7 +223,7 @@ export default function MountEditor(props: Props) {
                         await fetch_locations();
                     }
                 }}/>
-        {/* 只有「一凭据多账号」的凭据（百度、内网穿透）才需要再选具体账号 */}
+        {/* 有账号的凭据才需要选具体账号；留空即匿名访问 */}
         {need_account && <Select value={row.account_id} options={cur_account_options}
                 placeholder={t("选择账号")}
                 onChange={async (v) => {
