@@ -96,14 +96,7 @@ export default function CredentialPanel() {
     const [auth_mode, set_auth_mode] = useState<"one_click" | "oob">("oob");
     const [auth_code, set_auth_code] = useState("");
     /** 多账号类型的账号列表（SMB/WebDAV/SFTP/S3 的认证信息） */
-    const [accounts, set_accounts] = useState<any[]>([]);
-    /** 类型变化时，账号列表默认给一条空的，避免出现「账号」区块空着没输入框 */
-    useEffect(() => {
-        if (metas.find(m => m.type === type)?.accounts !== true) {
-            return;
-        }
-        set_accounts((prev) => (prev.length ? prev : [{id: "", account_name: "", password: "", secret_key: ""}]));
-    }, [type, metas]);
+    const [accounts, set_accounts] = useState<MountAccountRow[]>([]);
 
     /** 凭据是否启用（列表行内的「使用」下拉） */
     const [enabled, set_enabled] = useState(true);
@@ -168,7 +161,7 @@ export default function CredentialPanel() {
 
     /** 账号列表操作：增删改，认证信息都存在 accounts 里 */
     const add_account = () => {
-        set_accounts((prev) => [...prev, {id: "", account_name: "", password: "", secret_key: ""}]);
+        set_accounts((prev) => [...prev, {id: "", account_name: "", password: "", secret_key: ""} as MountAccountRow]);
     };
 
     const change_account = (index: number, patch: any) => {
@@ -296,7 +289,7 @@ export default function CredentialPanel() {
             }
         }
         try {
-            await mountHttp.post(id ? "credential/update" : "credential/add", {
+            const rsq = await mountHttp.post(id ? "credential/update" : "credential/add", {
                 id: id || undefined,
                 type,
                 note,
@@ -305,7 +298,10 @@ export default function CredentialPanel() {
                 enabled,
             });
             NotySuccess(t("保存成功"));
-            close_form();
+            // 新增保存成功后转成编辑态，页面不关，接着还能改
+            if (!id && rsq.data?.id) {
+                set_id(rsq.data.id);
+            }
             await load();
         } catch (e) {
             // Http 层已提示
