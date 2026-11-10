@@ -1,2 +1,2 @@
 #!/usr/bin/env node
-require("../build/watch.js");
+require("../build/main.js");

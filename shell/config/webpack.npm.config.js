@@ -7,10 +7,10 @@ const {npm_externals, common_plugins} = require("./base.webpack.config");
 module.exports = {
     target: 'node', // 指定打包结果运行在node环境下
     mode: 'production', // 或者 'production'
-    entry: path.join(__dirname, "..", "..", "build", "server", "main", "server.js"), // 你的TypeScript入口文件路径
+    entry: path.join(__dirname, "..", "..", "build", "server", "main", "main.js"), // 由 build.js 各阶段覆盖
     output: {
         path: path.resolve(__dirname, "..", "..", "build"), // 输出目录
-        filename: 'main.js', // 输出文件名
+        filename: 'main.js', // 由 build.js 各阶段覆盖
     },
     resolve: {
         // 入口是 tsc 编译后的 .js，不需要 webpack 解析 .ts

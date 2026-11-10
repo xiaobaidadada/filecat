@@ -40,7 +40,7 @@ const runServer = async () => {
     const devServerOptions = { ...webpackConfig.devServer, open: false };
     const server = new WebpackDevServer(devServerOptions, compiler);
     server.start();
-    require("../src/main/server")
+    require("../src/main/main")
 };
 
 runServer();

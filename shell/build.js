@@ -80,28 +80,38 @@ const tasksLister = new Listr(
             }
         },
         {
-            title: "构建服务端",
+            title: "构建 worker.js（业务线程）",
             task: async () => {
                 return new Promise((res, rej) => {
-                    webpack(serverConfig, (err, stats) => {
+                    const worker_config = {...serverConfig};
+                    worker_config['entry'] = path.join(__dirname, "..", "build", "server", "main", "work_main.js")
+                    worker_config['output'] = {...worker_config['output']}
+                    worker_config['output']['filename'] = 'worker.js'
+                    webpack(worker_config, (err, stats) => {
                         if (err || stats.hasErrors()) {
                             console.error(err || stats.toString());
                             rej(false);
                             return;
                         }
-                        // copyFileSync(path.join(__dirname, "..", "src", "main", "domain", "bin", "win-process.node"), path.join(__dirname, "..", "build", "win-process.node"))
-                        // copyFileSync(path.join(__dirname, "..", "src", "main", "domain", "bin", "linux-process.node"), path.join(__dirname, "..", "build", "linux-process.node"))
-                        // copyFileSync(path.join(__dirname, "..", "src", "main", "domain", "net", "tun","ts","linux","linuxtun.node"), path.join(__dirname, "..", "build", "linuxtun.node"))
-                        // copyFileSync(path.join(__dirname, "..", "src", "main", "domain", "net", "tun","ts","win","wintun.node"), path.join(__dirname, "..", "build", "wintun.node"))
-                        // copyFileSync(path.join(__dirname, "..", "src", "main", "domain", "net", "wintun-amd64.dll"), path.join(__dirname, "..", "build", "wintun-amd64.dll"))
-                        // copyFileSync(path.join(__dirname, "..", "src", "main", "domain", "net", "wintun-arm.dll"), path.join(__dirname, "..", "build", "wintun-arm.dll"))
-                        // copyFileSync(path.join(__dirname, "..", "src", "main", "domain", "net", "wintun-arm64.dll"), path.join(__dirname, "..", "build", "wintun-arm64.dll"))
-                        // copyFileSync(path.join(__dirname, "..", "src", "main", "domain", "net", "wintun-x86.dll"), path.join(__dirname, "..", "build", "wintun-x86.dll"))
-                        // copyFileSync(path.join(__dirname, "..", "src", "main", "domain", "bin", "ffmpeg"), path.join(__dirname, "..", "build", "ffmpeg"))
-                        // copyFileSync(path.resolve("build/server/main/domain/file/file.worker.js"), path.join(__dirname, "..", "build", "file.worker.js"))
-
-                        // 复制 子进程监控脚本
-                        // ensure_copyFileSync(path.resolve("src/main/watch.js"), path.join(__dirname, "..", "build", "watch.js"))
+                        res(true);
+                    });
+                })
+            },
+        },
+        {
+            title: "构建 main.js（守护进程）",
+            task: async () => {
+                return new Promise((res, rej) => {
+                    const main_config = {...serverConfig};
+                    main_config['entry'] = path.join(__dirname, "..", "build", "server", "main", "main.js")
+                    main_config['output'] = {...main_config['output']}
+                    main_config['output']['filename'] = 'main_work.js'
+                    webpack(main_config, (err, stats) => {
+                        if (err || stats.hasErrors()) {
+                            console.error(err || stats.toString());
+                            rej(false);
+                            return;
+                        }
                         if(is_exe) {
                             copy_wintun_dll()
                             fs.copyFileSync(path.resolve('package.json'), path.resolve('build','package.json'));
@@ -115,9 +125,7 @@ const tasksLister = new Listr(
 
                         res(true);
                     });
-
                 })
-
             },
         },
         {
