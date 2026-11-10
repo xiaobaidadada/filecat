@@ -1387,5 +1387,7 @@
   "留空则不验证身份": "Laisser vide pour ignorer l'authentification",
     "path_ph": "Saisir un chemin (vide pour la racine)",
     "src_dir_ph": "Ou saisir le nom du répertoire source",
-    "sftp_path_ph": "Un / initial indique un chemin absolu sur le serveur, sinon relatif au répertoire de connexion"
+    "sftp_path_ph": "Un / initial indique un chemin absolu sur le serveur, sinon relatif au répertoire de connexion",
+  "ro": "Permission",
+  "读写": "Lecture-écriture"
 }

@@ -1,20 +1,13 @@
-import RemotePathPicker from "./RemotePathPicker";
 import React, {useEffect, useState} from "react";
+import {useAtom} from "jotai";
+import {$stroe} from "../../../util/store";
 import {useTranslation} from "react-i18next";
-import {InputText, Select} from "../../../../meta/component/Input";
-import {ActionButton, ButtonLittle, ButtonText} from "../../../../meta/component/Button";
-import Switch from "../../../../meta/component/Button";import {mountHttp} from "../../../util/config";
+import {ButtonLittle, ButtonText} from "../../../../meta/component/Button";
+import {mountHttp} from "../../../util/config";
 import {using_tip} from "../../prompts/prompts.util";
 import {NotyFail, NotySuccess} from "../../../util/noty";
-import {
-    CredentialRow,
-    LocalSourceRow,
-    credential_options,
-    account_options,
-    need_account_of,
-    DEFAULT_COLOR,
-    DRIVER_META_LIST,
-} from "./mount_common";
+import MountForm, {empty_mount_form, MountFormValue} from "./MountForm";
+import {CredentialRow, DEFAULT_COLOR} from "./mount_common";
 
 interface Props {
     /** 要挂载的本地目录绝对路径 */
@@ -36,17 +29,7 @@ export default function MountEditor(props: Props) {
     const {t} = useTranslation();
     const show_tip = using_tip();
     const [creds, set_creds] = useState<CredentialRow[]>([]);
-    const [row, set_row] = useState<any>({
-        driver: "webdav",
-        credential_id: "",
-        account_id: "",
-        root_dir: "",
-        note: "",
-        color: DEFAULT_COLOR,
-        readonly: false,
-        enabled: true,
-        forward_to_remote: false,
-    });
+    const [form, set_form] = useState<MountFormValue>(empty_mount_form());
 
     useEffect(() => {
         (async () => {
@@ -62,15 +45,15 @@ export default function MountEditor(props: Props) {
                     const item = (Array.isArray(rsq?.data) ? rsq.data : [])
                         .find((v: any) => v.id === props.mount_id);
                     if (item) {
-                        set_row({
-                            driver: item.driver ,
+                        set_form({
+                            driver: item.driver,
+                            mount_path: item.mount_path ?? "",
                             credential_id: item.credential_id ?? "",
                             account_id: item.account_id ?? "",
                             root_dir: item.root_dir ?? "",
                             note: item.note ?? "",
-                            color: item.color ?? DEFAULT_COLOR,
+            color: item.color ?? DEFAULT_COLOR,
                             readonly: Boolean(item.readonly),
-                            enabled: item.enabled !== false,
                             forward_to_remote: Boolean(item.forward_to_remote),
                         });
                     }
@@ -81,35 +64,18 @@ export default function MountEditor(props: Props) {
         })();
     }, []);
 
-    /** 当前驱动元信息 */
-    const meta = DRIVER_META_LIST.find(d => d.type === row.driver);
-    /** 位置是「可远程列出」的形式（SMB 共享名、S3 存储桶 + 前缀） */
-    const use_location_list = meta?.location === "share";
-    /** 位置从凭据里的「名称 → 路径」映射中挑（本地目录） */
-    const use_local_source = meta?.location === "local";
-    /** 当前凭据登记的本地源目录映射 */
-    const local_sources: LocalSourceRow[] = creds.find(c => c.id === row.credential_id)?.local_sources ?? [];
-    const local_options = local_sources.map(v => ({title: `${v.name}（${v.path}）`, value: v.name}));
-
-    /** 当前驱动类型可选的凭据来源 */
-    const cred_options = () => credential_options(row.driver, creds);
-
-    /** 当前凭据是否需要再选账号（只有「一凭据多账号」的凭据才有 accounts） */
-    const cur_account_options = account_options(row.credential_id, creds);
-    const need_account = need_account_of(row.credential_id, creds);
-
     const do_test = async () => {
-        if (!row.credential_id) {
+        if (!form.credential_id) {
             NotyFail(t("请选择凭据"));
             return;
         }
         try {
             const rsq = await mountHttp.post("test", {
                 id: props.mount_id,
-                driver: row.driver,
-                credential_id: row.credential_id,
-                account_id: row.account_id,
-                root_dir: row.root_dir,
+                driver: form.driver,
+                credential_id: form.credential_id,
+                account_id: form.account_id,
+                root_dir: form.root_dir,
             });
             const r = rsq?.data;
             if (r?.ok) {
@@ -123,7 +89,7 @@ export default function MountEditor(props: Props) {
     };
 
     const save = async () => {
-        if (!row.credential_id) {
+        if (!form.credential_id) {
             NotyFail(t("请选择凭据"));
             return;
         }
@@ -131,17 +97,17 @@ export default function MountEditor(props: Props) {
         try {
             await mountHttp.post(props.mount_id ? "update" : "add", {
                 id: props.mount_id,
-                driver: row.driver,
+                driver: form.driver,
                 mount_path: props.mount_path,
-                credential_id: row.credential_id,
-                account_id: row.account_id || undefined,
-                root_dir: row.root_dir,
-                note: row.note,
-                color: row.color,
-                readonly: row.readonly,
-                enabled: row.enabled,
+                credential_id: form.credential_id,
+                account_id: form.account_id || undefined,
+                root_dir: form.root_dir,
+                note: form.note,
+                color: form.color,
+                readonly: form.readonly,
+                enabled: true,
                 // 非内网穿透驱动不支持转发，切走时显式置 false，避免残留脏值
-                forward_to_remote: row.driver === "tcp_proxy" && Boolean(row.forward_to_remote),
+                forward_to_remote: form.driver === "tcp_proxy" && Boolean(form.forward_to_remote),
             });
             NotySuccess(t("保存成功"));
             props.onDone();
@@ -150,65 +116,24 @@ export default function MountEditor(props: Props) {
         }
     };
 
+    /**
+     * 底部按钮交给 PromptCard 统一渲染（bottom_div），弹框自身不再画一条按钮栏。
+     * 挂载后注入一次；依赖为空，回调里读到的始终是本次渲染的闭包。
+     */
+    const [prompt_card, set_prompt_card] = useAtom($stroe.prompt_card);
+    useEffect(() => {
+        set_prompt_card({
+            ...prompt_card,
+            bottom_div: <>
+                <ButtonText text={t("取消")} clickFun={props.onClose}/>
+                <ButtonText text={t("测试连接")} clickFun={do_test}/>
+                <ButtonLittle text={t("保存")} clickFun={save}/>
+            </>
+        });
+    }, [form, creds]);
+
     return (<>
         <p>{props.mount_path}</p>
-        <Select value={row.driver}
-                options={DRIVER_META_LIST.map(d => ({title: d.name, value: d.type}))}
-                onChange={(v) => {
-                    set_row({...row, driver: v, credential_id: "", account_id: "", root_dir: ""});
-                }}/>
-        <Select value={row.credential_id} options={cred_options()}
-                placeholder={t("选择凭据")}
-                onChange={(v) => {
-                    set_row({...row, credential_id: v, account_id: ""});
-                }}/>
-        {/* 有账号的凭据才需要选具体账号；留空即匿名访问 */}
-        {need_account && <Select value={row.account_id} options={cur_account_options}
-                placeholder={t("选择账号")}
-                onChange={(v) => {
-                    set_row({...row, account_id: v, root_dir: ""});
-                }}/>}
-        {/* 位置：所有驱动都同时支持「列表/目录树挑选」和「直接手填」 */}
-        {use_location_list && <RemotePathPicker driver={row.driver}
-                credential_id={row.credential_id}
-                account_id={row.account_id}
-                require_account={need_account} editable
-                value={row.root_dir ?? ""} onChange={(v) => set_row({...row, root_dir: v})}/>}
-        {use_local_source && <>
-            <Select value={row.root_dir} options={local_options}
-                    placeholder={t("选择源目录")}
-                    onChange={(v) => set_row({...row, root_dir: v})}/>
-            <InputText value={String(row.root_dir ?? "")} placeholder={t("src_dir_ph")}
-                       handleInputChange={(v) => set_row({...row, root_dir: String(v ?? "").trim()})}/>
-        </>}
-        {!use_location_list && !use_local_source && <RemotePathPicker driver={row.driver}
-                credential_id={row.credential_id}
-                account_id={row.account_id}
-                require_account={need_account} editable
-                editable_placeholder={row.driver === "sftp"
-                    ? t("sftp_path_ph")
-                    : undefined}
-                value={row.root_dir ?? ""} onChange={(v) => set_row({...row, root_dir: v})}/>}
-        <InputText placeholder={t("备注")} value={row.note}
-                   handleInputChange={(v) => set_row({...row, note: v})}/>
-        {/* 标识色：InputText 内部已含色块 + 色值，不用再套容器 */}
-        <InputText type={"color"} value={row.color || DEFAULT_COLOR}
-                   handleInputChange={(v) => set_row({...row, color: v})}/>
-        <Select value={row.readonly}
-                options={[{title: t("只读"), value: true}, {title: "读写", value: false}]}
-                onChange={(v) => set_row({...row, readonly: v})}/>
-        {/* 只有内网穿透挂载能转发：其它驱动的对端不是 FileCat，没有它自己的前端和终端 */}
-        {row.driver === "tcp_proxy" && <div className={"div-row"}>
-            <span>{t("ftr2rmt")}</span>
-            <Switch checked={Boolean(row.forward_to_remote)}
-                    onChange={(v) => set_row({...row, forward_to_remote: v})}
-                    title={t("ftr2rmt_tip")}/>
-
-        </div>}
-        <div className={"div-row div-row--end"}>
-            <ButtonText text={t("取消")} clickFun={props.onClose}/>
-            <ButtonText text={t("测试连接")} clickFun={do_test}/>
-            <ButtonLittle text={t("保存")} clickFun={save}/>
-        </div>
+        <MountForm value={form} onChange={set_form} creds={creds} edit_mount_path={false}/>
     </>);
 }

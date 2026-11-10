@@ -1,20 +1,15 @@
-import RemotePathPicker from "./RemotePathPicker";
 import React, {useEffect, useState} from "react";
 import {useTranslation} from "react-i18next";
 import {Card, CardFull, TextTip} from "../../../../meta/component/Card";
 import {Column, Dashboard, Row} from "../../../../meta/component/Dashboard";
 import {ActionButton} from "../../../../meta/component/Button";
-import Switch from "../../../../meta/component/Button";
-import {InputRow, InputText, Select} from "../../../../meta/component/Input";
 import {Table} from "../../../../meta/component/Table";
 import {mountHttp} from "../../../util/config";
 import {NotyFail, NotySuccess} from "../../../util/noty";
 import {using_confirm} from "../../prompts/prompt.util";
+import MountForm, {empty_mount_form, MountFormValue} from "./MountForm";
 import {
     CredentialRow,
-    LocalSourceRow,
-    credential_options,
-    account_options,
     need_account_of,
     DEFAULT_COLOR,
     DRIVER_META_LIST,
@@ -41,14 +36,7 @@ export default function MountPanel() {
     const [editing, set_editing] = useState(false);
     /** 表单：id 为空表示新增 */
     const [id, set_id] = useState("");
-    const [driver, set_driver] = useState("webdav");
-    const [mount_path, set_mount_path] = useState("");
-    const [credential_id, set_credential_id] = useState("");
-    const [account_id, set_account_id] = useState("");
-    const [root_dir, set_root_dir] = useState("");
-    const [note, set_note] = useState("");
-    /** 转发到对端：仅内网穿透（tcp_proxy）挂载可开 */
-    const [forward_to_remote, set_forward_to_remote] = useState(false);
+    const [form, set_form] = useState<MountFormValue>(empty_mount_form());
 
     const load = async () => {
         try {
@@ -67,27 +55,17 @@ export default function MountPanel() {
         load();
     }, []);
 
-    /** 当前驱动类型可选的凭据来源 */
-    const cred_options = (drv: string) => credential_options(drv, creds);
-
     /**
      * 当前凭据是否需要再选账号。
      * 只有「一凭据多账号」的凭据（百度、内网穿透）才有 accounts，其余凭据不需要。
      */
-    const cur_account_options = account_options(credential_id, creds);
-    const need_account = need_account_of(credential_id, creds);
+    const need_account = need_account_of(form.credential_id, creds);
 
     /** 关闭表单并清空（新增完成后、切换编辑对象时用） */
     const close_form = () => {
         set_editing(false);
         set_id("");
-        set_driver("webdav");
-        set_mount_path("");
-        set_credential_id("");
-        set_account_id("");
-        set_root_dir("");
-        set_note("");
-        set_forward_to_remote(false);
+        set_form(empty_mount_form());
     };
 
     /** 点标题栏的「+」开始新增 */
@@ -99,27 +77,31 @@ export default function MountPanel() {
     const edit = (item: MountRow) => {
         set_editing(true);
         set_id(item.id);
-        set_driver(item.driver);
-        set_mount_path(item.mount_path ?? "");
-        set_credential_id(item.credential_id ?? "");
-        set_account_id(item.account_id ?? "");
-        set_root_dir(item.root_dir ?? "");
-        set_note(item.note ?? "");
-        set_forward_to_remote(Boolean(item.forward_to_remote));
+        set_form({
+            driver: item.driver,
+            mount_path: item.mount_path ?? "",
+            credential_id: item.credential_id ?? "",
+            account_id: item.account_id ?? "",
+            root_dir: item.root_dir ?? "",
+            note: item.note ?? "",
+            color: item.color ?? DEFAULT_COLOR,
+            readonly: Boolean(item.readonly),
+            forward_to_remote: Boolean(item.forward_to_remote),
+        });
     };
 
     const test = async () => {
-        if (!credential_id) {
+        if (!form.credential_id) {
             NotyFail(t("请选择凭据"));
             return;
         }
         try {
             const rsq = await mountHttp.post("test", {
                 id: id || undefined,
-                driver,
-                credential_id,
-                account_id,
-                root_dir,
+                driver: form.driver,
+                credential_id: form.credential_id,
+                account_id: form.account_id,
+                root_dir: form.root_dir,
             });
             const r = rsq?.data;
             if (r?.ok) {
@@ -133,31 +115,32 @@ export default function MountPanel() {
     };
 
     const save = async () => {
-        if (!credential_id) {
+        if (!form.credential_id) {
             NotyFail(t("请选择凭据"));
             return;
         }
-        if (need_account && !account_id) {
+        if (need_account && !form.account_id) {
             NotyFail(t("请选择账号"));
             return;
         }
-        if (!mount_path.trim()) {
+        if (!form.mount_path.trim()) {
             NotyFail(t("munt_rq"));
             return;
         }
         try {
             await mountHttp.post(id ? "update" : "add", {
                 id: id || undefined,
-                driver,
-                mount_path,
-                credential_id,
-                account_id: need_account ? account_id : undefined,
-                root_dir,
-                note,
-                color: DEFAULT_COLOR,
-                readonly: false,
+                driver: form.driver,
+                mount_path: form.mount_path,
+                credential_id: form.credential_id,
+                account_id: need_account ? form.account_id : undefined,
+                root_dir: form.root_dir,
+                note: form.note,
+                color: form.color,
+                readonly: form.readonly,
                 enabled: true,
-                forward_to_remote,
+                // 非内网穿透驱动不支持转发，切走时显式置 false，避免残留脏值
+                forward_to_remote: form.driver === "tcp_proxy" && Boolean(form.forward_to_remote),
             });
             NotySuccess(t("保存成功"));
             close_form();
@@ -184,30 +167,6 @@ export default function MountPanel() {
     };
 
     const driver_name = (v: string) => DRIVER_META_LIST.find(d => d.type === v)?.name ?? v;
-
-    /** 路径字段按协议叫法命名，不要一律叫「起始目录」 */
-    const dir_label = () => {
-        if (driver === "smb" || driver === "s3") {
-            return "子路径";
-        }
-        if (driver === "baidu") {
-            return "网盘目录";
-        }
-        if (driver === "tcp_proxy") {
-            return "对端目录";
-        }
-        return "目录";
-    };
-
-    /** 当前驱动的元信息 */
-    const driver_meta = DRIVER_META_LIST.find(d => d.type === driver);
-    /** 位置是「可远程列出」的形式（SMB 共享名、S3 存储桶 + 前缀） */
-    const use_location_list = driver_meta?.location === "share";
-    /** 位置从凭据里的「名称 → 路径」映射中挑（本地目录） */
-    const use_local_source = driver_meta?.location === "local";
-    /** 当前凭据登记的本地源目录映射 */
-    const local_sources: LocalSourceRow[] = creds.find(c => c.id === credential_id)?.local_sources ?? [];
-    const local_options = local_sources.map(v => ({title: `${v.name}（${v.path}）`, value: v.name}));
 
     return (<Row>
         {/* 左侧：挂载列表 */}
@@ -247,66 +206,7 @@ export default function MountPanel() {
                           <ActionButton icon={"save"} title={t("保存")} onClick={save}/>
                           <ActionButton icon={"cancel"} title={t("取消")} onClick={close_form}/>
                       </div>}>
-                <InputRow label={t("挂载类型")} label_width={"6rem"}>
-                    <Select value={driver}
-                            options={DRIVER_META_LIST.map(d => ({title: d.name, value: d.type}))}
-                            onChange={(v) => {
-                                set_driver(v);
-                                // 换类型时清掉已选凭据（类型可能不匹配）和位置（语义不同）
-                                set_credential_id("");
-                                set_account_id("");
-                                set_root_dir("");
-                            }}/>
-                </InputRow>
-                <InputRow label={t("凭据")} label_width={"6rem"} required>
-                    <Select value={credential_id} options={cred_options(driver)}
-                            onChange={(v) => {
-                                set_credential_id(v);
-                                // 换凭据时清掉已选账号（账号属于原凭据）
-                                set_account_id("");
-                                set_root_dir("");
-                            }}/>
-                </InputRow>
-                {/* 只有「一凭据多账号」的凭据（百度、内网穿透）才需要再选具体账号 */}
-                {need_account && <InputRow label={t("账号")} label_width={"6rem"} required>
-                    <Select value={account_id} options={cur_account_options}
-                            onChange={set_account_id}/>
-                </InputRow>}
-                <InputRow label={t("本地目录")} label_width={"6rem"} required>
-                    <InputText placeholder={t("被挂载的本地绝对路径")} value={mount_path}
-                               handleInputChange={set_mount_path}/>
-                </InputRow>
-                {/* 位置：所有驱动都同时支持「列表/目录树挑选」和「直接手填」 */}
-                {use_location_list && <InputRow label={t(driver_meta?.location_label === "s3_bucket" ? "存储桶" : "共享目录")}
-                                                label_width={"6rem"} required>
-                    <RemotePathPicker driver={driver} credential_id={credential_id} account_id={account_id}
-                                      require_account={need_account} editable
-                                      value={root_dir} onChange={set_root_dir}/>
-                </InputRow>}
-                {use_local_source && <InputRow label={t("源目录")} label_width={"6rem"} required>
-                    <Select value={root_dir} options={local_options}
-                            placeholder={t("选择源目录")}
-                            onChange={(v) => set_root_dir(v)}/>
-                    <InputText value={String(root_dir ?? "")} placeholder={t("src_dir_ph")}
-                               handleInputChange={(v) => set_root_dir(String(v ?? "").trim())}/>
-                </InputRow>}
-                {!use_location_list && !use_local_source && <InputRow label={t(dir_label())} label_width={"6rem"}>
-                    <RemotePathPicker driver={driver} credential_id={credential_id} account_id={account_id}
-                                      require_account={need_account} editable
-                                      editable_placeholder={driver === "sftp"
-                                          ? t("sftp_path_ph")
-                                          : undefined}
-                                      value={root_dir} onChange={set_root_dir}/>
-                </InputRow>}
-                <InputRow label={t("备注")} label_width={"6rem"}>
-                    <InputText placeholder={t("列表显示的名称")} value={note}
-                               handleInputChange={set_note}/>
-                </InputRow>
-                {/* 只有内网穿透挂载能转发：其它驱动的对端不是 FileCat，没有它自己的前端和终端 */}
-                {driver === "tcp_proxy" && <InputRow label={t("ftr2rmt")} label_width={"6rem"}>
-                    <Switch checked={forward_to_remote} onChange={set_forward_to_remote}
-                            title={t("ftr2rmt_tip")}/>
-                </InputRow>}
+                <MountForm value={form} onChange={set_form} creds={creds}/>
                 </Card>
             </Dashboard>}
         </Column>

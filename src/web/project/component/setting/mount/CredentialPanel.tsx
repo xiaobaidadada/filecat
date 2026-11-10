@@ -11,7 +11,16 @@ import {InstanceItem} from "../../../../meta/component/InstanceList";
 import {mountHttp} from "../../../util/config";
 import {NotyFail, NotySuccess} from "../../../util/noty";
 import {using_confirm} from "../../prompts/prompt.util";
-import {CREDENTIAL_META_LIST, CredentialField, CredentialMeta, CredentialRow, LocalSourceRow, MountAccountRow, fmt_time, mount_enable_options} from "./mount_common";
+import {
+    CREDENTIAL_META_LIST,
+    CredentialField,
+    CredentialMeta,
+    CredentialRow,
+    LocalSourceRow,
+    MountAccountRow,
+    fmt_time,
+    mount_enable_options
+} from "./mount_common";
 
 /** 新增凭据的默认类型 */
 const DEFAULT_TYPE = "webdav";
@@ -144,7 +153,7 @@ export default function CredentialPanel() {
     const sources: LocalSourceRow[] = config.local_sources ?? [];
 
     /** 改写映射列表的某一项 */
-    const update_source = (index: number, patch: {name?: string; path?: string}) => {
+    const update_source = (index: number, patch: { name?: string; path?: string }) => {
         set_config({...config, local_sources: sources.map((s, i) => (i === index ? {...s, ...patch} : s))});
     };
 
@@ -339,7 +348,8 @@ export default function CredentialPanel() {
     };
 
     /** 打开百度授权页面 */
-    const open_authorize = async () => {        try {
+    const open_authorize = async () => {
+        try {
             const rsq = await mountHttp.post("baidu/authorize_url", {id, mode: auth_mode});
             if (rsq?.data) {
                 window.open(rsq.data, "_blank", "noopener,noreferrer");
@@ -615,8 +625,8 @@ export default function CredentialPanel() {
                           rightTopCom={<div className={"div-row"}>
                               <ActionButton icon={"add"} title={t("添加")} onClick={start_add}/>
                           </div>}>
-                    <Table headers={[t("编号"),t("备注"), t("类型"), t("操作")]}
-                           rows={list.map((item,index) => [
+                    <Table headers={[t("编号"), t("备注"), t("类型"), t("操作")]}
+                           rows={list.map((item, index) => [
                                <span>{index}</span>,
                                <TextTip context={item.note || "-"}/>,
                                <TextTip context={type_name(item.type)}/>,
@@ -652,58 +662,8 @@ export default function CredentialPanel() {
                                         load_field_options(next_fields);
                                     }
                                 }}/>
-                        {/* 认证类字段全部平铺，不再分步翻页 */}
-                        {use_sources
-                            ? <React.Fragment>
-                                <div className={"div-row"}>
-                                    <h3>{t("目录")}</h3>
-                                    <ActionButton icon={"add"} title={t("添加")} onClick={add_source}/>
-                                </div>
-                                {sources.map((src, index) => (
-                                    <InstanceItem key={index}
-                                                  title={`${t("目录")} #${index + 1}`}
-                                                  toolbar={<>
-                                                      <ActionButton icon={"delete"} title={t("删除")}
-                                                                    onClick={() => remove_source(index)}/>
-                                                  </>}>
-                                        <InputRow label={t("名称")} label_width={"6rem"}>
-                                            <InputText placeholder={t("便于辨认的名字")} value={src.name}
-                                                       handleInputChange={(v) => update_source(index, {name: v})}/>
-                                        </InputRow>
-                                        <InputRow label={t("目录")} label_width={"6rem"} required>
-                                            <InputText placeholder={t("本地绝对路径")} value={src.path}
-                                                       handleInputChange={(v) => update_source(index, {path: v})}/>
-                                        </InputRow>
-                                    </InstanceItem>
-                                ))}
-                            </React.Fragment>
-                            : <React.Fragment>
-                                {fields.map(render_field)}
-                                {use_accounts && <React.Fragment>
-                                    <div className={"div-row"}>
-                                        <h3>{t("账号")}</h3>
-                                        <ActionButton icon={"add"} title={t("添加")} onClick={add_account}/>
-                                    </div>
-                                    {accounts.map((acc, index) => (
-                                        <InstanceItem key={index}
-                                                      title={`${t("账号")} #${index + 1}`}
-                                                      toolbar={<>
-                                                          <ActionButton icon={"delete"} title={t("删除")}
-                                                                        onClick={() => remove_account(index)}/>
-                                                      </>}>
-                                            {account_fields.map(f => (
-                                                <InputRow key={f.key} label={t(f.label)} label_width={"7rem"}
-                                                          required={f.required}>
-                                                    <InputText type={f.type === "password" ? "password" : "text"}
-                                                               placeholder={f.placeholder ? t(f.placeholder) : ""}
-                                                               value={acc[f.key] ?? ""}
-                                                               handleInputChange={(v) => change_account(index, {[f.key]: v})}/>
-                                                </InputRow>
-                                            ))}
-                                        </InstanceItem>
-                                    ))}
-                                </React.Fragment>}
-                            </React.Fragment>}
+                        {/* 认证类字段全部平铺，不再分步翻页；本地目录的「目录」列表放在下方独立卡片 */}
+                        {!use_sources && fields.map(render_field)}
                     </Card>
                 </Dashboard>
 
@@ -719,6 +679,65 @@ export default function CredentialPanel() {
                         {render_tcp_account()}
                     </Card>
                 </Dashboard>}
+
+                {/* 本地目录：一个凭据下登记多组「名称 → 路径」，挂载时挑其中一组。
+                    和账号卡片同一套结构，避免挤在凭据卡片里 */}
+                {use_sources && <Dashboard>
+                    <Card self_title={<span className={" div-row "}><h2>{t("目录")}</h2></span>}>
+                        <div className={"div-row"}>
+                            {/*<h3>{t("目录")}</h3>*/}
+                            <ActionButton icon={"add"} title={t("添加")} onClick={add_source}/>
+                        </div>
+                        {sources.map((src, index) => (
+                            <InstanceItem key={index}
+                                          title={`#${index + 1}`}
+                                          toolbar={<>
+                                              <ActionButton icon={"delete"} title={t("删除")}
+                                                            onClick={() => remove_source(index)}/>
+                                          </>}>
+                                <InputRow label={t("名称")} label_width={"7rem"}>
+                                    <InputText placeholder={t("便于辨认的名字")} value={src.name}
+                                               handleInputChange={(v) => update_source(index, {name: v})}/>
+                                </InputRow>
+                                <InputRow label={t("目录")} label_width={"7rem"} required>
+                                    <InputText placeholder={t("本地绝对路径")} value={src.path}
+                                               handleInputChange={(v) => update_source(index, {path: v})}/>
+                                </InputRow>
+                            </InstanceItem>
+                        ))}
+                    </Card>
+                </Dashboard>}
+
+                {/* 其余「一凭据多账号」类型（SMB / WebDAV / SFTP / S3）的账号也独立成卡片，
+                    与内网穿透、百度保持同一套交互：上面是连接配置，下面是若干账号。
+                    tcp_proxy 和 baidu 各有自己的账号卡片，这里排除掉，避免重复 */}
+                {use_accounts && !flow?.[1]?.keys?.includes(TCP_ACCOUNT_STEP)
+                    && !flow?.[1]?.keys?.includes(AUTHORIZE_STEP) && <Dashboard>
+                        <Card self_title={<span className={" div-row "}><h2>{t("账号")}</h2></span>}>
+                            <div className={"div-row"}>
+                                {/*<h3>{t("账号")}</h3>*/}
+                                <ActionButton icon={"add"} title={t("添加")} onClick={add_account}/>
+                            </div>
+                            {accounts.map((acc, index) => (
+                                <InstanceItem key={index}
+                                              title={`#${index + 1}`}
+                                              toolbar={<>
+                                                  <ActionButton icon={"delete"} title={t("删除")}
+                                                                onClick={() => remove_account(index)}/>
+                                              </>}>
+                                    {account_fields.map(f => (
+                                        <InputRow key={f.key} label={t(f.label)} label_width={"7rem"}
+                                                  required={f.required}>
+                                            <InputText type={f.type === "password" ? "password" : "text"}
+                                                       placeholder={f.placeholder ? t(f.placeholder) : ""}
+                                                       value={acc[f.key] ?? ""}
+                                                       handleInputChange={(v) => change_account(index, {[f.key]: v})}/>
+                                        </InputRow>
+                                    ))}
+                                </InstanceItem>
+                            ))}
+                        </Card>
+                    </Dashboard>}
             </React.Fragment>}
-        </Column>    </Row>);
+        </Column> </Row>);
 }

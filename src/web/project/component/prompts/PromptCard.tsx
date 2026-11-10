@@ -25,18 +25,26 @@ export function PromptCard() {
             {showPrompt.context_div}
         </div>
         <div className="card-action">
-            {
-                showPrompt.cancel &&
-                <button className="button button--flat button--grey" onClick={cancel}>
-                    {"cancel"}
-                </button>
-            }
-            {
-                showPrompt.confirm &&
-                <button className="button button--flat" onClick={showPrompt.confirm}>
-                    {"confirm"}
-                </button>
-            }
+            {/*
+              弹框自己给了 bottom_div 就用它，否则渲染通用的取消/确认。
+              有 bottom_div 时不再渲染默认按钮，避免出现两套按钮。
+            */}
+            {showPrompt.bottom_div
+                ? showPrompt.bottom_div
+                : <>
+                    {
+                        showPrompt.cancel &&
+                        <button className="button button--flat button--grey" onClick={cancel}>
+                            {"cancel"}
+                        </button>
+                    }
+                    {
+                        showPrompt.confirm &&
+                        <button className="button button--flat" onClick={showPrompt.confirm}>
+                            {"confirm"}
+                        </button>
+                    }
+                </>}
         </div>
     </div>)
 }

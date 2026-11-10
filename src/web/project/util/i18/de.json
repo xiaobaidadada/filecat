@@ -1387,5 +1387,7 @@
   "留空则不验证身份": "Leer lassen, um die Anmeldung zu überspringen",
     "path_ph": "Pfad eingeben (leer für Stammverzeichnis)",
     "src_dir_ph": "Oder Quellverzeichnisnamen eingeben",
-    "sftp_path_ph": "Ein führendes / bedeutet absoluten Serverpfad, sonst relativ zum Anmeldeverzeichnis"
+    "sftp_path_ph": "Ein führendes / bedeutet absoluten Serverpfad, sonst relativ zum Anmeldeverzeichnis",
+  "ro": "Berechtigung",
+  "读写": "Lesen-Schreiben"
 }

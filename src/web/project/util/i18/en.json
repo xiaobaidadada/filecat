@@ -1391,5 +1391,7 @@
   "留空则不验证身份": "Leave empty to skip authentication",
     "path_ph": "Enter path (leave empty for root)",
     "src_dir_ph": "Or type the source directory name",
-    "sftp_path_ph": "A leading / means an absolute server path, otherwise relative to the login directory"
+    "sftp_path_ph": "A leading / means an absolute server path, otherwise relative to the login directory",
+  "ro": "Permission",
+  "读写": "Read-write"
 }

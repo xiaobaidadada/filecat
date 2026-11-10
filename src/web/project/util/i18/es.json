@@ -1387,5 +1387,7 @@
   "留空则不验证身份": "Dejar vacío para omitir la autenticación",
     "path_ph": "Introduce la ruta (vacío para la raíz)",
     "src_dir_ph": "O escribe el nombre del directorio origen",
-    "sftp_path_ph": "Una / inicial indica una ruta absoluta en el servidor, si no es relativa al directorio de acceso"
+    "sftp_path_ph": "Una / inicial indica una ruta absoluta en el servidor, si no es relativa al directorio de acceso",
+  "ro": "Permiso",
+  "读写": "Lectura-escritura"
 }
