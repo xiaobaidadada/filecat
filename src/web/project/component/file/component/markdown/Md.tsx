@@ -14,9 +14,12 @@ import {is_mind_lang, prepare_mind} from "../md_editor/mind_graph";
 import {install_math, render_math_blocks} from "../md_editor/md_math";
 import {encode_html} from "../md_editor/md_html";
 import i18n from "../../../../util/in18resource";
+import {useAtom} from "jotai";
+import {$stroe} from "../../../../util/store";
+import {is_dark_theme} from "../../../../../../common/req/user.req";
 
 import hljs from 'highlight.js'
-import 'highlight.js/styles/github-dark.css' // 使用GitHub暗色主题
+import '../../../../../meta/resources/css/hljs_theme.css'; // 亮/暗两套高亮配色，按主题切换
 // 自定义 markdown-it 插件来为代码块添加复制按钮
 const markdownItCopyButton = (md) => {
     const defaultRender = md.renderer.rules.fence || function (tokens, idx, options, env, self) {
@@ -182,6 +185,8 @@ function language_of(code: HTMLElement): string {
 
 export default function Md(props: {context: string}) {
     const ref = useRef<HTMLDivElement>(null);
+    const [user_base_info] = useAtom($stroe.user_base_info);
+    const theme = user_base_info?.user_data?.theme;
     using_add_md__copy_button();
     // 不用 dangerouslySetInnerHTML：React 每次重渲染都会重设 innerHTML，
     // 会把 render_graph_blocks 替换出来的图形冲掉（而 context 没变时 effect 不会重跑）。
@@ -194,5 +199,7 @@ export default function Md(props: {context: string}) {
         render_graph_blocks(ref.current);
         render_math_blocks(ref.current);
     }, [props.context]);
-    return <div ref={ref}/>;
+    // 代码高亮配色跟随主题：暗色主题用 github-dark，其余用 github 亮色
+    const hl_cls = is_dark_theme(theme) ? "code-hl-dark" : "code-hl-light";
+    return <div ref={ref} className={hl_cls}/>;
 }

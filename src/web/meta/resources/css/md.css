@@ -36,24 +36,24 @@
 
 .code-block-with-copy {
     position: relative;
-    background: #1e1e1e;
+    background: var(--surfaceSecondary);
+    border: 1px solid var(--divider);
     border-radius: 8px;
     margin: 16px 0;
     overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .code-block-with-copy .code-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: #2d2d2d;
+    background: var(--surfacePrimary);
     padding: 8px 16px;
-    border-bottom: 1px solid #3d3d3d;
+    border-bottom: 1px solid var(--divider);
 }
 
 .code-block-with-copy .code-language {
-    color: #e6e6e6;
+    color: var(--textSecondary);
     font-size: 12px;
     font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
     text-transform: uppercase;
@@ -62,19 +62,18 @@
 
 .code-block-with-copy .copy-btn {
     padding: 4px 8px;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: transparent;
+    border: 1px solid var(--divider);
     border-radius: 4px;
     font-size: 11px;
-    color: #e6e6e6;
+    color: var(--textPrimary);
     cursor: pointer;
     transition: all 0.2s ease;
     backdrop-filter: blur(4px);
 }
 
 .code-block-with-copy .copy-btn:hover {
-    background: rgba(255, 255, 255, 0.2);
-    border-color: rgba(255, 255, 255, 0.3);
+    background: var(--primary-light);
 }
 
 .code-block-with-copy pre {
@@ -90,7 +89,7 @@
     line-height: 1.6;
     background: transparent;
     padding: 0;
-    color: #e6e6e6;
+    color: var(--textPrimary);
 }
 
 /* 自定义代码块样式 */
@@ -98,8 +97,8 @@
     margin: 1em 0;
     border-radius: 8px;
     overflow: hidden;
-    border: 1px solid #3d3d3d;
-    background: #1e1e1e;
+    border: 1px solid var(--divider);
+    background: var(--surfaceSecondary);
 }
 
 .custom-code-block pre {

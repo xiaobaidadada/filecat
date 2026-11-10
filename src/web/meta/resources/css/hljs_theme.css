@@ -1,0 +1,178 @@
+/*
+ * highlight.js 配色：亮色与暗色两套同时打进产物，靠外层 div 的 class 切换。
+ * 静态 import 的 CSS 不能按主题动态换文件，两套配色都加作用域前缀，互不干扰。
+ */
+
+/* ===== 亮色（GitHub Light）===== */
+.code-hl-light pre code.hljs {
+  display: block;
+  overflow-x: auto;
+  padding: 1em
+}
+.code-hl-light code.hljs {
+  padding: 3px 5px
+}
+.code-hl-light .hljs {
+  color: #24292e;
+  background: transparent
+}
+.code-hl-light .hljs-doctag,
+.code-hl-light .hljs-keyword,
+.code-hl-light .hljs-meta .hljs-keyword,
+.code-hl-light .hljs-template-tag,
+.code-hl-light .hljs-template-variable,
+.code-hl-light .hljs-type,
+.code-hl-light .hljs-variable.language_ {
+  color: #d73a49
+}
+.code-hl-light .hljs-title,
+.code-hl-light .hljs-title.class_,
+.code-hl-light .hljs-title.class_.inherited__,
+.code-hl-light .hljs-title.function_ {
+  color: #6f42c1
+}
+.code-hl-light .hljs-attr,
+.code-hl-light .hljs-attribute,
+.code-hl-light .hljs-literal,
+.code-hl-light .hljs-meta,
+.code-hl-light .hljs-number,
+.code-hl-light .hljs-operator,
+.code-hl-light .hljs-variable,
+.code-hl-light .hljs-selector-attr,
+.code-hl-light .hljs-selector-class,
+.code-hl-light .hljs-selector-id {
+  color: #005cc5
+}
+.code-hl-light .hljs-regexp,
+.code-hl-light .hljs-string,
+.code-hl-light .hljs-meta .hljs-string {
+  color: #032f62
+}
+.code-hl-light .hljs-built_in,
+.code-hl-light .hljs-symbol {
+  color: #e36209
+}
+.code-hl-light .hljs-comment,
+.code-hl-light .hljs-code,
+.code-hl-light .hljs-formula {
+  color: #6a737d
+}
+.code-hl-light .hljs-name,
+.code-hl-light .hljs-quote,
+.code-hl-light .hljs-selector-tag,
+.code-hl-light .hljs-selector-pseudo {
+  color: #22863a
+}
+.code-hl-light .hljs-subst {
+  color: #24292e
+}
+.code-hl-light .hljs-section {
+  color: #005cc5;
+  font-weight: bold
+}
+.code-hl-light .hljs-bullet {
+  color: #735c0f
+}
+.code-hl-light .hljs-emphasis {
+  color: #24292e;
+  font-style: italic
+}
+.code-hl-light .hljs-strong {
+  color: #24292e;
+  font-weight: bold
+}
+.code-hl-light .hljs-addition {
+  color: #22863a;
+  background-color: #f0fff4
+}
+.code-hl-light .hljs-deletion {
+  color: #b31d28;
+  background-color: #ffeef0
+}
+
+/* ===== 暗色（GitHub Dark）===== */
+.code-hl-dark pre code.hljs {
+  display: block;
+  overflow-x: auto;
+  padding: 1em
+}
+.code-hl-dark code.hljs {
+  padding: 3px 5px
+}
+.code-hl-dark .hljs {
+  color: #c9d1d9;
+  background: transparent
+}
+.code-hl-dark .hljs-doctag,
+.code-hl-dark .hljs-keyword,
+.code-hl-dark .hljs-meta .hljs-keyword,
+.code-hl-dark .hljs-template-tag,
+.code-hl-dark .hljs-template-variable,
+.code-hl-dark .hljs-type,
+.code-hl-dark .hljs-variable.language_ {
+  color: #ff7b72
+}
+.code-hl-dark .hljs-title,
+.code-hl-dark .hljs-title.class_,
+.code-hl-dark .hljs-title.class_.inherited__,
+.code-hl-dark .hljs-title.function_ {
+  color: #d2a8ff
+}
+.code-hl-dark .hljs-attr,
+.code-hl-dark .hljs-attribute,
+.code-hl-dark .hljs-literal,
+.code-hl-dark .hljs-meta,
+.code-hl-dark .hljs-number,
+.code-hl-dark .hljs-operator,
+.code-hl-dark .hljs-variable,
+.code-hl-dark .hljs-selector-attr,
+.code-hl-dark .hljs-selector-class,
+.code-hl-dark .hljs-selector-id {
+  color: #79c0ff
+}
+.code-hl-dark .hljs-regexp,
+.code-hl-dark .hljs-string,
+.code-hl-dark .hljs-meta .hljs-string {
+  color: #a5d6ff
+}
+.code-hl-dark .hljs-built_in,
+.code-hl-dark .hljs-symbol {
+  color: #ffa657
+}
+.code-hl-dark .hljs-comment,
+.code-hl-dark .hljs-code,
+.code-hl-dark .hljs-formula {
+  color: #8b949e
+}
+.code-hl-dark .hljs-name,
+.code-hl-dark .hljs-quote,
+.code-hl-dark .hljs-selector-tag,
+.code-hl-dark .hljs-selector-pseudo {
+  color: #7ee787
+}
+.code-hl-dark .hljs-subst {
+  color: #c9d1d9
+}
+.code-hl-dark .hljs-section {
+  color: #1f6feb;
+  font-weight: bold
+}
+.code-hl-dark .hljs-bullet {
+  color: #f2cc60
+}
+.code-hl-dark .hljs-emphasis {
+  color: #c9d1d9;
+  font-style: italic
+}
+.code-hl-dark .hljs-strong {
+  color: #c9d1d9;
+  font-weight: bold
+}
+.code-hl-dark .hljs-addition {
+  color: #aff5b4;
+  background-color: #033a16
+}
+.code-hl-dark .hljs-deletion {
+  color: #ffdcd7;
+  background-color: #67060c
+}

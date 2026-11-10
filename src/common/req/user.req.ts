@@ -156,6 +156,19 @@ export const themes_list = [
     {title:"google dark",value:"google-dark"}
 ];
 
+/** 内置主题里哪些属于暗色，用于代码高亮等需要跟随明暗的配色 */
+const dark_theme_values = new Set(["dark", "google-dark"]);
+
+/**
+ * 主题是否是暗色。插件主题由用户自己写样式，无法判断明暗，一律按亮色处理。
+ */
+export function is_dark_theme(theme: string | undefined | null): boolean {
+    if (!theme) {
+        return false;
+    }
+    return dark_theme_values.has(theme);
+}
+
 export enum user_file_time_show_type {
     current = "current",
     time="time",
