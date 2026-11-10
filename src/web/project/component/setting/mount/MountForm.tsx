@@ -136,7 +136,7 @@ export default function MountForm(props: Props) {
                               value={value.root_dir} onChange={(v) => onChange({...value, root_dir: v})}/>
         </InputRow>}
         <InputRow label={t("备注")} label_width={"6rem"}>
-            <InputText placeholder={t("列表显示的名称")} value={value.note}
+            <InputText value={value.note}
                        handleInputChange={(v) => onChange({...value, note: v})}/>
         </InputRow>
         <InputRow label={t("标识色")} label_width={"6rem"}>

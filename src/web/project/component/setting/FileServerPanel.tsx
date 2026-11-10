@@ -311,7 +311,7 @@ export default function FileServerPanel() {
                                    handleInputChange={(v) => set_port(Number(v) || 0)}/>
                     </InputRow>
                     <InputRow label={t("备注")} label_width={"7rem"}>
-                        <InputText placeholder={t("列表显示的名称")} value={note}
+                        <InputText  value={note}
                                    handleInputChange={set_note}/>
                     </InputRow>
                     <InputRow label={t("只读")} label_width={"7rem"}>
