@@ -91,6 +91,7 @@ export default function FileList() {
     const [workflow_show, set_workflow_show] = useAtom($stroe.workflow_show);
     const [workflow_realtime_show, set_workflow_realtime_show] = useAtom($stroe.workflow_realtime_show);
     const [workflow_show_click, set_workflow_show_click] = useAtom($stroe.work_flow_show);
+    const [have_act_file,set_have_act_file] = useState<boolean>(false)
 
     const {initUserInfo} = useContext(GlobalContext);
     const [user_base_info, setUser_base_info] = useAtom($stroe.user_base_info);
@@ -151,6 +152,9 @@ export default function FileList() {
         // 用 store 直读而不是闭包里的 mount_info，避免拿到上一次渲染的旧挂载
         const mount = getDefaultStore().get($stroe.current_mount);
         p.dir_path = to_remote_dir_path(getRouterAfter('file', getRouterPath()), mount);
+        // 每次切换目录都会重新订阅，addMsg 是追加监听器，不先移除会导致
+        // 一次推送触发 N 个回调，弹出 N 条重复提示
+        ws.removeMsg(CmdType.workflow_realtime);
         ws.addMsg(CmdType.workflow_realtime, (data) => {
             // console.log(data.context)
             const pojo = data.context as WorkFlowRealTimeRsq;
@@ -176,9 +180,9 @@ export default function FileList() {
             } else {
                 item.show_mtime = item.mtime ? getShortTime(item.mtime) : "";
             }
-            // if (!have_workflow_water && (item.name.endsWith('.workflow.yml') || item.name.endsWith('.act'))) {
-            //     have_workflow_water = true;
-            // }
+            if (!have_workflow_water && (item.name.endsWith('.workflow.yml') || item.name.endsWith('.act'))) {
+                set_have_act_file(true)
+            }
             if (item.name === workflow_dir_name) {
                 have_workflow_water = true;
             }
@@ -211,11 +215,10 @@ export default function FileList() {
      * 所以要等两边都就绪（workflow_show_click 由 file_after 置位）后再发。
      */
     useEffect(() => {
-        if (!workflow_show_click) {
-            return;
+        if (have_act_file) {
+            workflow_watcher();
         }
-        workflow_watcher();
-    }, [workflow_show_click, mount_info, location]);
+    }, [workflow_show_click,have_act_file, mount_info, location]);
     /** 关闭所有编辑器/预览器：url 切走或后退时，已打开的覆盖层必须收掉，否则会盖住文件列表 */    const close_all_editors = () => {
         setEditorSetting({open: false});
         setFilePreview({open: false});

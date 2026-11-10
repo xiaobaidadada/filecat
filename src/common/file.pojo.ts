@@ -112,6 +112,8 @@ export interface dir_mount_info {
     forward_client_num_id: number | null;
     /** 挂载的起始目录（对端视角），用于把本机 URL 路径换算成对端真实路径 */
     root_dir: string;
+    /** 驱动名（用于终端提示） */
+    driver_name: string;
     path_resolution: PathResolution;
 }
 

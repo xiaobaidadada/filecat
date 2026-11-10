@@ -122,6 +122,7 @@
   "port": "Port",
   "host": "Host",
   "key": "Schlüssel",
+  "ssh_proxy_tip": "(bitte stattdessen Netzlaufwerk-Mount verwenden, diese Funktion wird künftig entfernt)",
   "代理": "Proxy",
   "浏览器": "Browser",
   "网络唤醒": "Wake-on-LAN",

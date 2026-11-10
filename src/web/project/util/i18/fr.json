@@ -121,6 +121,7 @@
   "port": "port",
   "host": "hôte",
   "key": "clé",
+  "ssh_proxy_tip": "(utilisez plutôt le montage de disque réseau, cette fonction sera supprimée à l'avenir)",
   "代理": "Proxy",
   "浏览器": "Navigateur",
   "网络唤醒": "Réveil réseau",

@@ -69,6 +69,10 @@ export enum CmdType {
     remote_shell_getting,
     remote_shell_cancel,
     remote_shell_cd,
+    // SSH 挂载目录下的终端：直接开一条 ssh2 shell 通道，不经过 pty
+    mount_ssh_shell_open,
+    mount_ssh_shell_send,
+    mount_ssh_shell_getting,
 
     // rdp
     infos,
@@ -202,6 +206,10 @@ export type ws_cmd_type_map = {
     [CmdType.remote_shell_getting]: [any, any]
     [CmdType.remote_shell_cancel]: [any, any]
     [CmdType.remote_shell_cd]: [any, any]
+
+    [CmdType.mount_ssh_shell_open]: [ShellInitPojo, any]
+    [CmdType.mount_ssh_shell_send]: [any, any]
+    [CmdType.mount_ssh_shell_getting]: [any, any]
 
     [CmdType.infos]: [any, any]
     [CmdType.connect]: [any, any]

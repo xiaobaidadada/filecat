@@ -22,6 +22,9 @@ import {useTranslation} from "react-i18next";
 import {MAX_SIZE_TXT} from "../../../../common/ValueUtil";
 import {getEditModelType} from "../../../../common/StringUtil";
 import {path_join} from "pty-shell/dist/path_util";
+import {isAbsolutePath} from "../../../../common/path_util.js";
+import {get_user_now_pwd} from "../../../../common/DataUtil";
+export {isAbsolutePath, get_user_now_pwd};
 import {routerConfig} from "../../../../common/RouterConfig";
 import {Http} from "../../util/http";
 import {saveTxtReq} from "../../../../common/req/file.req";
@@ -756,6 +759,7 @@ export function use_get_now_abs_path() {
  * 终端、workflow 这类能力依赖对端存在真实 shell：
  * - 本地目录：随时可用
  * - 内网穿透挂载（tcp_proxy）：只有开了「转发到对端」才可用，此时请求会走穿透隧道
+ * - SSH 挂载（sftp）：对端是可登录的主机，直接开一条 ssh shell
  * - 其它网盘挂载：对端没有 shell，一律不可用
  */
 export function use_file_capabilities() {
@@ -764,7 +768,9 @@ export function use_file_capabilities() {
     const driver: string = mount?.driver ?? "";
     // 只有开启了转发的内网穿透挂载，请求才会落到对端 FileCat 上
     const remote_exec = is_mount && driver === "tcp_proxy" && Boolean(mount?.forward_to_remote);
-    const can_terminal = !is_mount || remote_exec;
+    // SSH 挂载：终端直连对端主机的 ssh shell，不经过对端 FileCat
+    const ssh_shell = is_mount && driver === "sftp";
+    const can_terminal = !is_mount || remote_exec || ssh_shell;
     // Git 需要能落到真实磁盘目录：本地目录挂载可还原源路径，
     // 转发到对端的内网穿透挂载由对端执行，其余网盘没有本地实体
     const git_available = !is_mount || driver === "local" || remote_exec;
@@ -778,6 +784,8 @@ export function use_file_capabilities() {
         driver,
         /** 请求是否在对端执行 */
         remote_exec,
+        /** 终端走驱动自己的 ssh shell（SSH 挂载） */
+        ssh_shell,
         /** 能否打开终端 */
         can_terminal,
         /** 能否使用 Git 功能 */
@@ -820,17 +828,20 @@ export function to_remote_dir_path(full_path: string, mount?: any) {
     if (!remote || !mount_url_path) {
         return full_path;
     }
-    // full_path 与 url_path 都是 URL 编码态，直接在编码态下比较
-    const path_prefix = mount_url_path.replace(/\/+$/, "") + "/";
-    if (!full_path.startsWith(path_prefix)) {
+    // full_path 与 url_path 可能一个编码一个解码，统一解码后再比较前缀
+    const decode_safe = (s: string) => {
+        try {
+            return decodeURIComponent(s);
+        } catch {
+            return s;
+        }
+    };
+    const prefix = decode_safe(mount_url_path).replace(/\/+$/, "") + "/";
+    const decoded_full = decode_safe(full_path);
+    if (!decoded_full.startsWith(prefix)) {
         return full_path;
     }
-    let rest = full_path.slice(path_prefix.length);
-    try {
-        rest = decodeURIComponent(rest);
-    } catch {
-        // 非法编码串按原样使用
-    }
+    const rest = decoded_full.slice(prefix.length);
     // 挂载点不是对端根目录时，对端视角要在前面补上它自己的起始目录
     const root_dir = String(mount?.root_dir ?? "").trim().replace(/^\/+|\/+$/g, "");
     if (!root_dir) {

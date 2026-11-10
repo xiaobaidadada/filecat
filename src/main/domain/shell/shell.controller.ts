@@ -1,6 +1,7 @@
 import {msg} from "../../../common/frame/router";
 import {CmdType, WsData} from "../../../common/frame/WsData";
 import {shellServiceImpl} from "./shell.service";
+import {mountShellService} from "./mount_shell.service";
 import {ShellInitPojo} from "../../../common/req/ssh.pojo";
 import {userService} from "../user/user.service";
 import {Wss} from "../../../common/frame/ws.server";
@@ -13,6 +14,16 @@ export class ShellController {
     @msg(CmdType.shell_open)
     async open(data:WsData<ShellInitPojo>) {
         await shellServiceImpl.open(data);
+        return ""
+    }
+    @msg(CmdType.mount_ssh_shell_open)
+    async mountSshOpen(data: WsData<ShellInitPojo>) {
+        await mountShellService.open(data);
+        return ""
+    }
+    @msg(CmdType.mount_ssh_shell_send)
+    async mountSshSend(data: WsData<ShellInitPojo>) {
+        mountShellService.send(data);
         return ""
     }
     @msg(CmdType.shell_send)

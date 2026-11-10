@@ -118,6 +118,29 @@ export interface FileDriver {
      * 只有本地目录挂载能给出（见 local_driver），其余返回 null。
      */
     local_real_path?(inner: string): string | null;
+
+    /**
+     * 可选：在远端开一个交互式 shell。
+     * 只有「远端本身就是一台可登录的主机」的驱动才实现（目前是 SFTP）；
+     * 未实现表示该挂载不能开终端。
+     */
+    open_shell?(inner: string, rows: number, cols: number): Promise<MountShell>;
+}
+
+/**
+ * 驱动提供的远端交互式 shell，语义对齐 pty：
+ *  - on_data 收到的是远端原始终端字节，直接写给前端 xterm
+ *  - write 写的是前端键入的原始按键
+ */
+export interface MountShell {
+    /** 注册输出回调 */
+    on_data(cb: (data: string) => void): void;
+    /** 写入用户输入 */
+    write(data: string): void;
+    /** 终端尺寸变化 */
+    set_window(rows: number, cols: number): void;
+    /** 关闭会话（只关这一条 shell，不断开驱动的底层连接） */
+    close(): void;
 }
 
 /**

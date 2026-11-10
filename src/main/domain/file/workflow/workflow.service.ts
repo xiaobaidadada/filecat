@@ -599,8 +599,8 @@ export class WorkflowService {
             this.online_change_push();
             work_exec_map.delete(file_path);
         }).catch(e => {
-            this.online_change_push();
             worker.running_type = running_type.fail;
+            this.online_change_push();
             console.log('任务执行失败', e)
             work_exec_map.delete(file_path);
             worker.close();

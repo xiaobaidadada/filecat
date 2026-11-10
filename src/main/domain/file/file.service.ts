@@ -194,10 +194,11 @@ export class FileService  {
             return null;
         }
         const inner = trim_slashes(info.path_resolution.inner_path);
-        const full = trim_slashes(param_path);
-        info.url_path = full.endsWith(inner)
-            ? full.slice(0, -inner.length).replace(/\/+$/, "")
-            : "";
+        // param_path 是 URL 编码的，inner_path 是解码的，两者字符数对不上，
+        // 所以按路径段剥掉挂载内的层级，剩下的才是挂载点在 URL 空间里的前缀
+        const inner_seg_count = inner.split("/").filter(Boolean).length;
+        const full_segs = trim_slashes(param_path).split("/").filter(Boolean);
+        info.url_path = full_segs.slice(0, Math.max(0, full_segs.length - inner_seg_count)).join("/");
         return info;
     }
 

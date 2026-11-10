@@ -115,6 +115,7 @@
   "port": "port",
   "host": "host",
   "key": "key",
+  "ssh_proxy_tip": "(use network disk mount instead, this feature will be removed in the future)",
   "代理": "Proxy",
   "浏览器": "Browser",
   "网络唤醒": "Wake-on-LAN",

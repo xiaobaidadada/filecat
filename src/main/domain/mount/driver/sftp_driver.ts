@@ -1,5 +1,5 @@
 import {Readable} from "stream";
-import {FileDriver, DriverCaps, MountDriverType} from "./file_driver";
+import {FileDriver, DriverCaps, MountDriverType, MountShell} from "./file_driver";
 import {FileItemData} from "../../../../common/file.pojo";
 import {getFileFormat} from "../../../../common/FileMenuType";
 import {driver_item_to_file_item, norm_mount_path, mount_join} from "./file_driver_type";
@@ -391,6 +391,49 @@ export class SftpDriver implements FileDriver {
         return null;
     }
 
+    /**
+     * 在远端开会话式 shell。
+     * 复用已建立的 SSH 连接（不含 SFTP 通道），只多开一条 shell 通道，
+     * 不会因为开终端而触发额外握手。
+     */
+    async open_shell(inner: string, rows: number, cols: number): Promise<MountShell> {
+        await this.get_sftp();
+        const client = this.client;
+        const cwd = this.abs(inner);
+        return new Promise<MountShell>((resolve, reject) => {
+            client.shell({term: "xterm-256color", rows, cols}, (err: any, stream: any) => {
+                if (err) {
+                    reject(err);
+                    return;
+                }
+                stream.write(`cd '${String(cwd).replace(/'/g, `'\\''`)}'\n`);
+                resolve({
+                    on_data(cb: (data: string) => void) {
+                        stream.on("data", (chunk: Buffer) => cb(chunk.toString()));
+                    },
+                    write(data: string) {
+                        if (!stream.writableEnded) {
+                            stream.write(data);
+                        }
+                    },
+                    set_window(r: number, c: number) {
+                        try {
+                            stream.setWindow(r, c);
+                        } catch (e) {
+                            // 通道已关闭时忽略
+                        }
+                    },
+                    close() {
+                        try {
+                            stream.end();
+                        } catch (e) {
+                            // ignore
+                        }
+                    },
+                });
+            });
+        });
+    }
     async quota(): Promise<{used: number; total: number} | null> {
         // SFTP 协议本身没有统一的容量查询，部分服务端支持 statvfs 扩展
         try {

@@ -69,3 +69,25 @@ body.rtl .menu .wrapper {
     font-size: 1em;
     vertical-align: middle;
 }
+
+/* Menu 选中项的提示小字，定位在菜单项正下方 */
+.menu .menu_tip {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-top: 1.45em;
+    font-size: .9em;
+    font-weight: 400;
+    line-height: 1.4;
+    color: var(--textSecondary, #5f6368);
+    opacity: .8;
+    white-space: nowrap;
+    pointer-events: none;
+}
+
+@media(max-width: 1200px) {
+    .menu .menu_tip {
+        display: none;
+    }
+}

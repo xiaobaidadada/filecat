@@ -143,7 +143,7 @@ export default function MountPanel() {
                 forward_to_remote: form.driver === "tcp_proxy" && Boolean(form.forward_to_remote),
             });
             NotySuccess(t("保存成功"));
-            close_form();
+            // close_form();
             await load();
         } catch (e) {
             // Http 层已提示

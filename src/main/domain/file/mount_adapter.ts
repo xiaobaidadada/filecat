@@ -93,6 +93,13 @@ export function current_mount_info(abs_path: string): dir_mount_info | null {
         const num = parseInt(String(raw ?? ""), 10);
         forward_client_num_id = isNaN(num) ? null : num;
     }
+    // 驱动名只用于前端提示文案；驱动可能因凭据停用等原因建不起来，取不到就退回类型名
+    let driver: FileDriver | null = null;
+    try {
+        driver = mountService.driver_of(m);
+    } catch (e) {
+        // ignore
+    }
 
     return {
         id: m.id,
@@ -108,6 +115,7 @@ export function current_mount_info(abs_path: string): dir_mount_info | null {
         forward_to_remote,
         forward_client_num_id,
         root_dir: String(m.root_dir ?? "").trim(),
+        driver_name: driver?.display_name ?? m.driver,
         path_resolution
     };
 }

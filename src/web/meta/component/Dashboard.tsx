@@ -10,6 +10,7 @@ export interface MenuOption {
     name: string;
     component: React.ComponentType<any> | React.ReactNode; // 支持直接传组件类或渲染好的 React 节点
     index?: number;
+    tip?: string; // 选中该项后在菜单下方显示的一行提示文字
 }
 
 export function Menu(props: { optionList: MenuOption[], father_route: string }) {
@@ -44,6 +45,9 @@ export function Menu(props: { optionList: MenuOption[], father_route: string }) 
                                     {({ isActive }) => (
                                         <li className={isActive || isDefaultActive ? "active" : ""}>
                                             {v.name}
+                                            {v.tip && (isActive || isDefaultActive) && (
+                                                <span className="menu_tip">{v.tip}</span>
+                                            )}
                                         </li>
                                     )}
                                 </NavLink>
