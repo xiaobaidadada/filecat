@@ -18,9 +18,8 @@ import {get_best_cmd} from "../../../common/path_util";
 import {FileUtil} from "../file/FileUtil";
 import {docker, SysDockerServiceImpl} from "../sys/sys.docker.service";
 import {get_bin_dependency} from "../bin/get_bin_dependency";
-import {filecat_cmd, ChildProcessUtil} from "../../../common/node/childProcessUtil";
+import {filecat_cmd} from "../../../common/node/childProcessUtil";
 import {DataUtil} from "../data/DataUtil";
-import {filecat_upgrade_class} from "./utils/filecat_upgrade";
 import {ai_agent_class} from "./utils/ai_agent";
 import {workflowService} from "../file/workflow/workflow.service";
 import {resolve_local_path} from "../file/mount_adapter";
@@ -174,14 +173,11 @@ export class ShellService {
     }
 
     add_handle_for_type_shell(pty_shell: PtyShell) {
-        pty_shell.add_cmd_handle(filecat_cmd.filecat_restart, async (params, send) => {
-            ChildProcessUtil.send_father(filecat_cmd.filecat_restart)
-        })
         pty_shell.add_cmd_handle(filecat_cmd.filecat_down, async (params, send) => {
-            ChildProcessUtil.send_father(filecat_cmd.filecat_down)
+            // 单进程运行，直接退出
+            process.exit(0)
         })
 
-        pty_shell.add_js_child(filecat_cmd.filecat_upgrade, filecat_upgrade_class)
         pty_shell.add_js_child(filecat_cmd.ai, ai_agent_class)
 
         // pty 内 workflow act 控制命令（启动/重启/停止/状态）
@@ -315,19 +311,6 @@ export class ShellService {
             cwd = pty_shell?.cwd ?? cwd
             // 特殊自定义命令
             switch (exe_cmd) {
-                case filecat_cmd.filecat_restart:
-                    // 重启filecat
-                    if (!this.check_permission({user_id, permission: UserAuth.shell_cmd_filecat_restart})) {
-                        return exec_type.not // 如果不是watch模式下，不允许执行
-                    } else {
-                        return exec_type.auto_child_process
-                    }
-                case    filecat_cmd.filecat_upgrade:
-                    if (!this.check_permission({ user_id, permission: UserAuth.shell_cmd_filecat_upgrade})) {
-                        return exec_type.not // 如果不是watch模式下，不允许执行
-                    } else {
-                        return exec_type.auto_child_process
-                    }
                 case    filecat_cmd.filecat_down:
                     if (!this.check_permission({ user_id, permission: UserAuth.shell_cmd_filecat_kill_self})) {
                         return exec_type.not // 如果不是watch模式下，不允许执行

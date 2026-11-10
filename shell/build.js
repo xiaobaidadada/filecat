@@ -9,12 +9,12 @@ const is_exe = args[0]==="exe"
 const is_npm = args[0]==="npm"
 if (args.length ===0 || is_npm) {
     serverConfig = require('./config/webpack.npm.config.js');
-    console.log('npm打包')
+    console.log('npm way')
 } else if (is_exe) {
-    console.log('二进制打包')
+    console.log('exe way')
     serverConfig = require('./config/webpack.exe.config.js');
 } else {
-    console.error('无法识别打包环境')
+    console.error('unknown way')
 }
 const {copyFileSync} = require("fs");
 const fs = require("fs");
@@ -46,20 +46,20 @@ function exec_sync(cmd) {
 const tasksLister = new Listr(
     [
         {
-            title:"清理build目录执行tsc",
+            title:"clean build and tsc",
             task:async ()=>{
                 fse.removeSync(path.join(__dirname, "..", "build"));
                 exec_sync("npx tsc")
             }
         },
         {
-            title:"编译plugin到build/plugin目录",
+            title:"compile plugin to build/plugin dir",
             task:async ()=>{
                 exec_sync("npx tsc -p tsconfig.plugin.json")
             }
         },
         {
-            title:"子线程构建",
+            title:"worker build",
             task:async ()=>{
                 return  Promise.all([new Promise((res, rej) => {
                     const config = {...serverConfig};
@@ -80,33 +80,14 @@ const tasksLister = new Listr(
             }
         },
         {
-            title: "构建 worker.js（业务线程）",
+            title: "server build",
             task: async () => {
                 return new Promise((res, rej) => {
-                    const worker_config = {...serverConfig};
-                    worker_config['entry'] = path.join(__dirname, "..", "build", "server", "main", "work_main.js")
-                    worker_config['output'] = {...worker_config['output']}
-                    worker_config['output']['filename'] = 'main_worker.js'
-                    webpack(worker_config, (err, stats) => {
-                        if (err || stats.hasErrors()) {
-                            console.error(err || stats.toString());
-                            rej(false);
-                            return;
-                        }
-                        res(true);
-                    });
-                })
-            },
-        },
-        {
-            title: "构建 main.js（守护进程）",
-            task: async () => {
-                return new Promise((res, rej) => {
-                    const main_config = {...serverConfig};
-                    main_config['entry'] = path.join(__dirname, "..", "build", "server", "main", "main.js")
-                    main_config['output'] = {...main_config['output']}
-                    main_config['output']['filename'] = 'main.js'
-                    webpack(main_config, (err, stats) => {
+                    const server_config = {...serverConfig};
+                    server_config['entry'] = path.join(__dirname, "..", "build", "server", "main", "main.js")
+                    server_config['output'] = {...server_config['output']}
+                    server_config['output']['filename'] = 'main.js'
+                    webpack(server_config, (err, stats) => {
                         if (err || stats.hasErrors()) {
                             console.error(err || stats.toString());
                             rej(false);
@@ -129,7 +110,7 @@ const tasksLister = new Listr(
             },
         },
         {
-            title: "构建web",
+            title: "web build",
             task: async () => {
                 return new Promise((res, rej) => {
                     webpack(config, (err, stats) => {
