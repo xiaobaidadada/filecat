@@ -1,11 +1,11 @@
-import React, {useEffect, useState} from "react";
+import React, {useEffect, useRef, useState} from "react";
 import {useTranslation} from "react-i18next";
 import {useAtom} from "jotai";
 import {$stroe} from "../../../util/store";
 import {Card, CardFull, TextTip} from "../../../../meta/component/Card";
 import {Column, Dashboard, Row} from "../../../../meta/component/Dashboard";
 import {ActionButton} from "../../../../meta/component/Button";
-import {InputRadio, InputRow, InputText, Select} from "../../../../meta/component/Input";
+import {InputRadio, InputRow, InputText, InputTextarea, Select} from "../../../../meta/component/Input";
 import {Table} from "../../../../meta/component/Table";
 import {InstanceItem} from "../../../../meta/component/InstanceList";
 import {mountHttp} from "../../../util/config";
@@ -508,6 +508,31 @@ export default function CredentialPanel() {
         }
     };
 
+    /** 备注输入后延迟落库，避免每敲一个字就发一次请求 */
+    const note_timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const save_baidu_note = (acc: MountAccountRow, note: string) => {
+        // 先更新本地显示，让输入框立刻响应，不必等请求回来
+        set_list(prev => prev.map(c => c.id === id
+            ? {...c, accounts: (c.accounts ?? []).map(a => a.id === acc.id ? {...a, note} : a)}
+            : c));
+        if (note_timer.current) {
+            clearTimeout(note_timer.current);
+        }
+        note_timer.current = setTimeout(async () => {
+            try {
+                // 走原有的账号保存接口，只改备注，账号名原样带回
+                await mountHttp.post("credential/account_save", {
+                    credential_id: id,
+                    account_id: acc.id,
+                    note,
+                    account_name: acc.account_name || acc.id,
+                });
+            } catch (e) {
+                // Http 层已提示
+            }
+        }, 500);
+    };
+
     /** 取消某个百度账号的授权（保留应用配置与凭据） */
     const deauthorize_account = (cred_id: string, acc: MountAccountRow) => {
         confirm_del({
@@ -526,7 +551,6 @@ export default function CredentialPanel() {
     };
 
     const type_name = (v: string) => metas.find(m => m.type === v)?.name ?? v;
-
     /** 是否分步类型（这些类型的字段需要先落库才能做后续动作） */
     const multi_step = (flow?.length ?? 1) > 1;
 
@@ -600,7 +624,8 @@ export default function CredentialPanel() {
                                                 onClick={() => deauthorize_account(id, acc)}/>
                               </>}>
                     <InputRow label={t("备注")} label_width={"6rem"}>
-                        <TextTip context={acc.note || "-"}/>
+                        <InputText placeholder={t("便于辨认的名字")} value={acc.note ?? ""}
+                                   handleInputChange={(v) => save_baidu_note(acc, v)}/>
                     </InputRow>
                     <InputRow label={t("百度账号")} label_width={"6rem"}>
                         <TextTip context={acc.account_name || acc.id}/>
@@ -725,13 +750,24 @@ export default function CredentialPanel() {
                                                   <ActionButton icon={"delete"} title={t("删除")}
                                                                 onClick={() => remove_account(index)}/>
                                               </>}>
+                                    <InputRow label={t("备注")} label_width={"7rem"}>
+                                        <InputText placeholder={t("便于辨认的名字")} value={acc.note ?? ""}
+                                                   handleInputChange={(v) => change_account(index, {note: v})}/>
+                                    </InputRow>
                                     {account_fields.map(f => (
                                         <InputRow key={f.key} label={t(f.label)} label_width={"7rem"}
                                                   required={f.required}>
-                                            <InputText type={f.type === "password" ? "password" : "text"}
-                                                       placeholder={f.placeholder ? t(f.placeholder) : ""}
-                                                       value={acc[f.key] ?? ""}
-                                                       handleInputChange={(v) => change_account(index, {[f.key]: v})}/>
+                                            {f.type === "textarea" ? (
+                                                <InputTextarea style={{width: "100%", height: "6rem"}}
+                                                               placeholder={f.placeholder ? t(f.placeholder) : ""}
+                                                               value={acc[f.key] ?? ""}
+                                                               handleInputChange={(v) => change_account(index, {[f.key]: v})}/>
+                                            ) : (
+                                                <InputText type={f.type === "password" ? "password" : "text"}
+                                                           placeholder={f.placeholder ? t(f.placeholder) : ""}
+                                                           value={acc[f.key] ?? ""}
+                                                           handleInputChange={(v) => change_account(index, {[f.key]: v})}/>
+                                            )}
                                         </InputRow>
                                     ))}
                                 </InstanceItem>

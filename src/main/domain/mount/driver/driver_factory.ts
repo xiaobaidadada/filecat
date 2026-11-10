@@ -84,7 +84,7 @@ function build_config(item: FileMountItem, cred: CredentialItem): DriverConfig {
                     port: cred.ssh_port,
                     username: account?.account_name ?? "",
                     password: account?.password,
-                    private_key: cred.ssh_private_key,
+                    private_key: account?.private_key,
                     root,
                 },
             };

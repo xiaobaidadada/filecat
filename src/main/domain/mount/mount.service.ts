@@ -367,7 +367,7 @@ export class MountService {
     }
 
     /**
-     * 新增/修改内网穿透凭据下的对端账号。
+     * 新增/修改凭据下的账号。
      * 有 account_id 表示修改（密码留空 = 不修改），否则新增。
      */
     async save_tcp_proxy_account(req: {
@@ -382,9 +382,6 @@ export class MountService {
         if (!cred) {
             throw new Error("凭据不存在");
         }
-        if (cred.type !== "tcp_proxy") {
-            throw new Error("该凭据不是内网穿透类型");
-        }
         const account_name = String(req.account_name ?? "").trim();
         if (!account_name) {
             throw new Error("请填写对端账号");
@@ -396,7 +393,7 @@ export class MountService {
         if (exist) {
             exist.note = req.note ?? exist.note;
             exist.account_name = account_name;
-            exist.password = req.password ?? "";
+            exist.password = req.password ?? exist.password ?? "";
             saved = exist;
         } else {
             saved = {

@@ -35,6 +35,8 @@ export interface MountAccount {
     account_name?: string;
     /** Login password (used by tcp_proxy; stored in plain text like other credentials) */
     password?: string;
+    /** SSH private key; when present it takes precedence over the password */
+    private_key?: string;
     /** S3 Secret Key (access_key is stored in account_name) */
     secret_key?: string;
     /** Display name (e.g. Baidu Netdisk nickname) */
@@ -136,7 +138,7 @@ export interface CredentialField {
     /** Field name on CredentialItem */
     key: string;
     label: string;
-    type: "text" | "password" | "switch";
+    type: "text" | "password" | "switch" | "textarea";
     required?: boolean;
     placeholder?: string;
     tip?: string;
@@ -199,13 +201,13 @@ export const CREDENTIAL_META_LIST: CredentialMeta[] = [
         fields: [
             {key: "ssh_host", label: "Host", type: "text", required: true},
             {key: "ssh_port", label: "Port", type: "text", placeholder: "Default 22"},
-            {key: "ssh_private_key", label: "Private key", type: "password", tip: "Either the key or the account password"},
         ],
         accounts: true,
         account_key: "account_name",
         account_fields: [
             {key: "account_name", label: "Username", type: "text", required: true},
             {key: "password", label: "Password", type: "password", tip: "Can be left empty when a private key is set"},
+            {key: "private_key", label: "Private key", type: "textarea", tip: "Takes precedence over the password when filled"},
         ],
     },
     {
