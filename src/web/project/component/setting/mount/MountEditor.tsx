@@ -13,7 +13,7 @@ import {
     account_options,
     need_account_of,
     DEFAULT_COLOR,
-    DriverMeta,
+    DRIVER_META_LIST,
 } from "./mount_common";
 
 interface Props {
@@ -35,7 +35,6 @@ interface Props {
 export default function MountEditor(props: Props) {
     const {t} = useTranslation();
     const show_tip = using_tip();
-    const [drivers, set_drivers] = useState<DriverMeta[]>([]);
     const [creds, set_creds] = useState<CredentialRow[]>([]);
     const [row, set_row] = useState<any>({
         driver: "webdav",
@@ -52,11 +51,7 @@ export default function MountEditor(props: Props) {
     useEffect(() => {
         (async () => {
             try {
-                const [d, c] = await Promise.all([
-                    mountHttp.post("driver/list", {}),
-                    mountHttp.post("credential/list", {}),
-                ]);
-                set_drivers(Array.isArray(d?.data) ? d.data : []);
+                const c = await mountHttp.post("credential/list", {});
                 set_creds(Array.isArray(c?.data) ? c.data : []);
             } catch (e) {
                 // Http 层已提示
@@ -87,7 +82,7 @@ export default function MountEditor(props: Props) {
     }, []);
 
     /** 当前驱动元信息 */
-    const meta = drivers.find(d => d.type === row.driver);
+    const meta = DRIVER_META_LIST.find(d => d.type === row.driver);
     /** 位置是「可远程列出」的形式（SMB 共享名、S3 存储桶 + 前缀） */
     const use_location_list = meta?.location === "share";
     /** 位置从凭据里的「名称 → 路径」映射中挑（本地目录） */
@@ -158,7 +153,7 @@ export default function MountEditor(props: Props) {
     return (<>
         <p>{props.mount_path}</p>
         <Select value={row.driver}
-                options={drivers.map(d => ({title: d.name, value: d.type}))}
+                options={DRIVER_META_LIST.map(d => ({title: d.name, value: d.type}))}
                 onChange={(v) => {
                     set_row({...row, driver: v, credential_id: "", account_id: "", root_dir: ""});
                 }}/>
@@ -196,7 +191,8 @@ export default function MountEditor(props: Props) {
                 value={row.root_dir ?? ""} onChange={(v) => set_row({...row, root_dir: v})}/>}
         <InputText placeholder={t("备注")} value={row.note}
                    handleInputChange={(v) => set_row({...row, note: v})}/>
-        <InputText placeholder={t("标识色，如 #4a9eff")} value={row.color}
+        {/* 标识色：InputText 内部已含色块 + 色值，不用再套容器 */}
+        <InputText type={"color"} value={row.color || DEFAULT_COLOR}
                    handleInputChange={(v) => set_row({...row, color: v})}/>
         <Select value={row.readonly}
                 options={[{title: t("只读"), value: true}, {title: "读写", value: false}]}

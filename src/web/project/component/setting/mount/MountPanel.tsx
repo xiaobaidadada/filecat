@@ -17,7 +17,7 @@ import {
     account_options,
     need_account_of,
     DEFAULT_COLOR,
-    DriverMeta,
+    DRIVER_META_LIST,
     MountRow,
 } from "./mount_common";
 
@@ -32,7 +32,6 @@ export default function MountPanel() {
     const confirm_del = using_confirm();
     const [list, set_list] = useState<MountRow[]>([]);
     const [creds, set_creds] = useState<CredentialRow[]>([]);
-    const [drivers, set_drivers] = useState<DriverMeta[]>([]);
 
     /**
      * 表单是否展开（新建或编辑中）。
@@ -53,14 +52,12 @@ export default function MountPanel() {
 
     const load = async () => {
         try {
-            const [m, c, d] = await Promise.all([
+            const [m, c] = await Promise.all([
                 mountHttp.post("list", {}),
                 mountHttp.post("credential/list", {}),
-                mountHttp.post("driver/list", {}),
             ]);
             set_list(Array.isArray(m?.data) ? m.data : []);
             set_creds(Array.isArray(c?.data) ? c.data : []);
-            set_drivers(Array.isArray(d?.data) ? d.data : []);
         } catch (e) {
             // Http 层已提示
         }
@@ -186,7 +183,7 @@ export default function MountPanel() {
         });
     };
 
-    const driver_name = (v: string) => drivers.find(d => d.type === v)?.name ?? v;
+    const driver_name = (v: string) => DRIVER_META_LIST.find(d => d.type === v)?.name ?? v;
 
     /** 路径字段按协议叫法命名，不要一律叫「起始目录」 */
     const dir_label = () => {
@@ -203,7 +200,7 @@ export default function MountPanel() {
     };
 
     /** 当前驱动的元信息 */
-    const driver_meta = drivers.find(d => d.type === driver);
+    const driver_meta = DRIVER_META_LIST.find(d => d.type === driver);
     /** 位置是「可远程列出」的形式（SMB 共享名、S3 存储桶 + 前缀） */
     const use_location_list = driver_meta?.location === "share";
     /** 位置从凭据里的「名称 → 路径」映射中挑（本地目录） */
@@ -252,7 +249,7 @@ export default function MountPanel() {
                       </div>}>
                 <InputRow label={t("挂载类型")} label_width={"6rem"}>
                     <Select value={driver}
-                            options={drivers.map(d => ({title: d.name, value: d.type}))}
+                            options={DRIVER_META_LIST.map(d => ({title: d.name, value: d.type}))}
                             onChange={(v) => {
                                 set_driver(v);
                                 // 换类型时清掉已选凭据（类型可能不匹配）和位置（语义不同）

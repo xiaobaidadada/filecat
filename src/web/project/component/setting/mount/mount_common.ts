@@ -155,6 +155,27 @@ export function mount_enable_options(t: (s: string) => string) {
     ];
 }
 
+/**
+ * 驱动元信息（「挂载类型」下拉用）。
+ *
+ * name 直接是英文，不走 i18n：这些都是品牌名和通用技术名词（WebDAV / SFTP / SMB / S3 等），
+ * 各语言下都保持原样，翻译反而是噪音。
+ * 位置字段形态各驱动不同：
+ *  · smb  —— 先选共享名，再可选共享内子路径
+ *  · s3   —— 先选存储桶，再可选 Key 前缀
+ *  · local —— 从凭据的目录映射里挑
+ *  · 其它 —— 一个远端起始目录
+ */
+export const DRIVER_META_LIST: DriverMeta[] = [
+    {type: "webdav", name: "WebDAV", has_root: true, location: "dir"},
+    {type: "sftp", name: "SSH / SFTP", has_root: true, location: "dir"},
+    {type: "smb", name: "SMB / Windows share", has_root: true, location: "share", location_label: "smb_share"},
+    {type: "s3", name: "S3 compatible storage", has_root: true, location: "share", location_label: "s3_bucket"},
+    {type: "baidu", name: "Baidu Netdisk", has_root: true, location: "dir"},
+    {type: "local", name: "Local directory", has_root: true, location: "local"},
+    {type: "tcp_proxy", name: "Tunneled FileCat", has_root: true, location: "dir"},
+];
+
 
 /** 时间戳 → yyyy-MM-dd HH:mm */
 export function fmt_time(ts?: number): string {

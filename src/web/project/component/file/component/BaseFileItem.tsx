@@ -85,6 +85,12 @@ export function BaseFileItem(props: FileItemData & {
         if(!selectList.find(v=>v===index))
         setSelectList([...selectList, index]);
     };
+    const style = {
+    "--filewidth": props.itemWidth ?? "33%"
+    }
+    if(props.mount_color) {
+        style["--mount-color"] = props.mount_color
+    }
     return (<div {...props.extraAttr} onClick={() => {
         click(props.index)
     }} className={props.mount ? "item mount-item" : "item"} role="button"
@@ -93,7 +99,7 @@ export function BaseFileItem(props: FileItemData & {
                  data-mount={props.mount ? "true" : undefined}
                  aria-selected={getByList(selectList, props.index) !== null}
                  aria-label={props.name}
-                 style={{"--filewidth": props.itemWidth ?? "33%"}}
+                 style={style}
                  onDragStart={(event) => handleDragStart(event, props.index)}
                  onDrop={(event) => handleronDrop(event, props.index)}
                  draggable = {props.draggable_handle !== undefined}

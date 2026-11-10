@@ -219,13 +219,6 @@ export class MountController {
         return Sucess(mountService.list_raw( ));
     }
 
-    /** 取所有可用驱动类型（前端「挂载类型」下拉用） */
-    @Post("/driver/list")
-    async driver_list(@Req() r) {
-        userService.have_user_auth(r.headers.authorization, UserAuth.file_mount);
-        return Sucess(mountService.driver_metas());
-    }
-
     /** 新增挂载 */
     @Post("/add")
     async add(@Body() body: MountSaveReq, @Req() r) {

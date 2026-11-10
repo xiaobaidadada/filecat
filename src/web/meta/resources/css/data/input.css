@@ -63,16 +63,28 @@
     /*borderRadius: 4px;*/
 }
 
-/* 颜色选择器：原生 input[type=color] 缩成一个小色块，点击弹系统调色板 */
+/* 颜色选择器：原生 input[type=color] 缩成一个小色块，点击弹系统调色板。
+   色块右侧由组件渲染 .input--color-value 显示色值，两者在组件内部就排成一行。 */
 .input--color {
     flex: 0 0 auto !important;
-    width: 1.6rem;
-    height: 1.6rem;
+    /* 基础 .input 有 min-width:100% 与 .input--block 的 width:100%，都会把色块撑满整行，
+       这里全部覆盖回固定小方块 */
+    width: 2.6rem !important;
+    min-width: 1.6rem !important;
+    height: 1.6rem !important;
     padding: 1px;
     border: 1px solid var(--borderPrimary, #dadce0);
     border-radius: 3px;
     background: none;
     cursor: pointer;
+}
+
+.input--color-value {
+    margin-left: 0.5rem;
+    font-size: 0.85em;
+    color: var(--textSecondary);
+    text-transform: lowercase;
+    white-space: nowrap;
 }
 
 .input--textarea {

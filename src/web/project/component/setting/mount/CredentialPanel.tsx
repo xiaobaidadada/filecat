@@ -383,9 +383,12 @@ export default function CredentialPanel() {
 
     /** 内网穿透：保存该行账号 */
     const save_tcp_account = async (acc: any) => {
-        if (!String(acc.account_name ?? "").trim()) {
-            NotyFail(t("请填写对端账号"));
-            return;
+        // 必填项与提示文案都以 CREDENTIAL_META_LIST 的 account_fields 为准
+        for (const f of account_fields) {
+            if (f.required && !String((acc as Record<string, any>)[f.key] ?? "").trim()) {
+                NotyFail(`${t("请填写")}${t(f.label)}`);
+                return;
+            }
         }
         try {
             const rsq = await mountHttp.post("credential/account_save", {
@@ -466,14 +469,14 @@ export default function CredentialPanel() {
                         <InputText placeholder={t("便于辨认的名字")} value={acc.note ?? ""}
                                    handleInputChange={(v) => change_account(index, {note: v})}/>
                     </InputRow>
-                    <InputRow label={t("对端账号")} label_width={"6rem"} required>
-                        <InputText placeholder={t("对端 FileCat 登录名")} value={acc.account_name ?? ""}
-                                   handleInputChange={(v) => change_account(index, {account_name: v})}/>
-                    </InputRow>
-                    <InputRow label={t("对端密码")} label_width={"6rem"}>
-                        <InputText type={"password"} value={acc.password ?? ""}
-                                   handleInputChange={(v) => change_account(index, {password: v})}/>
-                    </InputRow>
+                    {/* 文案以 CREDENTIAL_META_LIST 的 account_fields 为准 */}
+                    {account_fields.map(f => (
+                        <InputRow key={f.key} label={t(f.label)} label_width={"6rem"} required={f.required}>
+                            <InputText type={f.type === "password" ? "password" : "text"}
+                                       value={String((acc as Record<string, any>)[f.key] ?? "")}
+                                       handleInputChange={(v) => change_account(index, {[f.key]: v})}/>
+                        </InputRow>
+                    ))}
                 </InstanceItem>
             ))}
         </React.Fragment>;

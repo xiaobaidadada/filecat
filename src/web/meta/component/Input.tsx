@@ -202,11 +202,33 @@ function Input(props: {
                 )}
 
                 <div style={{position: "relative", flex: 1, display: "flex", alignItems: "center"}}>
+                    {props.type === "color" ? (
+                        /* 取色器：色块负责调起系统调色板，旁边的文字实时显示色值。
+                           组件内部就排好「色块 + 色值」，调用方不需要再套布局容器。 */
+                        <>
+                            <input
+                                className={css + " input--color"}
+                                type={"color"}
+                                disabled={!!props.disabled}
+                                value={value}
+                                ref={inputRef}
+                                onClick={(event) => event.stopPropagation()}
+                                onChange={(event) => {
+                                    const val = event.target.value;
+                                    setValue(val);
+                                    if (props.handleInputChange) {
+                                        props.handleInputChange(val, event.target);
+                                    }
+                                }}
+                            />
+                            <span className={"input--color-value"}>{value}</span>
+                        </>
+                    ) : (
                     <input
                         style={{flex: 1, minWidth: 0, paddingRight: isPassword ? "2.4em" : undefined}}
                         onClick={(event) => event.stopPropagation()}
                         disabled={!!props.disabled}
-                        className={css + (props.type === "color" ? " input--color" : "")}
+                        className={css}
                         type={isPassword && passwordVisible ? "text" : props.type}
                         placeholder={props.placeholder}
                         onChange={(event) => {
@@ -229,6 +251,7 @@ function Input(props: {
                         value={value}
                         ref={inputRef}
                     />
+                    )}
                     {isPassword && (
                         <i
                             className="material-icons input-password-toggle"

@@ -281,6 +281,12 @@ export const CREDENTIAL_META_LIST: CredentialMeta[] = [
                 tip: "Only needed when the remote FileCat has a base_url configured",
             },
         ],
+        accounts: true,
+        account_key: "account_name",
+        account_fields: [
+            {key: "account_name", label: "Username", type: "text", required: true},
+            {key: "password", label: "Password", type: "password"},
+        ],
     },
 ];
 

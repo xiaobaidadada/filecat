@@ -9,7 +9,6 @@ import {FileTypeEnum} from "../../../common/file.pojo";
 import {SmbDriver} from "./driver/smb_driver";
 import {S3Driver} from "./driver/s3_driver";
 import {LocalSource, validate_local_mount} from "./driver/local_driver";
-import {DRIVER_META_LIST, DriverMeta} from "./driver/file_driver_type";
 import {BaiduTokenStore,} from "./baidu/baidu_token";
 
 /**
@@ -431,11 +430,6 @@ export class MountService {
         this.set_credentials(list);
         // 账号被删，旧登录缓存作废
         clear_tcp_proxy_token(cred.tcp_client_num_id);
-    }
-
-    /** 驱动元信息（挂载类型下拉用） */
-    driver_metas(): DriverMeta[] {
-        return DRIVER_META_LIST;
     }
 
     /** 驱动类型 → 该类型需要选的凭据类型 */

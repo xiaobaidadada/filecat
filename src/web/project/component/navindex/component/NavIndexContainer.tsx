@@ -200,7 +200,7 @@ export function NavIndexContainer(props: {
                             }} placeholder={t("输入类目名")} no_border={true}/>
                             <InputText value={item.color} type={"color"} handleInputChange={(value) => {
                                 item.color = value;
-                            }} placeholder={"color"} no_border={true}/>
+                            }} no_border={true}/>
                         </React.Fragment>
                         :
                         (props.items.map((v, i) => (
