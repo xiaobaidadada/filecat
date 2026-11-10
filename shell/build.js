@@ -86,7 +86,7 @@ const tasksLister = new Listr(
                     const worker_config = {...serverConfig};
                     worker_config['entry'] = path.join(__dirname, "..", "build", "server", "main", "work_main.js")
                     worker_config['output'] = {...worker_config['output']}
-                    worker_config['output']['filename'] = 'main_work.js.js'
+                    worker_config['output']['filename'] = 'main_worker.js'
                     webpack(worker_config, (err, stats) => {
                         if (err || stats.hasErrors()) {
                             console.error(err || stats.toString());

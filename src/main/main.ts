@@ -138,7 +138,7 @@ async function start() {
     if (isDev) {
         entry = path.join(__dirname, "work_main.ts")
     } else {
-        entry = path.join(__dirname, "worker.js")
+        entry = path.join(__dirname, "main_worker.js")
     }
 
     /**
