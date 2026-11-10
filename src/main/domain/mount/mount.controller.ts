@@ -31,23 +31,8 @@ export interface MountSaveReq {
 /** 凭据保存请求体：除 id 外的凭据字段都是可选的，按类型填 */
 export type CredentialSaveReq = Partial<CredentialItem> & {id?: string};
 
-/** 取当前请求的用户 id（用于归属） */
-function current_user_id(r: any): string | undefined {
-    try {
-        return userService.get_user_info_by_token(r.headers.authorization)?.user_id;
-    } catch (e) {
-        return undefined;
-    }
-}
 
-/** 判断当前请求是否 root 账号 */
-function is_root_user(r: any): boolean {
-    try {
-        return Boolean(userService.get_user_info_by_token(r.headers.authorization)?.is_root);
-    } catch (e) {
-        return false;
-    }
-}
+
 
 /**
  * 目录挂载管理接口。
@@ -69,15 +54,8 @@ export class MountController {
     @Post("/credential/list")
     async credential_list(@Req() r) {
         userService.have_user_auth(r.headers.authorization, UserAuth.file_mount);
-        const list = mountService.list_credentials_for_user(current_user_id(r), is_root_user(r));
+        const list = mountService.list_credentials();
         return Sucess(list);
-    }
-
-    /** 取凭据类型元信息（供设置页渲染动态表单） */
-    @Post("/credential/meta")
-    async credential_meta(@Req() r) {
-        userService.have_user_auth(r.headers.authorization, UserAuth.file_mount);
-        return Sucess(mountService.credential_metas());
     }
 
     /** 新增凭据 */
@@ -93,7 +71,6 @@ export class MountController {
             note: body.note ?? "",
             accounts: mountService.normalize_accounts(body.accounts),
             enabled: body.enabled !== false,
-            user_id: current_user_id(r),
         } as Omit<CredentialItem, "id" | "created_at">);
         return Sucess(item);
     }
@@ -239,7 +216,7 @@ export class MountController {
     @Post("/list")
     async list(@Req() r) {
         userService.have_user_auth(r.headers.authorization, UserAuth.file_mount);
-        return Sucess(mountService.list_for_user(current_user_id(r), is_root_user(r), true));
+        return Sucess(mountService.list_raw( ));
     }
 
     /** 取所有可用驱动类型（前端「挂载类型」下拉用） */
@@ -264,7 +241,6 @@ export class MountController {
             color: body.color,
             enabled: body.enabled !== false,
             forward_to_remote: body.forward_to_remote === true,
-            user_id: current_user_id(r),
         });
         return Sucess(item);
     }
@@ -321,8 +297,8 @@ export class MountController {
 
     /**
      * 取授权链接。
-     * @param id 百度凭据 id（应用配置已保存在该凭据里）
-     * @param mode one_click=回调到 FileCat；oob=手动粘贴授权码
+     * @param body
+     * @param r
      */
     @Post("/baidu/authorize_url")
     async baidu_authorize_url(@Body() body: {id: string; mode: "one_click" | "oob"}, @Req() r) {
@@ -361,8 +337,8 @@ export class MountController {
 
     /**
      * 手动提交授权码（oob）。
-     * @param id 百度凭据 id
-     * @param mode 决定换 token 时用的回调地址
+     * @param body
+     * @param r
      */
     @Post("/baidu/exchange")
     async baidu_exchange(@Body() body: {id: string; code: string; mode: "one_click" | "oob"}, @Req() r) {

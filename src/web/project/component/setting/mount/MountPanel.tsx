@@ -220,11 +220,12 @@ export default function MountPanel() {
                           rightTopCom={<div className={"div-row"}>
                               <ActionButton icon={"add"} title={t("添加")} onClick={start_add}/>
                           </div>}>
-                    <Table headers={[t("备注"), t("挂载类型"), t("凭据"), t("账号"), t("操作")]}
-                           rows={list.map(item => {
+                    <Table headers={[t("编号"),t("备注"), t("挂载类型"), t("凭据"), t("账号"), t("操作")]}
+                           rows={list.map((item,index) => {
                                const cred = creds.find(c => c.id === item.credential_id);
                                const acc = (cred?.accounts ?? []).find(a => a.id === item.account_id);
                                return [
+                                   <span>{index}</span>,
                                    <TextTip context={item.note || "-"}/>,
                                    <p>{driver_name(item.driver)}</p>,
                                    <TextTip context={cred ? cred.note : t("凭据已丢失")}/>,

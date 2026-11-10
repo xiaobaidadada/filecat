@@ -11,7 +11,7 @@ import {InstanceItem} from "../../../../meta/component/InstanceList";
 import {mountHttp} from "../../../util/config";
 import {NotyFail, NotySuccess} from "../../../util/noty";
 import {using_confirm} from "../../prompts/prompt.util";
-import {CredentialField, CredentialMeta, CredentialRow, LocalSourceRow, MountAccountRow, fmt_time, mount_enable_options} from "./mount_common";
+import {CREDENTIAL_META_LIST, CredentialField, CredentialMeta, CredentialRow, LocalSourceRow, MountAccountRow, fmt_time, mount_enable_options} from "./mount_common";
 
 /** 新增凭据的默认类型 */
 const DEFAULT_TYPE = "webdav";
@@ -103,13 +103,10 @@ export default function CredentialPanel() {
 
     const load = async () => {
         try {
-            const [c, m] = await Promise.all([
-                mountHttp.post("credential/list", {}),
-                mountHttp.post("credential/meta", {}),
-            ]);
+            const c = await mountHttp.post("credential/list", {});
             const next_list = Array.isArray(c?.data) ? c.data : [];
             set_list(next_list);
-            setMetas(Array.isArray(m?.data) ? m.data : []);
+            setMetas(CREDENTIAL_META_LIST);
             return next_list;
         } catch (e) {
             // Http 层已提示
@@ -615,8 +612,9 @@ export default function CredentialPanel() {
                           rightTopCom={<div className={"div-row"}>
                               <ActionButton icon={"add"} title={t("添加")} onClick={start_add}/>
                           </div>}>
-                    <Table headers={[t("备注"), t("类型"), t("操作")]}
-                           rows={list.map(item => [
+                    <Table headers={[t("编号"),t("备注"), t("类型"), t("操作")]}
+                           rows={list.map((item,index) => [
+                               <span>{index}</span>,
                                <TextTip context={item.note || "-"}/>,
                                <TextTip context={type_name(item.type)}/>,
                                <div>

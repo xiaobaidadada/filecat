@@ -1,26 +1,16 @@
 import {DataUtil} from "../data/DataUtil";
 import {data_common_key} from "../data/data_type";
 import {FileMountItem, find_mount, MountMatch, relative_path} from "./mount.pojo";
-import {
-    CredentialItem,
-    CredentialMeta,
-    CredentialType,
-    CREDENTIAL_META_LIST,
-    DRIVER_CREDENTIAL_TYPE,
-    get_credential_meta,
-    MountAccount,
-} from "./credential.pojo";
-import {get_driver, dispose_driver, dispose_all_drivers, create_test_driver} from "./driver/driver_factory";
+import {CredentialItem, CredentialType, DRIVER_CREDENTIAL_TYPE, MountAccount,} from "./credential.pojo";
+import {create_test_driver, dispose_all_drivers, dispose_driver, get_driver} from "./driver/driver_factory";
 import {FileDriver, MountDriverType} from "./driver/file_driver";
 import {clear_tcp_proxy_token} from "./driver/tcp_proxy_driver";
 import {FileTypeEnum} from "../../../common/file.pojo";
 import {SmbDriver} from "./driver/smb_driver";
 import {S3Driver} from "./driver/s3_driver";
-import {LocalDriver, LocalSource, validate_local_mount} from "./driver/local_driver";
-import {DriverMeta, DRIVER_META_LIST} from "./driver/file_driver_type";
-import {
-    BaiduTokenStore,
-} from "./baidu/baidu_token";
+import {LocalSource, validate_local_mount} from "./driver/local_driver";
+import {DRIVER_META_LIST, DriverMeta} from "./driver/file_driver_type";
+import {BaiduTokenStore,} from "./baidu/baidu_token";
 
 /**
  * 挂载服务。
@@ -121,20 +111,6 @@ export class MountService {
         }
     }
 
-    /** 取指定用户可见的凭据；is_root 可看全部 */
-    list_credentials_for_user(user_id?: string, is_root?: boolean): CredentialItem[] {
-        const all = this.list_credentials();
-        if (is_root) {
-            return all;
-        }
-        return all.filter(v => !v.user_id || v.user_id === user_id);
-    }
-
-    /** 凭据类型元信息（供设置页渲染动态表单） */
-    credential_metas(): CredentialMeta[] {
-        return CREDENTIAL_META_LIST;
-    }
-
     // ==================== 挂载管理 ====================
 
     /**
@@ -183,15 +159,7 @@ export class MountService {
         return this.list_raw().find(v => v.id === id);
     }
 
-    /** 取指定用户可见的挂载记录；is_root 可看全部；raw 为 true 时不受总开关影响（设置页用） */
-    list_for_user(user_id?: string, is_root?: boolean, raw?: boolean): FileMountItem[] {
-        const all = raw ? this.list_raw() : this.list();
-        if (is_root) {
-            return all;
-        }
-        // 普通用户只能看到自己创建的挂载；未记录创建者的视为公共
-        return all.filter(v => !v.user_id || v.user_id === user_id);
-    }
+
 
     /** 新增挂载 */
     async add(item: Omit<FileMountItem, "id" | "created_at">): Promise<FileMountItem> {

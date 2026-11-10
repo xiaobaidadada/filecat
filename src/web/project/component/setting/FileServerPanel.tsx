@@ -275,7 +275,7 @@ export default function FileServerPanel() {
                               <ActionButton icon={"add"} title={t("添加")} onClick={start_add}/>
                           </div>}>
                     <Table headers={[t("状态"), t("备注"), t("协议"), t("端口"), t("共享"), t("操作")]}
-                           rows={list.map(item => [
+                           rows={list.map((item,index) => [
                                <Switch checked={item.running} title={t("启用")}
                                        onChange={(value) => set_enabled(item, value)}/>,
                                <TextTip>{item.note || "-"}</TextTip>,

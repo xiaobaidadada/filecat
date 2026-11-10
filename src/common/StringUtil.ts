@@ -337,3 +337,8 @@ export function get_error_str(e:any) {
     }
     return m;
 }
+
+export function trim_slashes(value?: string): string {
+    if(!value) return "";
+    return value.replace(/^\/+|\/+$/g, "");
+}

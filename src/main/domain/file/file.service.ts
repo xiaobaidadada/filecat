@@ -25,7 +25,7 @@ import {RCode} from "../../../common/Result.pojo";
 import {fileCompress, FileCompress} from "./file.compress";
 import {get_bin_dependency} from "../bin/get_bin_dependency";
 import {getFileFormat} from "../../../common/FileMenuType";
-import {formatDate, formatPermissions, removeTrailingPath} from "../../../common/StringUtil";
+import {formatDate, formatPermissions, removeTrailingPath, trim_slashes} from "../../../common/StringUtil";
 import si from "systeminformation";
 import multer from 'multer';
 import {Request, Response} from "express";
@@ -193,15 +193,11 @@ export class FileService  {
         if (!info) {
             return null;
         }
-        // 挂载点在 URL 空间的相对路径：当前 URL 路径去掉「挂载内子路径」的尾部
-        // 例：param_path=filecat/挂测/mnt/a/b/，inner_path=/a/b/ → url_path=filecat/挂测/mnt
-        const inner = info.path_resolution.inner_path.replace(/^\/+|\/+$/g, "");
-        const full = (param_path ?? "").replace(/^\/+|\/+$/g, "");
-        // param_path 是 URL 编码的，inner_path 是解码的，两者字符长度不可直接相减，
-        // 所以按「路径段」剥掉挂载内的层级，剩下的才是挂载点在 URL 空间里的前缀
-        const inner_seg_count = inner ? inner.split("/").filter(Boolean).length : 0;
-        const full_segs = full.split("/").filter(Boolean);
-        info.url_path = full_segs.slice(0, Math.max(0, full_segs.length - inner_seg_count)).join("/");
+        const inner = trim_slashes(info.path_resolution.inner_path);
+        const full = trim_slashes(param_path);
+        info.url_path = full.endsWith(inner)
+            ? full.slice(0, -inner.length).replace(/\/+$/, "")
+            : "";
         return info;
     }
 

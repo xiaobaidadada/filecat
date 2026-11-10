@@ -95,12 +95,11 @@ export interface PathResolution {
 export interface dir_mount_info {
     /** 挂载记录 id，前端据此打开编辑/取消挂载 */
     id: string;
-    /** 挂载备注 */
     note: string;
     driver: string;
     color: string;
     mount_path: string;
-    /** 挂载点相对用户根目录的路径，用于把本机 URL 路径换算成对端视角的相对路径 */
+    /** start path by dir of mount dir */
     url_path: string;
     readonly: boolean;
     /** 凭据备注（展示用） */

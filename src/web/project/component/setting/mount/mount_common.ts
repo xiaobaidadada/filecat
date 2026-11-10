@@ -1,5 +1,8 @@
 /** 挂载相关组件共用的类型与常量 */
 
+// 凭据类型与字段元信息前后端共用，定义在 src/common，这里转发出来供挂载组件使用
+export * from "../../../../../common/credential.pojo";
+
 /** 凭据下的子账号（百度网盘、内网穿透 FileCat 使用「一凭据多账号」） */
 export interface MountAccountRow {
     /** 账号唯一 id（百度用 uk，内网穿透用生成 id） */
@@ -60,27 +63,6 @@ export interface CredentialRow {
 export interface LocalSourceRow {
     name: string;
     path: string;
-}
-
-/** 凭据类型元信息 */
-/** 凭据字段描述（与后端 CredentialField 对应，供动态渲染表单） */
-export interface CredentialField {
-    key: string;
-    label: string;
-    type: "text" | "password" | "switch";
-    required?: boolean;
-    placeholder?: string;
-    tip?: string;
-    /** 开关类字段的默认值（未填写时生效） */
-    default?: boolean;
-    /** 字段取值来自动态选项（目前只有穿透客户端下拉），选项由后端返回 */
-    options_source?: "tcp_client";
-}
-
-export interface CredentialMeta {
-    type: string;
-    name: string;
-    fields: CredentialField[];
 }
 
 /** 挂载记录 */
