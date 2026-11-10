@@ -398,7 +398,7 @@ export async function start_main() {
             console.error(error?.message);
         }
         // 打印
-        console.log(`server running version: ${version},node version:${process.version}`);
+        console.log(`server running version: ${version},node version:${process.version} pid:${process.pid}`);
         console.log(`node work dir: ${process.cwd()}, filecat data dir: ${Env.work_dir}`)
         console.log(`node.exe place: ${process.execPath}, entry位置: ${__filename} __dirname:${__dirname}`);
         urls.forEach(url => {

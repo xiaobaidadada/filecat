@@ -91,9 +91,10 @@
   text-decoration: underline;
 }
 
-/* 树本身限高滚动，目录多时不把整个表单撑长 */
+/* 树本身限高滚动，目录多时不把整个表单撑长。
+   用视口比例而不是固定 rem，免得手机上固定 16rem 加上其他字段把弹窗顶出屏幕 */
 .rpp-tree {
-  max-height: 16rem;
+  max-height: min(16rem, 30vh);
   overflow: auto;
   border: 1px solid var(--borderPrimary);
   border-radius: 0.3rem;

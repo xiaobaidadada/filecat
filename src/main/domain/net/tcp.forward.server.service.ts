@@ -42,16 +42,15 @@ export class TcpForwardServerService {
 
     private global_socket_id = 1;
 
-    private sync_client_runtime_fields(target: tcp_proxy_server_client, source: tcp_forward_client_type) {
-        target.client_name = source.client_name ?? target.client_name;
-        if (source.client_remote_address != null) {
-            target.client_remote_address = source.client_remote_address;
+    private sync_client_runtime_fields(it: tcp_proxy_server_client, client: tcp_forward_client_type) {
+        if (client.client_remote_address != null) {
+            it.client_remote_address = client.client_remote_address
         }
-        if (source.online_start_time != null) {
-            target.online_start_time = source.online_start_time;
+        if (client.online_start_time != null) {
+            it.online_start_time = client.online_start_time
         }
-        if (source.offline_time != null) {
-            target.offline_time = source.offline_time;
+        if (client.offline_time != null) {
+            it.offline_time = client.offline_time
         }
     }
 
