@@ -86,7 +86,7 @@ const tasksLister = new Listr(
                     const worker_config = {...serverConfig};
                     worker_config['entry'] = path.join(__dirname, "..", "build", "server", "main", "work_main.js")
                     worker_config['output'] = {...worker_config['output']}
-                    worker_config['output']['filename'] = 'worker.js'
+                    worker_config['output']['filename'] = 'main_work.js.js'
                     webpack(worker_config, (err, stats) => {
                         if (err || stats.hasErrors()) {
                             console.error(err || stats.toString());
@@ -105,7 +105,7 @@ const tasksLister = new Listr(
                     const main_config = {...serverConfig};
                     main_config['entry'] = path.join(__dirname, "..", "build", "server", "main", "main.js")
                     main_config['output'] = {...main_config['output']}
-                    main_config['output']['filename'] = 'main_work.js'
+                    main_config['output']['filename'] = 'main.js'
                     webpack(main_config, (err, stats) => {
                         if (err || stats.hasErrors()) {
                             console.error(err || stats.toString());
