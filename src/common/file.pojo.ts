@@ -1,6 +1,7 @@
 // import {MaterialIcon} from "material-icons";
 import {dir_upload_max_num_item} from "./req/setting.req";
 import {MaterialIcon} from "material-icons";
+import {MountMatch} from "../main/domain/mount/mount.pojo";
 
 export enum FileTypeEnum {
     audio = "audio",
@@ -74,6 +75,45 @@ export interface FileInfoItemData {
 export interface GetFilePojo {
     files?: FileItemData[],
     folders?: FileItemData[],
+    mount_info?:dir_mount_info
+}
+
+/**
+ * 一次「路径解析」的结果。
+ * 命中挂载时 driver 非空，inner_path 是挂载点内相对路径；
+ * 未命中时 driver 为 null，real_path 是本地绝对路径。
+ */
+export interface PathResolution {
+    /** 挂载匹配信息；null 表示本地路径 */
+    match: MountMatch | null;
+    /** 本地绝对路径（本地场景直接用；挂载场景是「挂载点 + 相对路径」拼出来的，仅用于展示/日志） */
+    real_path: string;
+    /** 挂载点内相对路径；本地场景恒为 "/" */
+    inner_path: string;
+}
+
+export interface dir_mount_info {
+    /** 挂载记录 id，前端据此打开编辑/取消挂载 */
+    id: string;
+    /** 挂载备注 */
+    note: string;
+    driver: string;
+    color: string;
+    mount_path: string;
+    /** 挂载点相对用户根目录的路径，用于把本机 URL 路径换算成对端视角的相对路径 */
+    url_path: string;
+    readonly: boolean;
+    /** 凭据备注（展示用） */
+    credential_note: string;
+    /** 账号备注（仅百度等一凭据多账号的类型有；展示用，为空时回退账号名） */
+    account_note: string;
+    /** 转发到对端：该挂载目录下的请求在对端 FileCat 执行 */
+    forward_to_remote: boolean;
+    /** 转发目标穿透客户端 id；未开启转发或取不到时为 null */
+    forward_client_num_id: number | null;
+    /** 挂载的起始目录（对端视角），用于把本机 URL 路径换算成对端真实路径 */
+    root_dir: string;
+    path_resolution: PathResolution;
 }
 
 export class FileVideoFormatTransPojo {

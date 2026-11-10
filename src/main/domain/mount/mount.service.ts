@@ -276,6 +276,9 @@ export class MountService {
      * 命中返回匹配信息（含相对路径），未命中返回 null（表示按本地文件处理）。
      */
     resolve(abs_path: string): MountMatch | null {
+        if (!this.is_enabled()) {
+            return null;
+        }
         return find_mount(abs_path, this.list());
     }
 

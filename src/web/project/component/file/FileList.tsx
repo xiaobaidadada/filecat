@@ -20,7 +20,7 @@ import {
     user_click_file, use_get_now_abs_path, to_remote_dir_path, use_file_capabilities, use_ai_forward
 } from "./FileUtil";
 import {InputTextIcon} from "../../../meta/component/Input";
-import {FileTypeEnum, GetFilePojo} from "../../../../common/file.pojo";
+import {dir_mount_info, FileTypeEnum, GetFilePojo} from "../../../../common/file.pojo";
 import {NotyFail, NotySuccess} from "../../util/noty";
 import {useTranslation} from "react-i18next";
 import {GlobalContext} from "../../GlobalProvider";
@@ -80,7 +80,7 @@ export default function FileList() {
     /** 挂载变更信号：变化时重新拉取当前目录列表 */
     const [file_list_refresh] = useAtom($stroe.file_list_refresh);
     /** 网盘挂载总开关：关闭时不请求任何挂载相关信息 */
-    const [mount_enabled] = useAtom<boolean | null>($stroe.mount_enabled);
+    // const [mount_enabled] = useAtom<boolean | null>($stroe.mount_enabled);
     /** 当前目录所在挂载的提示信息；null 表示不在挂载目录里（放 store 里与 FileMenu 共享） */
     const [mount_info, setMountInfo] = useAtom($stroe.current_mount);
     const [showPrompt, setShowPrompt] = useAtom($stroe.showPrompt);
@@ -195,28 +195,14 @@ export default function FileList() {
         }
         set_workflow_show_click(have_workflow_water)
     }
-    /** 拉取当前目录所在挂载的信息，用于列表顶部提示；未挂载时清空 */
-    const mount_info_path_ref = React.useRef<string | null>(null);
-    const fetchMountInfo = async (param_path: string) => {
-        // 开关未加载或已关闭时，挂载全部按本地处理，无需请求
-        if (mount_enabled !== true) {
-            setMountInfo(null);
-            return;
-        }
-        // 同一目录并发去重：开关加载完成后 effect 会判断 mount_info 是否为空来补拉，
-        // 此时 fileHandler 的请求可能还没回来，用路径标记避免重复请求
-        if (mount_info_path_ref.current === param_path) {
-            return;
-        }
-        mount_info_path_ref.current = param_path;
-        try {
-            const rsp = await fileHttp.post("file/mount_info", {param_path});
-            setMountInfo(rsp?.data ?? null);
-            // 进入/离开「转发到对端」的挂载目录时 token 会变，重连让新 token 生效
-            await ws.connect();
-        } catch (e) {
-            setMountInfo(null);
-        }
+
+    /**
+     * 挂载信息随文件列表接口一起返回，不再单独请求 file/mount_info。
+     * 进入/离开「转发到对端」的挂载目录时 token 会变，需要重连让新 token 生效。
+     */
+    const apply_mount_info = async (info: dir_mount_info | undefined | null) => {
+        setMountInfo(info ?? null);
+        // await ws.connect();
     }
 
     /**
@@ -301,8 +287,6 @@ export default function FileList() {
         if (blankSearchMode || blank_search_mode_for_temp) {
             return;
         }
-        // 同步当前目录的挂载信息（用于列表顶部提示条），未挂载则为 null
-        fetchMountInfo(path);
         // 文件列表初始化界面
         let rsp
         if(user_base_info.user_data.file_list_pagination_mode === FileListPaginationModeEmum.pagination) {
@@ -328,6 +312,7 @@ export default function FileList() {
             if(rsp.code !== RCode.Success)return
             const pojo = rsp.data as GetFilePojo
             file_after(pojo)
+            apply_mount_info(pojo.mount_info)
             if(!pojo.files?.length) {
                 // 没有更多数据，标记到底，避免继续滚动加载
                 set_file_page({page_size: file_page.page_size,page_num: -1})
@@ -354,6 +339,7 @@ export default function FileList() {
         const data: GetFilePojo = rsp.data;
         file_sort(data, user_base_info.user_data.dir_show_type)
         file_after(rsp.data)
+        apply_mount_info(data.mount_info)
         setNowFileList(rsp.data)
         pre_search = rsp.data;
     }
@@ -395,26 +381,24 @@ export default function FileList() {
         }
     }, [file_list_refresh]);
 
-    // 总开关被切换时同步当前目录的挂载提示（关闭清空，开启重新拉取）
+    // 总开关监听：挂载信息随列表接口返回，这里只在关闭时清空提示
     const mount_toggled_ref = React.useRef(false);
-    useEffect(() => {
-        if (mount_enabled === null) {
-            return;
-        }
-        // 首次拿到状态：不算切换，但要确保首屏提示拉取到了（fileHandler 可能早于开关加载执行）
-        if (!mount_toggled_ref.current) {
-            mount_toggled_ref.current = true;
-            if (mount_enabled === true && mount_info === null) {
-                fetchMountInfo(getRouterAfter('file', getRouterPath()));
-            }
-            return;
-        }
-        if (mount_enabled === true) {
-            fetchMountInfo(getRouterAfter('file', getRouterPath()));
-        } else {
-            setMountInfo(null);
-        }
-    }, [mount_enabled]);
+    // useEffect(() => {
+    //     if (mount_enabled === null) {
+    //         return;
+    //     }
+    //     // 首次拿到状态不算切换：挂载信息已经随文件列表接口返回了
+    //     if (!mount_toggled_ref.current) {
+    //         mount_toggled_ref.current = true;
+    //         return;
+    //     }
+    //     if (mount_enabled === true) {
+    //         // 开关刚打开，列表里已有的挂载信息是后端按旧状态算的，重新拉一次
+    //         fileHandler();
+    //     } else {
+    //         setMountInfo(null);
+    //     }
+    // }, [mount_enabled]);
     // useEffect(() => {
     //     init()
     // }, [file_page]);

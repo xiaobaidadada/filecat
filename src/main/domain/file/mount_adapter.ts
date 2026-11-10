@@ -3,7 +3,7 @@ import {Readable} from "stream";
 import {mountService} from "../mount/mount.service";
 import {MountMatch} from "../mount/mount.pojo";
 import {FileDriver} from "../mount/driver/file_driver";
-import {FileItemData, FileTypeEnum} from "../../../common/file.pojo";
+import {dir_mount_info, FileItemData, FileTypeEnum, PathResolution} from "../../../common/file.pojo";
 import {norm_mount_path} from "../mount/driver/file_driver_type";
 
 /**
@@ -13,20 +13,6 @@ import {norm_mount_path} from "../mount/driver/file_driver_type";
  * 这样 file.service.ts 里 30 个方法都只需要在开头加一次判断，
  * 而不是到处写 if (是网盘) {...} else {...}。
  */
-
-/**
- * 一次「路径解析」的结果。
- * 命中挂载时 driver 非空，inner_path 是挂载点内相对路径；
- * 未命中时 driver 为 null，real_path 是本地绝对路径。
- */
-export interface PathResolution {
-    /** 挂载匹配信息；null 表示本地路径 */
-    match: MountMatch | null;
-    /** 本地绝对路径（本地场景直接用；挂载场景是「挂载点 + 相对路径」拼出来的，仅用于展示/日志） */
-    real_path: string;
-    /** 挂载点内相对路径；本地场景恒为 "/" */
-    inner_path: string;
-}
 
 /** 解析一个本地绝对路径，判断是否被挂载接管 */
 export function resolve_local_path(abs_path: string): PathResolution {
@@ -90,32 +76,12 @@ export function mounts_under(abs_dir: string): Map<string, {
  * 命中挂载（含挂载点自身及其子目录）时返回挂载的展示信息，用于前端顶部提示。
  * 提示条展示：凭据备注 - 驱动名/账号备注 - 挂载备注。
  */
-export function current_mount_info(abs_path: string): {
-    /** 挂载记录 id，前端据此打开编辑/取消挂载 */
-    id: string;
-    /** 挂载备注 */
-    note: string;
-    driver: string;
-    color: string;
-    mount_path: string;
-    /** 挂载点相对用户根目录的路径，用于把本机 URL 路径换算成对端视角的相对路径 */
-    url_path: string;
-    readonly: boolean;
-    /** 凭据备注（展示用） */
-    credential_note: string;
-    /** 账号备注（仅百度等一凭据多账号的类型有；展示用，为空时回退账号名） */
-    account_note: string;
-    /** 转发到对端：该挂载目录下的请求在对端 FileCat 执行 */
-    forward_to_remote: boolean;
-    /** 转发目标穿透客户端 id；未开启转发或取不到时为 null */
-    forward_client_num_id: number | null;
-    /** 挂载的起始目录（对端视角），用于把本机 URL 路径换算成对端真实路径 */
-    root_dir: string;
-} | null {
+export function current_mount_info(abs_path: string): dir_mount_info | null {
     const match = mountService.resolve(abs_path);
     if (!match) {
         return null;
     }
+    const path_resolution : PathResolution = {match, real_path: abs_path, inner_path: match.inner_path};
     const m = match.mount;
     // 凭据与账号备注属于展示信息，取不到时降级为空字符串，不影响挂载本身
     const cred = mountService.get_credential(m.credential_id);
@@ -127,6 +93,7 @@ export function current_mount_info(abs_path: string): {
         const num = parseInt(String(raw ?? ""), 10);
         forward_client_num_id = isNaN(num) ? null : num;
     }
+
     return {
         id: m.id,
         note: m.note ,
@@ -141,6 +108,7 @@ export function current_mount_info(abs_path: string): {
         forward_to_remote,
         forward_client_num_id,
         root_dir: String(m.root_dir ?? "").trim(),
+        path_resolution
     };
 }
 

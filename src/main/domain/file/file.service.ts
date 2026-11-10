@@ -6,7 +6,8 @@ import {
     FileTypeEnum,
     FileVideoFormatTransPojo,
     GetFilePojo,
-    LogViewerPojo
+    LogViewerPojo,
+    dir_mount_info, PathResolution
 } from "../../../common/file.pojo";
 // import {config} from "../../other/config";
 import fs, {Stats, WriteStream} from "fs";
@@ -75,7 +76,6 @@ function build_fg_ignore(base_path: string, exclude_names: string[] = [], exclud
 }
 
 import {
-    PathResolution,
     resolve_local_path,
     require_driver,
     assert_cap,
@@ -166,7 +166,7 @@ export class FileService  {
         };
     }
 
-    private resolveFilePath(token: string, param_path: string) {
+    public resolveFilePath(token: string, param_path: string) {
         let sysPath = decodeURIComponent(param_path);
         const root_path = settingService.getFileRootPath(token);
         if (!isAbsolutePath(sysPath)) {
@@ -180,22 +180,29 @@ export class FileService  {
      * 取当前目录所在挂载的信息（用于文件列表顶部提示）。
      * 未挂载时返回 null，前端不显示提示条。
      */
-    public async mount_info(token: string, param_path: string) {
-        const sysPath = this.resolveFilePath(token, param_path ?? "");
+    public async mount_info(sysPath: string,param_path:string) {
+        return this.build_mount_info(sysPath, param_path);
+    }
+
+    /**
+     * 取当前目录所在挂载的信息（用于文件列表顶部提示），未挂载或挂载总开关关闭时返回 null。
+     * 挂载总开关关闭时 mountService.resolve 拿不到 match，因此这里无需再单独判断开关。
+     */
+    private build_mount_info(sysPath: string, param_path: string): dir_mount_info | null {
         const info = current_mount_info(sysPath);
         if (!info) {
-            return Sucess(null);
+            return null;
         }
         // 挂载点在 URL 空间的相对路径：当前 URL 路径去掉「挂载内子路径」的尾部
         // 例：param_path=filecat/挂测/mnt/a/b/，inner_path=/a/b/ → url_path=filecat/挂测/mnt
-        const inner = resolve_local_path(sysPath).inner_path.replace(/^\/+|\/+$/g, "");
+        const inner = info.path_resolution.inner_path.replace(/^\/+|\/+$/g, "");
         const full = (param_path ?? "").replace(/^\/+|\/+$/g, "");
         // param_path 是 URL 编码的，inner_path 是解码的，两者字符长度不可直接相减，
         // 所以按「路径段」剥掉挂载内的层级，剩下的才是挂载点在 URL 空间里的前缀
         const inner_seg_count = inner ? inner.split("/").filter(Boolean).length : 0;
         const full_segs = full.split("/").filter(Boolean);
         info.url_path = full_segs.slice(0, Math.max(0, full_segs.length - inner_seg_count)).join("/");
-        return Sucess(info);
+        return info;
     }
 
     private normalizeSqliteValue(value: any): any {
@@ -371,6 +378,7 @@ export class FileService  {
                 })
             }
         }
+        result.mount_info = this.build_mount_info(sysPath, param_path);
         return Sucess(result);
     }
 
@@ -411,6 +419,7 @@ export class FileService  {
                 result.files?.push(base);
             }
         }
+        result.mount_info = this.build_mount_info(res.real_path, param_path);
         return Sucess(result);
     }
 
@@ -954,6 +963,7 @@ export class FileService  {
             }
             result.files.push(pojo)
         }
+        result.mount_info = this.build_mount_info(sysPath, param_path);
         return Sucess(result);
     }
 
@@ -996,6 +1006,7 @@ export class FileService  {
             }
             result.files.push(pojo);
         }
+        result.mount_info = this.build_mount_info(res.real_path, param_path);
         return Sucess(result);
     }
 

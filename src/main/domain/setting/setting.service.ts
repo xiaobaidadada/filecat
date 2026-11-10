@@ -315,20 +315,39 @@ export class SettingService {
         let index_text = await FileUtil.readFileSync(index_path);
         const web_site_title = this.get_sys_env().web_site_title;
         const logo_url = await this.get_logo_url();
+        // 站点访问前缀，模板的 <base href> 和 EXCALIDRAW_ASSET_PATH 都要用它
+        const base_url = await get_base();
         index_text = Mustache.render(index_text.toString(), {
             Windows_FileCat: JSON.stringify({
-                base_url: await get_base(),
+                base_url,
                 web_site_title,
                 logo_url
             }), // 给前端
             web_site_title,
+            base_url,
             // 浏览器标签页图标：配置了自定义 logo 就用它，否则回退到内置的 favicon 文件
             logo_favicon: logo_url || "favicon-32x32.png",
             // 全局默认主题：首屏直接渲染 link，避免等 JS 跑完才插导致闪一下。
             // light 是 base.css 里的默认样式，没有独立文件，所以不加 link。
             default_theme_css: `<link id="theme-css" rel="stylesheet" href="${DEFAULT_THEME}.css">`
         });
-        return index_text;
+        // 构建产物里的 script src 是构建时固化的根路径，这里按运行时 base_url 补前缀
+        return this.add_base_url_to_src(index_text.toString(), base_url);
+    }
+
+    /**
+     * 给 HTML 中 script 标签的 src="/xxx" 补上 base_url 前缀
+     * 构建时产物里的 script src 是固化的根路径，运行时前缀它拿不到
+     * 跳过协议相对地址 //host 与已带同一前缀的地址，base_url 为空时原样返回
+     */
+    private add_base_url_to_src(html: string, base_url: string) {
+        if (!base_url) {
+            return html;
+        }
+        // 只处理 script 标签，已带前缀的不重复添加，// 开头是协议相对地址不能动
+        const escaped = base_url.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const re = new RegExp(`(<script\\b[^>]*?\\ssrc=")/(?!\\/|${escaped.slice(1)}/)`, "g");
+        return html.replace(re, `$1${base_url}/`);
     }
 
 

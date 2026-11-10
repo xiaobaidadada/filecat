@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <base href="/">
+    <base href="{{{base_url}}}/">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{{web_site_title}}}</title>
@@ -22,6 +22,6 @@
       return {{{Windows_FileCat}}};
 </script>
 <script>
-    window.EXCALIDRAW_ASSET_PATH = "/";window.FileCat;
+    window.EXCALIDRAW_ASSET_PATH = "{{{base_url}}}/";window.FileCat;
 </script>
 </html>
