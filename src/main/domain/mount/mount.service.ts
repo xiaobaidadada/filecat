@@ -8,7 +8,7 @@ import {clear_tcp_proxy_token} from "./driver/tcp_proxy_driver";
 import {FileTypeEnum} from "../../../common/file.pojo";
 import {SmbDriver} from "./driver/smb_driver";
 import {S3Driver} from "./driver/s3_driver";
-import {LocalSource, validate_local_mount} from "./driver/local_driver";
+import {validate_local_mount} from "./driver/local_driver";
 import {BaiduTokenStore,} from "./baidu/baidu_token";
 
 /**
@@ -173,7 +173,7 @@ export class MountService {
             throw new Error(err);
         }
         // 本地目录驱动：校验源目录与挂载点，禁止同路径 / 祖孙嵌套（避免无限递归）
-        await this.check_local_mount_conflict(item.driver, item.credential_id, item.mount_path, item.root_dir);
+        await this.check_local_mount_conflict(item.driver, item.credential_id, item.account_id, item.mount_path);
         const full: FileMountItem = {
             ...item,
             id: `mnt_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
@@ -208,12 +208,12 @@ export class MountService {
             }
         }
         // 本地目录驱动：任意相关字段变化都要重新做冲突校验
-        if (patch.credential_id || patch.mount_path || patch.root_dir || patch.driver) {
+        if (patch.credential_id || patch.account_id || patch.mount_path || patch.driver) {
             await this.check_local_mount_conflict(
                 patch.driver ?? list[i].driver,
                 patch.credential_id ?? list[i].credential_id,
+                patch.account_id ?? list[i].account_id,
                 patch.mount_path ?? list[i].mount_path,
-                patch.root_dir ?? list[i].root_dir,
                 id,
             );
         }
@@ -307,33 +307,28 @@ export class MountService {
 
     /**
      * 本地目录挂载的冲突校验。
-     * 仅对 local 驱动生效：取凭据里的源目录，校验它与挂载点的关系。
+     * 仅对 local 驱动生效：取挂载选中账号的源目录，校验它与挂载点的关系。
      * 额外检查：源目录不能落在「其它已存在的挂载点内」，否则会形成挂载链环。
      */
     private async check_local_mount_conflict(
         driver: MountDriverType,
         credential_id: string,
+        account_id: string | undefined,
         mount_path: string,
-        root_dir?: string,
         exclude_id?: string,
     ): Promise<void> {
         if (driver !== MountDriverType.local) {
             return;
         }
-        // 本地目录没有认证信息：root_dir 是凭据里某个映射的名称
-        const source_name = String(root_dir ?? "").trim();
-        if (!source_name) {
-            throw new Error("本地目录挂载请选择源目录");
-        }
         const cred = this.get_credential(credential_id);
-        const sources: LocalSource[] = cred?.local_sources ?? [];
-        const hit = sources.find((s) => String(s?.name ?? "").trim() === source_name);
-        if (!hit) {
-            throw new Error(`该本地目录凭据里没有映射：${source_name}`);
+        const account = (cred?.accounts ?? []).find((v) => v.id === account_id);
+        if (!account) {
+            throw new Error("本地目录挂载请先选择目录");
         }
-        const real_source = String(hit.path ?? "").trim();
+        const real_source = String(account.path ?? "").trim();
         if (!real_source) {
-            throw new Error(`本地目录映射「${source_name}」缺少路径`);
+            const source_name = String(account.note || account.account_name || "").trim();
+            throw new Error(`本地目录「${source_name}」缺少路径`);
         }
         const err = await validate_local_mount(real_source, mount_path);
         if (err) {
@@ -355,36 +350,28 @@ export class MountService {
     }
 
     /** 取某个凭据下的账号列表（给前端用） */
-    list_accounts(credential_id: string): Array<MountAccount & { authorized: boolean }> {
-        const cred = this.get_credential(credential_id);
-        if (!cred) {
-            return [];
-        }
-        return (cred.accounts ?? []).map((item) => ({
-            ...item,
-            authorized: Boolean(item.token?.access_token),
-        }));
-    }
-
     /**
      * 新增/修改凭据下的账号。
      * 有 account_id 表示修改（密码留空 = 不修改），否则新增。
      */
-    async save_tcp_proxy_account(req: {
+    /**
+     * 新增/修改凭据下的账号。
+     * 有 account_id 表示修改（字段不传 = 不修改），否则新增。
+     * 所有凭据类型共用，差异字段由前端按 CREDENTIAL_META_LIST 的 account_fields 传入。
+     */
+    async save_account(req: {
         credential_id: string;
         account_id?: string;
         note?: string;
-        account_name: string;
+        account_name?: string;
         password?: string;
+        private_key?: string;
+        secret_key?: string;
     }): Promise<MountAccount> {
         const list = this.list_credentials();
         const cred = list.find(v => v.id === req.credential_id);
         if (!cred) {
             throw new Error("凭据不存在");
-        }
-        const account_name = String(req.account_name ?? "").trim();
-        if (!account_name) {
-            throw new Error("请填写对端账号");
         }
         const accounts = cred.accounts ?? [];
         const exist = req.account_id ? accounts.find(v => v.id === req.account_id) : undefined;
@@ -392,28 +379,39 @@ export class MountService {
         let saved: MountAccount;
         if (exist) {
             exist.note = req.note ?? exist.note;
-            exist.account_name = account_name;
-            exist.password = req.password ?? exist.password ?? "";
+            exist.account_name = req.account_name ?? exist.account_name;
+            exist.password = req.password ?? exist.password;
+            exist.private_key = req.private_key ?? exist.private_key;
+            exist.secret_key = req.secret_key ?? exist.secret_key;
             saved = exist;
         } else {
             saved = {
-                id: `tcp_${Date.now()}_${Math.random().toString(16).slice(2, 8)}`,
+                id: `acc_${Date.now()}_${Math.random().toString(16).slice(2, 8)}`,
                 note: req.note ?? "",
-                account_name,
-                password: req.password ?? "",
+                account_name: req.account_name ?? "",
+                password: req.password,
+                private_key: req.private_key,
+                secret_key: req.secret_key,
                 enabled: true,
             };
             accounts.push(saved);
             cred.accounts = accounts;
         }
         this.set_credentials(list);
-        // 账号信息变了，旧登录缓存作废
-        clear_tcp_proxy_token(cred.tcp_client_num_id);
+        this.invalidate_credential_cache(cred);
         return saved;
     }
 
-    /** 删除内网穿透凭据下的对端账号；被挂载引用时拒绝 */
-    async remove_tcp_proxy_account(credential_id: string, account_id: string): Promise<void> {
+    /** 账号信息变更后清掉该凭据的运行期缓存（内网穿透的登录态、驱动实例等） */
+    private invalidate_credential_cache(cred: CredentialItem): void {
+        if (cred.tcp_client_num_id) {
+            clear_tcp_proxy_token(cred.tcp_client_num_id);
+        }
+        this.dispose_by_credential(cred.id);
+    }
+
+    /** 删除凭据下的账号；被挂载引用时拒绝 */
+    async remove_account(credential_id: string, account_id: string): Promise<void> {
         const list = this.list_credentials();
         const cred = list.find(v => v.id === credential_id);
         if (!cred) {
@@ -423,11 +421,68 @@ export class MountService {
         if (used) {
             throw new Error(`该账号正在被挂载「${used.note || used.mount_path}」使用，无法删除`);
         }
+        if (cred.type === "baidu") {
+            // 百度账号还带一份落盘的 token，得一并清掉，否则重新授权时会读到旧 token
+            new BaiduTokenStore(credential_id).remove_account(account_id);
+        }
         cred.accounts = (cred.accounts ?? []).filter(v => v.id !== account_id);
         this.set_credentials(list);
-        // 账号被删，旧登录缓存作废
-        clear_tcp_proxy_token(cred.tcp_client_num_id);
+        this.invalidate_credential_cache(cred);
     }
+
+    /**
+     * 验证单个账号是否可用。
+     * 所有类型统一走：把该账号放进凭据副本里试连一次根目录。
+     * form_* 参数允许验证界面上尚未保存的值。
+     */
+    async verify_account(req: {
+        credential_id: string;
+        account_id?: string;
+        account_name?: string;
+        password?: string;
+        private_key?: string;
+        secret_key?: string;
+    }): Promise<{ok: boolean; error?: string; count?: number}> {
+        const cred = this.get_credential(req.credential_id);
+        if (!cred) {
+            return {ok: false, error: "凭据不存在"};
+        }
+        const base = req.account_id ? (cred.accounts ?? []).find(v => v.id === req.account_id) : undefined;
+        // 百度账号带 OAuth token，用专门的校验能报出 token 过期这类具体原因
+        if (cred.type === "baidu" && req.account_id) {
+            const rs = await this.baidu_verify(cred.id, req.account_id);
+            return {ok: rs.valid, error: rs.error};
+        }
+        // 用一个临时账号承载界面上还没保存的值，不写库
+        const probe: MountAccount = {
+            id: base?.id ?? "probe",
+            account_name: req.account_name ?? base?.account_name ?? "",
+            password: req.password ?? base?.password,
+            private_key: req.private_key ?? base?.private_key,
+            secret_key: req.secret_key ?? base?.secret_key,
+            token: base?.token,
+        };
+        return this.test_credential({
+            type: cred.type,
+            credential: {...cred, accounts: [probe]},
+            account_id: probe.id,
+        });
+    }
+
+    /** 批量验证凭据下的所有账号 */
+    async verify_all_accounts(credential_id: string): Promise<{ok: boolean; results: Array<{account_id: string; note: string; ok: boolean; error?: string}>}> {
+        const cred = this.get_credential(credential_id);
+        if (!cred) {
+            return {ok: false, results: []};
+        }
+        const results: Array<{account_id: string; note: string; ok: boolean; error?: string}> = [];
+        for (const acc of cred.accounts ?? []) {
+            const rs = await this.verify_account({credential_id, account_id: acc.id});
+            results.push({account_id: acc.id, note: acc.note ?? "", ok: rs.ok, error: rs.error});
+        }
+        return {ok: results.every(v => v.ok), results};
+    }
+
 
     /** 驱动类型 → 该类型需要选的凭据类型 */
     driver_credential_type(driver: MountDriverType): CredentialType | undefined {
@@ -647,11 +702,6 @@ export class MountService {
         return out;
     }
 
-    /** 删除某个已授权账号（保留应用配置与凭据本体） */
-    baidu_deauthorize(id: string, account_id: string): void {
-        new BaiduTokenStore(id).remove_account(account_id);
-        this.dispose_by_credential(id);
-    }
 }
 
 

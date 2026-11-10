@@ -39,6 +39,8 @@ export interface MountAccount {
     private_key?: string;
     /** S3 Secret Key (access_key is stored in account_name) */
     secret_key?: string;
+    /** Local directory source path (absolute); only used by the local driver */
+    path?: string;
     /** Display name (e.g. Baidu Netdisk nickname) */
     nickname?: string;
     avatar_url?: string;
@@ -99,21 +101,11 @@ export interface CredentialItem {
     baidu_app_key?: string;
     baidu_secret_key?: string;
 
-    // ========== Local directory ==========
-    /** Name -> local absolute path mapping list; pick one when mounting */
-    local_sources?: LocalSource[];
-
     // ========== TCP-proxy FileCat ==========
     /** Proxy client id (matches the id in tcp_proxy_server_client) */
     tcp_client_num_id?: string;
     /** base_url of the remote FileCat (required when the remote has one, otherwise URLs mismatch) */
     tcp_base_url?: string;
-}
-
-/** One "name -> path" mapping under a local-directory credential */
-export interface LocalSource {
-    name: string;
-    path: string;
 }
 
 /**
@@ -254,6 +246,10 @@ export const CREDENTIAL_META_LIST: CredentialMeta[] = [
             {key: "baidu_app_key", label: "AppKey", type: "text", required: true},
             {key: "baidu_secret_key", label: "SecretKey", type: "password", required: true},
         ],
+        accounts: true,
+        account_key: "account_name",
+        // 百度账号由 OAuth 产生，用户名和 token 由服务端写入，只有备注可改
+        account_fields: [],
     },
     {
         // Local directories have no auth info; one credential registers several name -> path mappings

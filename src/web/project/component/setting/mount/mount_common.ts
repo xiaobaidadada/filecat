@@ -11,6 +11,14 @@ export interface MountAccountRow {
     note?: string;
     /** 账号名（百度账号名 / 对端 FileCat 登录名） */
     account_name?: string;
+    /** 密码（SSH / WebDAV / SMB 等） */
+    password?: string;
+    /** SSH 私钥内容；填了优先用私钥，否则用密码 */
+    private_key?: string;
+    /** S3 Secret Key */
+    secret_key?: string;
+    /** 本地目录源路径（绝对路径）；仅本地目录类型使用 */
+    path?: string;
     /** 昵称（如百度网盘昵称） */
     nickname?: string;
     avatar_url?: string;
@@ -52,17 +60,9 @@ export interface CredentialRow {
     baidu_app_id?: string;
     baidu_app_key?: string;
     baidu_secret_key?: string;
-    // 本地目录
-    local_sources?: LocalSourceRow[];
     // 内网穿透
     tcp_client_num_id?: string;
     tcp_base_url?: string;
-}
-
-/** 本地目录凭据下的一条「名称 → 路径」映射 */
-export interface LocalSourceRow {
-    name: string;
-    path: string;
 }
 
 /** 挂载记录 */
@@ -124,10 +124,12 @@ export function credential_options(driver: string, creds: CredentialRow[]) {
  */
 export function account_options(credential_id: string, creds: CredentialRow[]) {
     const cred = creds.find(c => c.id === credential_id);
-    const list = (cred?.accounts ?? []).map(a => ({
-        title: a.note || a.account_name || a.nickname || a.id,
-        value: a.id,
-    }));
+    const list = (cred?.accounts ?? []).map(a => {
+        // 有备注时同时显示账号名，格式「账号名（备注）」，方便辨认
+        const name = a.account_name || a.nickname || a.id;
+        const title = a.note ? `${name}（${a.note}）` : name;
+        return {title, value: a.id};
+    });
     // 有账号可选时，额外给一个「不使用账号」项，用于免密服务
     return list.length ? [{title: "not use account", value: ""}, ...list] : list;
 }
@@ -141,7 +143,8 @@ export function need_account_of(credential_id: string, creds: CredentialRow[]) {
     if (!cred) {
         return false;
     }
-    return cred.type !== "local" && (cred.accounts ?? []).length > 0;
+    // local 的账号就是源目录映射，同样必须选
+    return (cred.accounts ?? []).length > 0;
 }
 
 /** 挂载目录默认标识色 */

@@ -5,7 +5,6 @@ import {InputRow, InputText, Select} from "../../../../meta/component/Input";
 import Switch from "../../../../meta/component/Button";
 import {
     CredentialRow,
-    LocalSourceRow,
     account_options,
     credential_options,
     need_account_of,
@@ -67,9 +66,14 @@ export default function MountForm(props: Props) {
     const use_location_list = meta?.location === "share";
     /** 位置从凭据里的「名称 → 路径」映射中挑（本地目录） */
     const use_local_source = meta?.location === "local";
-    /** 当前凭据登记的本地源目录映射 */
-    const local_sources: LocalSourceRow[] = creds.find(c => c.id === value.credential_id)?.local_sources ?? [];
-    const local_options = local_sources.map(v => ({title: `${v.name}（${v.path}）`, value: v.name}));
+    /** 当前凭据登记的本地源目录（本地目录类型下，每条账号即一条目录映射） */
+    const local_accounts = creds.find(c => c.id === value.credential_id)?.accounts ?? [];
+    const local_options = local_accounts.map(v => {
+        // 有备注时同时显示名称，格式「名称（备注）」，与账号下拉保持一致
+        const name = v.account_name ?? "";
+        const title = v.note ? `${name}（${v.note}）` : name;
+        return {title, value: v.id};
+    });
 
     const cur_account_options = account_options(value.credential_id, creds);
     const need_account = need_account_of(value.credential_id, creds);
@@ -122,11 +126,9 @@ export default function MountForm(props: Props) {
                               value={value.root_dir} onChange={(v) => onChange({...value, root_dir: v})}/>
         </InputRow>}
         {use_local_source && <InputRow label={t("源目录")} label_width={"6rem"} required>
-            <Select value={value.root_dir} options={local_options}
+            <Select value={value.account_id} options={local_options}
                     placeholder={t("选择源目录")}
-                    onChange={(v) => onChange({...value, root_dir: v})}/>
-            <InputText value={String(value.root_dir ?? "")} placeholder={t("src_dir_ph")}
-                       handleInputChange={(v) => onChange({...value, root_dir: String(v ?? "").trim()})}/>
+                    onChange={(v) => onChange({...value, account_id: v})}/>
         </InputRow>}
         {!use_location_list && !use_local_source && <InputRow label={t(dir_label())} label_width={"6rem"}>
             <RemotePathPicker driver={value.driver} credential_id={value.credential_id}

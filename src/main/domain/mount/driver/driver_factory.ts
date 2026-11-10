@@ -57,9 +57,11 @@ function account_of(item: FileMountItem, cred: CredentialItem) {
  * 凭据提供连接信息，挂载提供它自己的「位置信息」。
  *
  * 位置信息在界面上是逐类型不同的控件，但都存在 root_dir 这一个字段里：
- *  · smb  —— 共享名，可选「共享名/子路径」
- *  · s3   —— 存储桶，可选「桶/前缀」
- *  · 其它 —— 远端起始目录
+ *  · smb   —— 共享名，可选「共享名/子路径」
+ *  · s3    —— 存储桶，可选「桶/前缀」
+ *  · 其它  —— 远端起始目录
+ *
+ * 例外：local 没有位置信息，源目录完全由挂载选中的账号（account_id）决定。
  */
 function build_config(item: FileMountItem, cred: CredentialItem): DriverConfig {
     const root = root_of(item);
@@ -132,9 +134,8 @@ function build_config(item: FileMountItem, cred: CredentialItem): DriverConfig {
             return {
                 driver: item.driver,
                 config: {
-                    // 本地目录的 root_dir 是「映射名」，不是路径
-                    sources: cred.local_sources ?? [],
-                    root: String(item.root_dir ?? "").trim(),
+                    // 源目录由挂载选中的账号（account_id）决定
+                    source_path: String(account?.path ?? "").trim(),
                 },
             };
         case MountDriverType.tcp_proxy:

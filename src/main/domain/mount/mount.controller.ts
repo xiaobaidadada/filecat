@@ -134,66 +134,55 @@ export class MountController {
         return Sucess(list);
     }
 
-    /** 内网穿透凭据下的对端账号列表 */
-    @Post("/credential/account_list")
-    async tcp_proxy_account_list(@Body() body: { credential_id: string }, @Req() r) {
-        userService.have_user_auth(r.headers.authorization, UserAuth.file_mount);
-        return Sucess(mountService.list_accounts(body?.credential_id ?? ""));
-    }
-
-    /** 新增 / 修改内网穿透凭据下的对端账号（密码留空表示不修改） */
+    /**
+     * 新增 / 修改凭据下的账号，所有凭据类型共用。
+     * 有 account_id 表示修改；未传的字段保持原值（密码留空即不修改）。
+     */
     @Post("/credential/account_save")
-    async tcp_proxy_account_save(@Body() body: {
+    async account_save(@Body() body: {
         credential_id: string;
         account_id?: string;
         note?: string;
-        account_name: string;
+        account_name?: string;
         password?: string;
+        private_key?: string;
+        secret_key?: string;
     }, @Req() r) {
         userService.have_user_auth(r.headers.authorization, UserAuth.file_mount);
-        const acc = await mountService.save_tcp_proxy_account(body);
+        const acc = await mountService.save_account(body);
         return Sucess({id: acc.id});
     }
 
-    /** 删除内网穿透凭据下的对端账号 */
+    /** 删除凭据下的账号（被挂载引用时拒绝） */
     @Post("/credential/account_remove")
-    async tcp_proxy_account_remove(@Body() body: { credential_id: string; account_id: string }, @Req() r) {
+    async account_remove(@Body() body: { credential_id: string; account_id: string }, @Req() r) {
         userService.have_user_auth(r.headers.authorization, UserAuth.file_mount);
-        await mountService.remove_tcp_proxy_account(body?.credential_id, body?.account_id);
+        await mountService.remove_account(body?.credential_id, body?.account_id);
         return Sucess(true);
     }
 
-    /** 验证某个对端账号能否登录（密码错了立刻能看出来） */
+    /**
+     * 验证单个账号能否连通，所有凭据类型共用。
+     * 允许带上界面上尚未保存的字段，方便选完就试。
+     */
     @Post("/credential/account_verify")
-    async tcp_proxy_account_verify(@Body() body: {
+    async account_verify(@Body() body: {
         credential_id: string;
-        account_id: string;
+        account_id?: string;
         account_name?: string;
         password?: string;
+        private_key?: string;
+        secret_key?: string;
     }, @Req() r) {
         userService.have_user_auth(r.headers.authorization, UserAuth.file_mount);
-        const cred = mountService.get_credential(body?.credential_id);
-        if (!cred) {
-            return Sucess({ok: false, error: "凭据不存在"});
-        }
-        const acc = (cred.accounts ?? []).find(v => v.id === body?.account_id);
-        if (!acc) {
-            return Sucess({ok: false, error: "账号不存在"});
-        }
-        // 把要验证的那个账号放进凭据，驱动才能拿到账号密码
-        const rs = await mountService.test_credential({
-            type: "tcp_proxy",
-            credential: {
-                tcp_client_num_id: cred.tcp_client_num_id,
-                accounts: [{
-                    id: acc.id,
-                    account_name: body.account_name || acc.account_name,
-                    password: body.password || acc.password,
-                }],
-            },
-            account_id: acc.id,
-        });
-        return Sucess(rs);
+        return Sucess(await mountService.verify_account(body));
+    }
+
+    /** 批量验证凭据下的所有账号 */
+    @Post("/credential/account_verify_all")
+    async account_verify_all(@Body() body: { credential_id: string }, @Req() r) {
+        userService.have_user_auth(r.headers.authorization, UserAuth.file_mount);
+        return Sucess(await mountService.verify_all_accounts(body?.credential_id ?? ""));
     }
 
     // ==================== 挂载 ====================
@@ -341,25 +330,10 @@ export class MountController {
     }
 
     /** 校验某个百度账号 */
-    @Post("/baidu/verify")
-    async baidu_verify(@Body() body: {id: string; account_id: string}, @Req() r) {
-        userService.have_user_auth(r.headers.authorization, UserAuth.file_mount);
-        return Sucess(await mountService.baidu_verify(body.id, body.account_id));
-    }
-
-    /** 批量校验/刷新全部百度账号 */
     @Post("/baidu/verify/all")
     async baidu_verify_all(@Req() r) {
         userService.have_user_auth(r.headers.authorization, UserAuth.file_mount);
         return Sucess(await mountService.baidu_verify_all());
-    }
-
-    /** 取消某个百度账号的授权（清 token，保留应用配置与凭据，可重新授权） */
-    @Post("/baidu/deauthorize")
-    async baidu_deauthorize(@Body() body: {id: string; account_id: string}, @Req() r) {
-        userService.have_user_auth(r.headers.authorization, UserAuth.file_mount);
-        mountService.baidu_deauthorize(body.id, body.account_id);
-        return Sucess(true);
     }
 
     /** 拼出 FileCat 自己的百度回调地址（用于一键授权，需在百度控制台登记） */

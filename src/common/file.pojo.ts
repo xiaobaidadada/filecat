@@ -95,7 +95,7 @@ export interface PathResolution {
 export interface dir_mount_info {
     /** 挂载记录 id，前端据此打开编辑/取消挂载 */
     id: string;
-    note: string;
+    note: string; // 挂载备注
     driver: string;
     color: string;
     mount_path: string;

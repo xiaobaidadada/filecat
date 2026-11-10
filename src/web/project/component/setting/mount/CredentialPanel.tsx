@@ -16,7 +16,6 @@ import {
     CredentialField,
     CredentialMeta,
     CredentialRow,
-    LocalSourceRow,
     MountAccountRow,
     fmt_time,
     mount_enable_options
@@ -125,9 +124,8 @@ export default function CredentialPanel() {
 
     /**
      * 账号增删改后，把当前编辑的凭据重新拉一遍回填。
-     * 账号操作是即时落库的，但右侧表单持有的是「点编辑那一刻的快照」，
-     * 不回填就会出现：保存后输入框还是旧对象（id 为空，再点保存又新建一条）、
-     * 删除后界面上还留着已删掉的账号。
+     * 账号操作即时落库，但右侧表单持有的是「点编辑那一刻的快照」，
+     * 不回填就会出现：保存后输入框还是旧对象、删除后界面还留着已删的账号。
      */
     const refresh_accounts = async (credential_id: string) => {
         const next_list = await load();
@@ -149,20 +147,20 @@ export default function CredentialPanel() {
     /** 该类型是否用账号列表（认证信息不在 config 里） */
     const use_accounts = meta?.accounts === true;
     const account_fields = meta?.account_fields ?? [];
-    /** 当前的映射列表 */
-    const sources: LocalSourceRow[] = config.local_sources ?? [];
+    /** 当前的目录映射列表（本地目录类型复用 accounts：每条账号即一条目录映射） */
+    const sources: MountAccountRow[] = accounts;
 
     /** 改写映射列表的某一项 */
-    const update_source = (index: number, patch: { name?: string; path?: string }) => {
-        set_config({...config, local_sources: sources.map((s, i) => (i === index ? {...s, ...patch} : s))});
+    const update_source = (index: number, patch: { note?: string; account_name?: string; path?: string }) => {
+        set_accounts((prev) => prev.map((s, i) => (i === index ? {...s, ...patch} : s)));
     };
 
     const add_source = () => {
-        set_config({...config, local_sources: [...sources, {name: "", path: ""}]});
+        set_accounts((prev) => [...prev, {id: "", account_name: "", path: ""} as MountAccountRow]);
     };
 
     const remove_source = (index: number) => {
-        set_config({...config, local_sources: sources.filter((_, i) => i !== index)});
+        set_accounts((prev) => prev.filter((_, i) => i !== index));
     };
 
     /** 账号列表操作：增删改，认证信息都存在 accounts 里 */
@@ -174,7 +172,8 @@ export default function CredentialPanel() {
         set_accounts((prev) => prev.map((v, i) => (i === index ? {...v, ...patch} : v)));
     };
 
-    const remove_account = (index: number) => {
+    /** 移除本地列表里的一条（只用于还没保存的账号，已保存的走接口删除） */
+    const drop_account = (index: number) => {
         set_accounts((prev) => prev.filter((_, i) => i !== index));
     };
     /** 当前类型的分步流程；单一类型没有 */
@@ -263,7 +262,7 @@ export default function CredentialPanel() {
             // }
             const seen = new Set<string>();
             for (const src of sources) {
-                const nm = String(src.name ?? "").trim();
+                const nm = String(src.account_name ?? "").trim();
                 const pth = String(src.path ?? "").trim();
                 if (!nm || !pth) {
                     NotyFail(t("源目录的名称和路径都不能为空"));
@@ -300,7 +299,7 @@ export default function CredentialPanel() {
                 type,
                 note,
                 ...config,
-                accounts: use_accounts ? accounts : undefined,
+                accounts: use_accounts || use_sources ? accounts : undefined,
                 enabled,
             });
             NotySuccess(t("保存成功"));
@@ -331,7 +330,6 @@ export default function CredentialPanel() {
             baidu_app_id: item.baidu_app_id,
             baidu_app_key: item.baidu_app_key,
             baidu_secret_key: item.baidu_secret_key,
-            local_sources: item.local_sources,
             tcp_client_num_id: item.tcp_client_num_id,
             tcp_base_url: item.tcp_base_url,
         });
@@ -391,39 +389,104 @@ export default function CredentialPanel() {
         });
     };
 
-    /** 内网穿透：保存该行账号 */
-    const save_tcp_account = async (acc: any) => {
-        // 必填项与提示文案都以 CREDENTIAL_META_LIST 的 account_fields 为准
-        for (const f of account_fields) {
-            if (f.required && !String((acc as Record<string, any>)[f.key] ?? "").trim()) {
-                NotyFail(`${t("请填写")}${t(f.label)}`);
-                return;
-            }
-        }
+    /**
+     * 账号列表卡片，所有凭据类型共用一套交互：
+     * 备注 + 各类型自己的 account_fields，每个账号都有保存 / 验证 / 删除。
+     * 百度账号的 uk、授权状态这类只读信息作为额外信息项传进来。
+     */
+    const render_accounts = () => {
+        return <React.Fragment>
+            {/* 百度账号只能通过 OAuth 授权产生，没有「手动添加」 */}
+            {account_fields.length > 0 && <div className={"div-row"}>
+                <ActionButton icon={"add"} title={t("添加")} onClick={add_account}/>
+            </div>}
+            {accounts.map((acc, index) => (
+                <InstanceItem key={acc.id ?? index}
+                              title={`${t("账号")} #${index + 1}`}
+                              toolbar={<>
+                                  <ActionButton icon={"save"} title={t("保存")}
+                                                onClick={() => save_account(acc)}/>
+                                  <ActionButton icon={"network_check"} title={t("验证")}
+                                                onClick={() => verify_account(acc)}/>
+                                  <ActionButton icon={"delete"} title={t("删除")}
+                                                onClick={() => remove_account(acc)}/>
+                              </>}>
+                    <InputRow label={t("备注")} label_width={"7rem"}>
+                        <InputText placeholder={t("便于辨认的名字")} value={acc.note ?? ""}
+                                   handleInputChange={(v) => change_account(index, {note: v})}/>
+                    </InputRow>
+                    {account_fields.map(f => (
+                        <InputRow key={f.key} label={t(f.label)} label_width={"7rem"} required={f.required}>
+                            {f.type === "textarea" ? (
+                                <InputTextarea style={{width: "100%", height: "6rem"}}
+                                               placeholder={f.placeholder ? t(f.placeholder) : ""}
+                                               value={String(acc[f.key] ?? "")}
+                                               handleInputChange={(v) => change_account(index, {[f.key]: v})}/>
+                            ) : (
+                                <InputText type={f.type === "password" ? "password" : "text"}
+                                           placeholder={f.placeholder ? t(f.placeholder) : ""}
+                                           value={String(acc[f.key] ?? "")}
+                                           handleInputChange={(v) => change_account(index, {[f.key]: v})}/>
+                            )}
+                        </InputRow>
+                    ))}
+                    {/* 百度这类账号有服务端返回的只读信息，展示在字段下方 */}
+                    {acc.id && acc.token !== undefined && <>
+                        <InputRow label={t("百度账号")} label_width={"7rem"}>
+                            <p>{acc.account_name || acc.id}</p>
+                        </InputRow>
+                        <InputRow label={t("授权状态")} label_width={"7rem"}>
+                            <p>{acc.token ? t("已授权") : t("未授权")}</p>
+                        </InputRow>
+                        <InputRow label={t("授权时间")} label_width={"7rem"}>
+                            <p>{acc.token?.obtained_at ? fmt_time(acc.token.obtained_at) : "-"}</p>
+                        </InputRow>
+                    </>}
+                </InstanceItem>
+            ))}
+        </React.Fragment>;
+    };
+
+    /** 保存单个账号（立即落库，不影响凭据本体的其它字段） */
+    const save_account = async (acc: MountAccountRow) => {
         try {
-            const rsq = await mountHttp.post("credential/account_save", {
-                credential_id: id,
-                account_id: acc.id || undefined,
-                note: acc.note,
-                account_name: acc.account_name,
-                password: acc.password,
-            });
-            NotySuccess(t("已保存"));
+            const body: Record<string, string> = {credential_id: id};
+            if (acc.id) {
+                body.account_id = acc.id;
+            }
+            if (acc.note !== undefined) {
+                body.note = acc.note;
+            }
+            for (const f of account_fields) {
+                const v = acc[f.key];
+                if (v !== undefined && v !== null) {
+                    body[f.key] = String(v);
+                }
+            }
+            await mountHttp.post("credential/account_save", body);
+            NotySuccess(t("保存成功"));
+            // 重新拉一遍，新建的账号才能拿到后端生成的 id，后续保存才会走修改
             await refresh_accounts(id);
         } catch (e) {
             // Http 层已提示
         }
     };
 
-    /** 内网穿透：验证对端账号能否登录（密码错了立刻能看出来） */
-    const verify_tcp_account = async (acc: any) => {
+    /** 验证单个账号能否连通 */
+    const verify_account = async (acc: MountAccountRow) => {
         try {
-            const rsq = await mountHttp.post("credential/account_verify", {
-                credential_id: id,
-                account_id: acc.id,
-                account_name: acc.account_name,
-                password: acc.password,
-            });
+            const body: Record<string, string> = {credential_id: id};
+            if (acc.id) {
+                body.account_id = acc.id;
+            }
+            // 带上界面上尚未保存的值，改完密码不保存也能先试
+            for (const f of account_fields) {
+                const v = acc[f.key];
+                if (v !== undefined && v !== null) {
+                    body[f.key] = String(v);
+                }
+            }
+            const rsq = await mountHttp.post("credential/account_verify", body);
             const d = rsq?.data ?? {};
             if (d.ok) {
                 NotySuccess(t("账号可用"));
@@ -435,11 +498,10 @@ export default function CredentialPanel() {
         }
     };
 
-    /** 内网穿透：删除对端账号 */
-    const remove_tcp_account = (acc: any) => {
+    /** 删除账号；已保存的走接口，刚添加还没保存的直接从列表移除 */
+    const remove_account = (acc: MountAccountRow) => {
         if (!acc.id) {
-            // 还没落库的行，直接本地删掉
-            set_accounts((prev) => prev.filter((v: any) => v !== acc));
+            drop_account(accounts.indexOf(acc));
             return;
         }
         confirm_del({
@@ -450,99 +512,6 @@ export default function CredentialPanel() {
                     await mountHttp.post("credential/account_remove", {credential_id: id, account_id: acc.id});
                     NotySuccess(t("已删除"));
                     await refresh_accounts(id);
-                } catch (e) {
-                    // Http 层已提示
-                }
-            },
-        });
-    };
-
-    /** 第 2 步：对端账号管理（每个账号一行，可备注、可改密码、可验证、可删除） */
-    const render_tcp_account = () => {
-        return <React.Fragment key={TCP_ACCOUNT_STEP}>
-            <div className={"div-row"}>
-                <h3>{t("账号")}</h3>
-                <ActionButton icon={"add"} title={t("添加")} onClick={add_account}/>
-            </div>
-            {accounts.map((acc, index) => (
-                <InstanceItem key={index}
-                              title={`${t("账号")} #${index + 1}`}
-                              toolbar={<>
-                                  <ActionButton icon={"save"} title={t("保存")}
-                                                onClick={() => save_tcp_account(acc)}/>
-                                  <ActionButton icon={"network_check"} title={t("验证登录")}
-                                                onClick={() => verify_tcp_account(acc)}/>
-                                  <ActionButton icon={"delete"} title={t("删除")}
-                                                onClick={() => remove_tcp_account(acc)}/>
-                              </>}>
-                    <InputRow label={t("备注")} label_width={"6rem"}>
-                        <InputText placeholder={t("便于辨认的名字")} value={acc.note ?? ""}
-                                   handleInputChange={(v) => change_account(index, {note: v})}/>
-                    </InputRow>
-                    {/* 文案以 CREDENTIAL_META_LIST 的 account_fields 为准 */}
-                    {account_fields.map(f => (
-                        <InputRow key={f.key} label={t(f.label)} label_width={"6rem"} required={f.required}>
-                            <InputText type={f.type === "password" ? "password" : "text"}
-                                       value={String((acc as Record<string, any>)[f.key] ?? "")}
-                                       handleInputChange={(v) => change_account(index, {[f.key]: v})}/>
-                        </InputRow>
-                    ))}
-                </InstanceItem>
-            ))}
-        </React.Fragment>;
-    };
-
-    /** 授权检测：调百度 uinfo 验活某个账号 */
-    const verify_account = async (cred_id: string, account_id: string) => {
-        try {
-            const rsq = await mountHttp.post("baidu/verify", {id: cred_id, account_id});
-            const d = rsq?.data ?? {};
-            if (d.valid) {
-                NotySuccess(t("账号可用"));
-            } else {
-                NotyFail(`${t("账号不可用")}：${d.error ?? ""}`);
-            }
-            await load();
-        } catch (e) {
-            // Http 层已提示
-        }
-    };
-
-    /** 备注输入后延迟落库，避免每敲一个字就发一次请求 */
-    const note_timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const save_baidu_note = (acc: MountAccountRow, note: string) => {
-        // 先更新本地显示，让输入框立刻响应，不必等请求回来
-        set_list(prev => prev.map(c => c.id === id
-            ? {...c, accounts: (c.accounts ?? []).map(a => a.id === acc.id ? {...a, note} : a)}
-            : c));
-        if (note_timer.current) {
-            clearTimeout(note_timer.current);
-        }
-        note_timer.current = setTimeout(async () => {
-            try {
-                // 走原有的账号保存接口，只改备注，账号名原样带回
-                await mountHttp.post("credential/account_save", {
-                    credential_id: id,
-                    account_id: acc.id,
-                    note,
-                    account_name: acc.account_name || acc.id,
-                });
-            } catch (e) {
-                // Http 层已提示
-            }
-        }, 500);
-    };
-
-    /** 取消某个百度账号的授权（保留应用配置与凭据） */
-    const deauthorize_account = (cred_id: string, acc: MountAccountRow) => {
-        confirm_del({
-            title: t("确认删除"),
-            sub_title: acc.note || acc.account_name || acc.id,
-            confirm_fun: async () => {
-                try {
-                    await mountHttp.post("baidu/deauthorize", {id: cred_id, account_id: acc.id});
-                    NotySuccess(t("已删除"));
-                    await load();
                 } catch (e) {
                     // Http 层已提示
                 }
@@ -582,14 +551,8 @@ export default function CredentialPanel() {
         </React.Fragment>;
     };
 
-    /** 百度账号列表：读当前凭据的 accounts 数组（一个应用可授权多个账号） */
-    const baidu_accounts = (): MountAccountRow[] => {
-        return list.find(c => c.id === id)?.accounts ?? [];
-    };
-
-    /** 第 2 步：上方授权表单 + 下方账号列表（一个应用可挂多个账号） */
+    /** 第 2 步：上方授权入口，账号列表由统一的 render_accounts 渲染 */
     const render_authorize = () => {
-        const accounts = baidu_accounts();
         return <React.Fragment key={AUTHORIZE_STEP}>
             {/* 授权方式与授权入口常驻，已授权时也可继续授权新账号 */}
             <InputRow label={t("授权方式")} label_width={"6rem"}>
@@ -612,32 +575,6 @@ export default function CredentialPanel() {
                 {auth_mode === "oob" &&
                     <ActionButton icon={"check"} title={t("完成授权")} onClick={submit_code}/>}
             </div>
-
-            {/* 账号列表：每个已授权账号一个实例项，与其它凭据的账号列表保持一致 */}
-            {accounts.map((acc, index) => (
-                <InstanceItem key={acc.id}
-                              title={`${t("账号")} #${index + 1}`}
-                              toolbar={<>
-                                  <ActionButton icon={"network_check"} title={t("授权检测")}
-                                                onClick={() => verify_account(id, acc.id)}/>
-                                  <ActionButton icon={"delete"} title={t("删除")}
-                                                onClick={() => deauthorize_account(id, acc)}/>
-                              </>}>
-                    <InputRow label={t("备注")} label_width={"6rem"}>
-                        <InputText placeholder={t("便于辨认的名字")} value={acc.note ?? ""}
-                                   handleInputChange={(v) => save_baidu_note(acc, v)}/>
-                    </InputRow>
-                    <InputRow label={t("百度账号")} label_width={"6rem"}>
-                        <TextTip context={acc.account_name || acc.id}/>
-                    </InputRow>
-                    <InputRow label={t("授权状态")} label_width={"6rem"}>
-                        <p>{acc.token ? t("已授权") : t("未授权")}</p>
-                    </InputRow>
-                    <InputRow label={t("授权时间")} label_width={"6rem"}>
-                        <p>{acc.token?.obtained_at ? fmt_time(acc.token.obtained_at) : "-"}</p>
-                    </InputRow>
-                </InstanceItem>
-            ))}
         </React.Fragment>;
     };
 
@@ -692,16 +629,10 @@ export default function CredentialPanel() {
                     </Card>
                 </Dashboard>
 
-                {/* 依赖凭据本身才能进行的内容，放到下方独立卡片里 */}
+                {/* 依赖凭据本身才能进行的内容（百度授权入口），放到下方独立卡片里 */}
                 {flow?.[1]?.keys?.includes(AUTHORIZE_STEP) && <Dashboard>
-                    <Card self_title={<span className={" div-row "}><h2>{t("账号")}</h2></span>}>
+                    <Card self_title={<span className={" div-row "}><h2>{t("授权")}</h2></span>}>
                         {render_authorize()}
-                    </Card>
-                </Dashboard>}
-
-                {flow?.[1]?.keys?.includes(TCP_ACCOUNT_STEP) && <Dashboard>
-                    <Card self_title={<span className={" div-row "}><h2>{t("账号")}</h2></span>}>
-                        {render_tcp_account()}
                     </Card>
                 </Dashboard>}
 
@@ -717,12 +648,18 @@ export default function CredentialPanel() {
                             <InstanceItem key={index}
                                           title={`#${index + 1}`}
                                           toolbar={<>
+                                              <ActionButton icon={"save"} title={t("保存")}
+                                                            onClick={save}/>
                                               <ActionButton icon={"delete"} title={t("删除")}
                                                             onClick={() => remove_source(index)}/>
                                           </>}>
+                                <InputRow label={t("备注")} label_width={"7rem"}>
+                                    <InputText placeholder={t("便于辨认的名字")} value={src.note ?? ""}
+                                               handleInputChange={(v) => update_source(index, {note: v})}/>
+                                </InputRow>
                                 <InputRow label={t("名称")} label_width={"7rem"}>
-                                    <InputText placeholder={t("便于辨认的名字")} value={src.name}
-                                               handleInputChange={(v) => update_source(index, {name: v})}/>
+                                    <InputText placeholder={t("目录")} value={src.account_name ?? ""}
+                                               handleInputChange={(v) => update_source(index, {account_name: v})}/>
                                 </InputRow>
                                 <InputRow label={t("目录")} label_width={"7rem"} required>
                                     <InputText placeholder={t("本地绝对路径")} value={src.path}
@@ -733,47 +670,13 @@ export default function CredentialPanel() {
                     </Card>
                 </Dashboard>}
 
-                {/* 其余「一凭据多账号」类型（SMB / WebDAV / SFTP / S3）的账号也独立成卡片，
-                    与内网穿透、百度保持同一套交互：上面是连接配置，下面是若干账号。
-                    tcp_proxy 和 baidu 各有自己的账号卡片，这里排除掉，避免重复 */}
-                {use_accounts && !flow?.[1]?.keys?.includes(TCP_ACCOUNT_STEP)
-                    && !flow?.[1]?.keys?.includes(AUTHORIZE_STEP) && <Dashboard>
-                        <Card self_title={<span className={" div-row "}><h2>{t("账号")}</h2></span>}>
-                            <div className={"div-row"}>
-                                {/*<h3>{t("账号")}</h3>*/}
-                                <ActionButton icon={"add"} title={t("添加")} onClick={add_account}/>
-                            </div>
-                            {accounts.map((acc, index) => (
-                                <InstanceItem key={index}
-                                              title={`#${index + 1}`}
-                                              toolbar={<>
-                                                  <ActionButton icon={"delete"} title={t("删除")}
-                                                                onClick={() => remove_account(index)}/>
-                                              </>}>
-                                    <InputRow label={t("备注")} label_width={"7rem"}>
-                                        <InputText placeholder={t("便于辨认的名字")} value={acc.note ?? ""}
-                                                   handleInputChange={(v) => change_account(index, {note: v})}/>
-                                    </InputRow>
-                                    {account_fields.map(f => (
-                                        <InputRow key={f.key} label={t(f.label)} label_width={"7rem"}
-                                                  required={f.required}>
-                                            {f.type === "textarea" ? (
-                                                <InputTextarea style={{width: "100%", height: "6rem"}}
-                                                               placeholder={f.placeholder ? t(f.placeholder) : ""}
-                                                               value={acc[f.key] ?? ""}
-                                                               handleInputChange={(v) => change_account(index, {[f.key]: v})}/>
-                                            ) : (
-                                                <InputText type={f.type === "password" ? "password" : "text"}
-                                                           placeholder={f.placeholder ? t(f.placeholder) : ""}
-                                                           value={acc[f.key] ?? ""}
-                                                           handleInputChange={(v) => change_account(index, {[f.key]: v})}/>
-                                            )}
-                                        </InputRow>
-                                    ))}
-                                </InstanceItem>
-                            ))}
-                        </Card>
-                    </Dashboard>}
+                {/* 账号列表：所有「一凭据多账号」类型（SMB / WebDAV / SFTP / S3 / 内网穿透 / 百度）
+                    共用同一套渲染与同一组接口，各自字段由 CREDENTIAL_META_LIST 的 account_fields 决定 */}
+                {use_accounts && <Dashboard>
+                    <Card self_title={<span className={" div-row "}><h2>{t("账号")}</h2></span>}>
+                        {render_accounts()}
+                    </Card>
+                </Dashboard>}
             </React.Fragment>}
         </Column> </Row>);
 }
