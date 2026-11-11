@@ -7,6 +7,8 @@ import {Table} from "../../../../meta/component/Table";
 import {mountHttp} from "../../../util/config";
 import {NotyFail, NotySuccess} from "../../../util/noty";
 import {using_confirm} from "../../prompts/prompt.util";
+import {useAtom} from "jotai";
+import {$stroe} from "../../../util/store";
 import MountForm, {empty_mount_form, MountFormValue} from "./MountForm";
 import {
     CredentialRow,
@@ -27,6 +29,8 @@ export default function MountPanel() {
     const confirm_del = using_confirm();
     const [list, set_list] = useState<MountRow[]>([]);
     const [creds, set_creds] = useState<CredentialRow[]>([]);
+    // 挂载总开关：关闭时全站不再请求挂载相关信息
+    const [mount_enabled, set_mount_enabled] = useAtom<boolean | null>($stroe.mount_enabled);
 
     /**
      * 表单是否展开（新建或编辑中）。
@@ -53,7 +57,29 @@ export default function MountPanel() {
 
     useEffect(() => {
         load();
+        // 进入本页时拉取总开关状态；拿不到按关闭处理
+        (async () => {
+            try {
+                const rsp = await mountHttp.post("enabled/get", {});
+                set_mount_enabled(rsp?.data === true);
+            } catch (e) {
+                set_mount_enabled(false);
+            }
+        })();
     }, []);
+
+    /** 切换挂载总开关 */
+    const toggle_mount = async () => {
+        const value = !mount_enabled;
+        try {
+            const rsp = await mountHttp.post("enabled/set", {enabled: value});
+            const now = rsp?.data === true;
+            set_mount_enabled(now);
+            NotySuccess(now ? t("挂载已启用") : t("挂载已停用"));
+        } catch (e) {
+            // Http 层已提示
+        }
+    };
 
     /**
      * 当前凭据是否需要再选账号。
@@ -174,6 +200,10 @@ export default function MountPanel() {
             <Dashboard>
                 <CardFull self_title={<span className={" div-row "}><h2>{t("网盘挂载")}</h2></span>}
                           rightTopCom={<div className={"div-row"}>
+                              <ActionButton icon={mount_enabled === true ? "cloud_done" : "cloud_off"}
+                                            title={mount_enabled === true ? t("muntont") : t("muntoff")}
+                                            selected={mount_enabled === true}
+                                            onClick={toggle_mount}/>
                               <ActionButton icon={"add"} title={t("添加")} onClick={start_add}/>
                           </div>}>
                     <Table headers={[t("编号"),t("备注"), t("挂载类型"), t("凭据"), t("账号"), t("操作")]}

@@ -75,7 +75,7 @@ export class MountController {
         return Sucess(item);
     }
 
-    /** 修改凭据 */
+    /** 修改凭据。账号有独立的增删接口，这里不接受 accounts，避免整表覆盖导致重复或丢失 */
     @Post("/credential/update")
     async credential_update(@Body() body: CredentialSaveReq, @Req() r) {
         userService.have_user_auth(r.headers.authorization, UserAuth.file_mount);
@@ -83,9 +83,8 @@ export class MountController {
             throw new Error("缺少凭据 id");
         }
         const patch: Partial<CredentialItem> = {...body};
-        if (body.accounts !== undefined) {
-            patch.accounts = mountService.normalize_accounts(body.accounts);
-        }
+        // 账号只通过 credential/account_save 维护，这里一律剔除
+        delete patch.accounts;
         return Sucess(mountService.update_credential(body.id, patch));
     }
 
@@ -144,6 +143,7 @@ export class MountController {
         account_id?: string;
         note?: string;
         account_name?: string;
+        path?: string;
         password?: string;
         private_key?: string;
         secret_key?: string;

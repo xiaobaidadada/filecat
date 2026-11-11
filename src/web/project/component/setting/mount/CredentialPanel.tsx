@@ -160,7 +160,37 @@ export default function CredentialPanel() {
     };
 
     const remove_source = (index: number) => {
-        set_accounts((prev) => prev.filter((_, i) => i !== index));
+        remove_account(accounts[index]);
+    };
+
+    /** 保存单条目录映射（本地目录类型）：走账号接口逐条落库 */
+    const save_source = async (index: number) => {
+        const src = accounts[index];
+        if (!id) {
+            NotyFail(t("请先保存凭据"));
+            return;
+        }
+        try {
+            const body: Record<string, string> = {credential_id: id};
+            if (src.id) {
+                body.account_id = src.id;
+            }
+            if (src.note !== undefined) {
+                body.note = src.note;
+            }
+            if (src.account_name !== undefined) {
+                body.account_name = String(src.account_name);
+            }
+            if (src.path !== undefined) {
+                body.path = String(src.path);
+            }
+            const rsq = await mountHttp.post("credential/account_save", body);
+            NotySuccess(t("保存成功"));
+            const saved = rsq?.data;
+            set_accounts((prev) => prev.map((v, i) => (i === index ? {...v, ...saved} : v)));
+        } catch (e) {
+            // Http 层已提示
+        }
     };
 
     /** 账号列表操作：增删改，认证信息都存在 accounts 里 */
@@ -299,13 +329,39 @@ export default function CredentialPanel() {
                 type,
                 note,
                 ...config,
-                accounts: use_accounts || use_sources ? accounts : undefined,
+                // 账号走独立接口维护，这里不提交；新建时也不能带，
+                // 否则后端会生成一批本地不认识的 id，后续保存会重复创建
                 enabled,
             });
             NotySuccess(t("保存成功"));
             // 新增保存成功后转成编辑态，页面不关，接着还能改
+            const credential_id = id || rsq.data?.id;
             if (!id && rsq.data?.id) {
                 set_id(rsq.data.id);
+            }
+            // 把本地还没保存的账号逐条落库，避免刷新后临时账号丢失
+            if ((use_accounts || use_sources) && credential_id) {
+                for (const acc of accounts) {
+                    if (acc.id) {
+                        continue;
+                    }
+                    const body: Record<string, string> = {credential_id};
+                    if (acc.note !== undefined) {
+                        body.note = acc.note;
+                    }
+                    // 认证类字段由 account_fields 定义；本地目录的映射用 account_name 与 path
+                    const keys = use_sources
+                        ? ["account_name", "path"]
+                        : account_fields.map(f => f.key);
+                    for (const k of keys) {
+                        const v = (acc as Record<string, any>)[k];
+                        if (v !== undefined && v !== null) {
+                            body[k] = String(v);
+                        }
+                    }
+                    const saved = await mountHttp.post("credential/account_save", body);
+                    Object.assign(acc, saved?.data ?? {});
+                }
             }
             await load();
         } catch (e) {
@@ -463,10 +519,12 @@ export default function CredentialPanel() {
                     body[f.key] = String(v);
                 }
             }
-            await mountHttp.post("credential/account_save", body);
+            const rsq = await mountHttp.post("credential/account_save", body);
             NotySuccess(t("保存成功"));
-            // 重新拉一遍，新建的账号才能拿到后端生成的 id，后续保存才会走修改
-            await refresh_accounts(id);
+            // 用后端返回的账号（含新分配的 id）就地替换本地这条，
+            // 避免整体重拉时丢掉其它还没保存的新增行
+            const saved = rsq?.data;
+            set_accounts((prev) => prev.map((v) => (v === acc ? {...v, ...saved} : v)));
         } catch (e) {
             // Http 层已提示
         }
@@ -649,7 +707,7 @@ export default function CredentialPanel() {
                                           title={`#${index + 1}`}
                                           toolbar={<>
                                               <ActionButton icon={"save"} title={t("保存")}
-                                                            onClick={save}/>
+                                                            onClick={() => save_source(index)}/>
                                               <ActionButton icon={"delete"} title={t("删除")}
                                                             onClick={() => remove_source(index)}/>
                                           </>}>

@@ -364,6 +364,7 @@ export class MountService {
         account_id?: string;
         note?: string;
         account_name?: string;
+        path?: string;
         password?: string;
         private_key?: string;
         secret_key?: string;
@@ -380,6 +381,7 @@ export class MountService {
         if (exist) {
             exist.note = req.note ?? exist.note;
             exist.account_name = req.account_name ?? exist.account_name;
+            exist.path = req.path ?? exist.path;
             exist.password = req.password ?? exist.password;
             exist.private_key = req.private_key ?? exist.private_key;
             exist.secret_key = req.secret_key ?? exist.secret_key;
@@ -389,6 +391,7 @@ export class MountService {
                 id: `acc_${Date.now()}_${Math.random().toString(16).slice(2, 8)}`,
                 note: req.note ?? "",
                 account_name: req.account_name ?? "",
+                path: req.path,
                 password: req.password,
                 private_key: req.private_key,
                 secret_key: req.secret_key,
