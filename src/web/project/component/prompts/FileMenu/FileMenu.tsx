@@ -16,6 +16,7 @@ import {ai_agentHttp, fileHttp, settingHttp, userHttp} from "../../../util/confi
 import {getRouterAfter, getRouterPath, getRouterPrePath} from "../../../util/WebPath";
 import {InputText, Select} from "../../../../meta/component/Input";
 import {file_share_item, workflow_pre_input} from "../../../../../common/req/file.req";
+
 import {Http_controller_router} from "../../../../../common/req/http_controller_router";
 import {GlobalContext} from "../../../GlobalProvider";
 import {useNavigate} from "react-router-dom";
@@ -37,6 +38,23 @@ import {use_click_folder, use_file_open, use_get_now_abs_path, user_click_file} 
 import {getFilesByIndexs, getFileNameByLocation} from "../../file/FileUtil";
 import {mountHttp} from "../../../util/config";
 import MountEditor from "../../setting/mount/MountEditor";
+
+/**
+ * 归一化 workflow 输入项的下拉选项，供 InputText 使用。
+ * 值类型（string/number）：显示值与提交值相同；
+ * 对象类型 {name, value}：显示 name，提交 value。
+ */
+function normalize_pre_input_options(options?: (string | number | { name: string; value: string | number })[]) {
+    if (!options) {
+        return undefined;
+    }
+    return options.map((it) => {
+        if (typeof it === "object" && it !== null) {
+            return {label: String(it.name), value: String(it.value)};
+        }
+        return {label: String(it), value: String(it)};
+    });
+}
 
 
 export function FileMenu() {
@@ -360,7 +378,7 @@ export function FileMenu() {
                                 {list.map((item, index) => {
                                     // @ts-ignore
                                     return <InputText key={index} placeholderOut={item.description} value={item.default}
-                                                      options={item.options}
+                                                      options={normalize_pre_input_options(item.options)}
                                                       handleInputChange={(value) => {
                                                           item.default = value
                                                       }}/>

@@ -14,6 +14,16 @@
     z-index: 100;
 }
 
+/* 弹框内容区（.card-content）带 overflow:auto，会裁掉绝对定位的下拉。
+   改为 fixed：不设 top/left，浏览器会沿用下拉原本的静态位置（即输入框正下方），
+   同时脱离祖先的 overflow 裁剪。
+   awesomplete 自带 left:0，fixed 下会贴到视口左边，必须显式还原成自动。 */
+.card-content .awesomplete > ul {
+    position: fixed;
+    left: auto;
+    z-index: 1004;
+}
+
 .input {
     /* border-radius: .1em;  <- 旧的，太硬了 */
     border-radius: 6px;      /* 现代 UI 标配：更圆润的倒角 */

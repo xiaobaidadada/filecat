@@ -37,12 +37,19 @@ export interface fileInfoReq {
 }
 
 
+/** workflow 输入项的下拉选项（对象形式） */
+export interface workflow_pre_input_option {
+    name: string;
+    value: string | number;
+}
+
 export class workflow_pre_input {
     key: string; // 必须有
     description?: string; // 描述显示
     required?: boolean; // 是否必须要有
     default?: any; // 默认值
-    options: any[];
+    // 下拉选项：值类型（显示值即提交值），或对象类型 {name, value}（显示 name，提交 value）
+    options?: (string | number | workflow_pre_input_option)[];
 }
 
 export enum WorkRunType {
