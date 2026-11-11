@@ -106,3 +106,179 @@
   font-size: 0.9em;
   padding: 0.3rem 0.4rem;
 }
+
+/* 挂载标识色选择：色块 + 可手敲的色值输入 + 预设色板箭头 */
+.mount-color {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+  width: 100%;
+}
+
+/* 色块本身是 label，包裹隐藏的原生取色器，点击即打开调色板 */
+.mount-color__swatch {
+  flex: 0 0 auto;
+  width: 1.6em;
+  height: 1.6em;
+  border: 1px solid var(--borderPrimary);
+  border-radius: 0.25em;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.mount-color__swatch input[type="color"] {
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: none;
+  opacity: 0;
+  cursor: pointer;
+}
+
+/* 手敲输入框 */
+.mount-color__text {
+  flex: 1;
+  min-width: 0;
+  height: 1.8em;
+  padding: 0 0.5em;
+  border: 1px solid var(--borderPrimary);
+  border-radius: 0.25em;
+  background-color: var(--surfacePrimary);
+  color: var(--textPrimary);
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 0.9em;
+}
+
+.mount-color__arrow.material-icons {
+  flex: 0 0 auto;
+  cursor: pointer;
+  color: var(--textSecondary);
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+.mount-color__arrow:hover {
+  color: var(--textPrimary);
+}
+
+/* 预设色板：通过 portal 挂到 body 上，避免被弹框内容区（.card-content 的 overflow:auto）裁剪。
+   位置由组件按输入框坐标计算，这里只负责外观。 */
+.mount-color__panel {
+  position: fixed;
+  z-index: 1004;
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: 0.4em;
+  border: 1px solid var(--borderPrimary);
+  border-radius: 0.3em;
+  background-color: var(--surfacePrimary);
+  box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.15);
+}
+
+.mount-color__grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 0.3em;
+}
+
+.mount-color__item {
+  width: 1.4em;
+  height: 1.4em;
+  border-radius: 0.2em;
+  cursor: pointer;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.mount-color__item:hover {
+  transform: scale(1.12);
+}
+
+/* 预设管理：底部工具条 */
+.mount-color__tools {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.3em;
+  margin-top: 0.4em;
+  padding-top: 0.3em;
+  border-top: 1px solid var(--borderPrimary);
+}
+
+.mount-color__tools .action {
+  padding: 0.15em;
+  border-radius: 0.2em;
+  cursor: pointer;
+  color: var(--textSecondary);
+}
+
+.mount-color__tools .action:hover {
+  color: var(--textPrimary);
+}
+
+.mount-color__tools .action .material-icons {
+  font-size: 1rem;
+}
+
+/* 色板项容器：删除按钮悬停时才出现 */
+.mount-color__cell {
+  position: relative;
+  display: inline-flex;
+}
+
+/* 删除按钮：默认隐藏，悬停色板项时显示。
+   叠加 .material-icons 提高特异性，否则会被全局 .material-icons 的 24px 覆盖 */
+.mount-color__del.material-icons {
+  position: absolute;
+  top: -0.3em;
+  right: -0.3em;
+  font-size: 0.7rem;
+  line-height: 1;
+  padding: 0.1em;
+  border-radius: 50%;
+  background-color: var(--surfacePrimary);
+  color: var(--textSecondary);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.mount-color__cell:hover .mount-color__del,
+.mount-color__row:hover .mount-color__del {
+  opacity: 1;
+}
+
+.mount-color__del:hover {
+  color: var(--red);
+}
+
+/* 编辑模式：色块 + 色值 + 备注 一行一项 */
+.mount-color__edit {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35em;
+  min-width: 20rem;
+}
+
+.mount-color__row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.35em;
+}
+
+.mount-color__swatch--sm {
+  width: 1.4em;
+  height: 1.4em;
+}
+
+.mount-color__note {
+  flex: 1.2;
+  min-width: 0;
+  height: 1.8em;
+  padding: 0 0.5em;
+  border: 1px solid var(--borderPrimary);
+  border-radius: 0.25em;
+  background-color: var(--surfacePrimary);
+  color: var(--textPrimary);
+  font-size: 0.9em;
+}

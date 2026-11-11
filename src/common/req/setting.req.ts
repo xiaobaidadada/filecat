@@ -46,6 +46,12 @@ export class FileQuickCmdItem {
     params: string;
 }
 
+// 挂载标识色预设（个人保存，可自定义颜色与备注）
+export class MountColorItem {
+    color: string; // 色值，如 #4a9eff
+    note?: string; // 备注，鼠标悬停时显示
+}
+
 // SQL 查询预设项
 export class SqlPresetItem {
     index?: number; // 序号

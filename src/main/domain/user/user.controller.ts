@@ -1,6 +1,6 @@
 import {Body, Get, JsonController, Post, Req} from "routing-controllers";
 import {UserAuth, UserBaseInfo, UserData, UserLogin} from "../../../common/req/user.req";
-import {SqlPresetItem} from "../../../common/req/setting.req";
+import {MountColorItem, SqlPresetItem} from "../../../common/req/setting.req";
 import {AuthFail, Fail, Sucess} from "../../other/Result";
 import {Cache} from "../../other/cache";
 import {generateSaltyUUID} from "../../../common/StringUtil";
@@ -194,6 +194,8 @@ export class UserController {
         is_file_list_zoom?: boolean,
         is_sql_preset?: boolean,
         sql_preset_list?: SqlPresetItem[],
+        is_mount_color?: boolean, // 是否更新挂载标识色预设
+        mount_color_list?: MountColorItem[],
         is_search_exclude?: boolean, // 是否更新深度搜索的忽略名字
         search_exclude_names?: string[],
         is_md_theme?: boolean, // 是否更新 md 编辑器个人主题
@@ -218,6 +220,8 @@ export class UserController {
             userService.only_update_user_data(user_id, {file_list_zoom: body.value} as UserData);
         } else if(body.is_sql_preset) {
             userService.only_update_user_data(user_id, {sql_preset_list: body.sql_preset_list} as UserData);
+        } else if(body.is_mount_color) {
+            userService.only_update_user_data(user_id, {mount_color_list: body.mount_color_list} as UserData);
         } else if(body.is_search_exclude) {
             userService.only_update_user_data(user_id, {search_exclude_names: body.search_exclude_names} as UserData);
         } else if(body.is_md_theme) {

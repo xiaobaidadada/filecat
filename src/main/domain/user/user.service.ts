@@ -79,6 +79,7 @@ export class UserService {
             file_list_zoom: user.file_list_zoom,
             ai_chat_zoom: user.ai_chat_zoom,
             sql_preset_list: user.sql_preset_list,
+            mount_color_list: user.mount_color_list,
             search_exclude_names: user.search_exclude_names,
             upload_file_ignore: user.upload_file_ignore,
             upload_file_ignore_list: user.upload_file_ignore_list,
