@@ -205,6 +205,7 @@ export default function MindMapEditor(props: Props) {
         mindRef.current?.destroy?.();
         mindRef.current = null;
         dirtyRef.current = false;
+        latest.current.props.on_dirty?.(false);
         setLoading(true);
         setError("");
 

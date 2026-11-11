@@ -127,8 +127,6 @@ export default function Studio(props) {
     const [nav_content, set_nav_content] = useState<NavContent>("folder");
     // 左侧面板开关。切到非 md 文件时自动回到目录视图
     const [show_nav, set_show_nav] = useState(true);
-    // md 编辑器的脏标记（由它上报，用于 Header 显示保存按钮）
-    const [md_dirty, set_md_dirty] = useState(false);
 
     // ===== 右侧 AI 聊天面板 =====
     // 是否展开右侧聊天面板：状态同步到 url 参数 chat_open，刷新/切换文件后仍保持。
@@ -292,7 +290,7 @@ export default function Studio(props) {
         set_edit_file_path(pre_path);
         // 换成别的文件时左侧面板回到目录视图：大纲是上一个 md 文件的，留着会对不上
         set_nav_content("folder");
-        set_md_dirty(false);
+        set_have_update(false);
     }
 
 
@@ -489,8 +487,6 @@ export default function Studio(props) {
                           selected={show_nav}/>
             {/* md 文件专属能力：与全屏 md 编辑器的 Header 保持一致 */}
             {is_md && [
-                md_dirty ? <ActionButton key={"save"} title={t("保存")} icon={"save"}
-                                         onClick={() => md_api.current?.save()}/> : null,
                 <ActionButton key={"mode"} icon={md_api.current?.mode() === "source" ? "edit" : "code"}
                               title={md_api.current?.mode() === "source" ? t("实时编辑模式") : t("源码模式")}
                               onClick={() => md_api.current?.toggle_mode()}/>,
@@ -505,19 +501,15 @@ export default function Studio(props) {
                 <ActionButton title={t("AI 聊天")} icon={"smart_toy"} selected={chat_open}
                               onClick={() => set_chat_open(!chat_open)}/>
             )}
-            {/* 保存按钮：各编辑器自己提供 save（md/画板/思维导图/时间轴/表格/文本） */}
-            {is_md
-                ? (md_dirty ? <ActionButton title={t("保存")} icon={"save"} onClick={() => md_api.current?.save()}/> : null)
-                : is_draw
-                    ? <ActionButton title={t("保存")} icon={"save"} onClick={() => excalidraw_api.current?.save()}/>
-                    : is_mind
-                        ? <ActionButton title={t("保存")} icon={"save"} onClick={() => mind_api.current?.save()}/>
-                    : is_timeline
-                        ? <ActionButton title={t("保存")} icon={"save"} onClick={() => timeline_api.current?.save()}/>
-                        : is_excel
-                            ? <ActionButton title={t("保存")} icon={"save"} onClick={() => excel_api.current?.save()}/>
-                            : (have_update ? <ActionButton title={"保存"} icon={"save"} onClick={file_save}/> : null)
-            }
+            {/* 保存按钮：统一由 have_update 控制显隐，各编辑器通过 on_dirty 上报脏状态 */}
+            {have_update && (
+                is_md ? <ActionButton title={t("保存")} icon={"save"} onClick={() => md_api.current?.save()}/>
+                : is_draw ? <ActionButton title={t("保存")} icon={"save"} onClick={() => excalidraw_api.current?.save()}/>
+                : is_mind ? <ActionButton title={t("保存")} icon={"save"} onClick={() => mind_api.current?.save()}/>
+                : is_timeline ? <ActionButton title={t("保存")} icon={"save"} onClick={() => timeline_api.current?.save()}/>
+                : is_excel ? <ActionButton title={t("保存")} icon={"save"} onClick={() => excel_api.current?.save()}/>
+                : <ActionButton title={t("保存")} icon={"save"} onClick={file_save}/>
+            )}
         </Header>
         <div className={"studio-body"} ref={studio_nav_ref}>
             {/* 左侧面板：用 display 控制显隐，而不是条件渲染。
@@ -571,7 +563,7 @@ export default function Studio(props) {
                             path: edit_file_path,
                             url: fileHttp.getDownloadUrl(encodeURIComponent(edit_file_path)),
                             name: edit_filename.name,
-                            on_dirty: set_md_dirty,
+                            on_dirty: set_have_update,
                             on_outline: (items, active) => {
                                 set_outline_items(items);
                                 set_outline_active(active);

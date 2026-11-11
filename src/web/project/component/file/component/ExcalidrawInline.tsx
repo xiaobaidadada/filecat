@@ -43,6 +43,8 @@ export default function ExcalidrawInline(props: Props) {
     const [loading, setLoading] = useState(false);
     // 脏标记：Excalidraw 的 onChange 在初始化时也会触发一次，用这个标志跳过首次
     const dirtyRef = useRef(false);
+    // 保存时的内容快照：用于判断 onChange 是否只是视图状态变化（如选中元素）
+    const savedRef = useRef<string | null>(null);
     const mountedRef = useRef(false);
 
     // 用 ref 承接最新的 props/API，保证暴露出去的 save 始终可用且不产生过期闭包
@@ -80,6 +82,7 @@ export default function ExcalidrawInline(props: Props) {
         }
         const rsq = await fileHttp.post(`save/${encodeURIComponent(latest.current.props.save_path)}`, {context});
         if (rsq.code === RCode.Success) {
+            savedRef.current = context;
             dirtyRef.current = false;
             latest.current.props.on_dirty?.(false);
             latest.current.props.on_saved?.();
@@ -101,6 +104,11 @@ export default function ExcalidrawInline(props: Props) {
 
     // 加载场景：切换文件时重新拉取
     useEffect(() => {
+        // 切换文件时清空脏标记，避免沿用上一个文件的未保存状态
+        dirtyRef.current = false;
+        savedRef.current = null;
+        mountedRef.current = false;
+        latest.current.props.on_dirty?.(false);
         let cancelled = false;
         const load = async () => {
             if (!props.url) {
@@ -165,17 +173,23 @@ export default function ExcalidrawInline(props: Props) {
                     langCode="zh-CN"
                     initialData={initialData}
                     excalidrawAPI={(api) => setExcalidrawAPI(api)}
-                    // 内容变化标记为脏，让外层 Header 出现保存按钮
+                    // 内容变化才标记为脏：Excalidraw 保存后仍会因选中/滚动等视图状态回调 onChange，
+                    // 这类变化不会进入序列化结果，比对内容即可准确过滤
                     onChange={() => {
                         if (!mountedRef.current) {
                             // 首次渲染 Excalidraw 也会回调一次 onChange，这里跳过
                             mountedRef.current = true;
+                            savedRef.current = buildData();
                             return;
                         }
-                        if (!dirtyRef.current) {
-                            dirtyRef.current = true;
-                            latest.current.props.on_dirty?.(true);
+                        if (dirtyRef.current) {
+                            return;
                         }
+                        if (buildData() === savedRef.current) {
+                            return;
+                        }
+                        dirtyRef.current = true;
+                        latest.current.props.on_dirty?.(true);
                     }}
                     onKeyDown={(event) => {
                         if ((event.ctrlKey || event.metaKey) && (event.key === "s" || event.key === "S" || event.keyCode === 83)) {

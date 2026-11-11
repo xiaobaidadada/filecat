@@ -12,6 +12,7 @@ import {RCode} from "../../../../../common/Result.pojo";
 import {use_editor_auto_save} from "../../../util/editor_auto_save";
 import "@excalidraw/excalidraw/index.css";
 import {EditorAutoSaveEnum} from "../../../../../common/req/user.req";
+import {using_confirm} from "../../prompts/prompt.util";
 
 type ExcalidrawSceneData = {
     type?: string;
@@ -47,6 +48,7 @@ export default function ExcalidrawEditor() {
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
     const {t} = useTranslation();
+    const confirm = using_confirm();
 
     // 用 ref 保存最新的 save 函数，供 keydown 监听稳定调用（避免闭包拿到旧 save）
     const saveRef = useRef<() => void>(() => {
@@ -56,11 +58,15 @@ export default function ExcalidrawEditor() {
     });
     // 场景有改动标记（自动保存用；保存成功后清除）
     const dirty_ref = useRef(false);
+    // 保存时的内容快照：用于判断 onChange 是否只是选中/滚动等视图状态变化
+    const saved_ref = useRef<string | null>(null);
 
     useEffect(() => {
         let cancelled = false;
 
         const load = async () => {
+            dirty_ref.current = false;
+            saved_ref.current = null;
             if (!excalidraw_editor?.url) {
                 setInitialData(null);
                 return;
@@ -96,10 +102,22 @@ export default function ExcalidrawEditor() {
         };
     }, [excalidraw_editor?.url]);
 
-    const close = () => {
+    /** 真正执行关闭 */
+    const do_close = () => {
         set_excalidraw_editor({});
         navigate(getRouterPath());
         excalidraw_editor?.close?.();
+    };
+
+    const close = () => {
+        if (dirty_ref.current) {
+            confirm({
+                sub_title: t("有未保存的修改，确定要关闭吗？"),
+                confirm_fun: do_close,
+            });
+            return;
+        }
+        do_close();
     };
 
     const save = async (silent = false) => {
@@ -122,14 +140,16 @@ export default function ExcalidrawEditor() {
             gridSize: appState.gridSize,
         };
 
+        const content = JSON.stringify(data);
         const rsq = await fileHttp.post(
             `save/${encodeURIComponent(getRouterAfter("file", getRouterPath()))}${excalidraw_editor.name}`,
-            {context: JSON.stringify(data)},
+            {context: content},
         );
 
         if (rsq.code === RCode.Success) {
             // 自动保存不弹成功提示，只在手动保存时提示
             if (!silent) NotySuccess(t("保存成功"));
+            saved_ref.current = content;
             dirty_ref.current = false;
         }
     };
@@ -167,8 +187,31 @@ export default function ExcalidrawEditor() {
                         langCode="zh-CN"
                         initialData={initialData}
                         excalidrawAPI={(api) => setExcalidrawAPI(api)}
+                        // 内容变化才标记为脏：保存后 Excalidraw 仍会因选中/滚动回调 onChange
                         onChange={() => {
-                            // 场景变化即有未保存改动（自动保存用）
+                            if (!excalidrawAPI || dirty_ref.current) {
+                                return;
+                            }
+                            const elements = excalidrawAPI.getSceneElements();
+                            const appState = excalidrawAPI.getAppState();
+                            const files = excalidrawAPI.getFiles();
+                            const data = JSON.parse(serializeAsJSON(elements, appState, files, "local"));
+                            data.appState = {
+                                ...(data.appState ?? {}),
+                                zoom: appState.zoom,
+                                scrollX: appState.scrollX,
+                                scrollY: appState.scrollY,
+                                viewBackgroundColor: appState.viewBackgroundColor,
+                                gridSize: appState.gridSize,
+                            };
+                            if (saved_ref.current === null) {
+                                // 首次回调作为基线快照，不算改动
+                                saved_ref.current = JSON.stringify(data);
+                                return;
+                            }
+                            if (JSON.stringify(data) === saved_ref.current) {
+                                return;
+                            }
                             dirty_ref.current = true;
                         }}
                         onKeyDown={(event) => {

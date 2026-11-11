@@ -244,6 +244,8 @@ export default function TimelineEditor(props: Props) {
 
     // 加载文件内容
     useEffect(() => {
+        // 切换文件时清空脏标记，避免沿用上一个文件的未保存状态
+        mark_dirty(false);
         // 直接传入文档（md 只读嵌入）：不请求网络，只做只读渲染
         if (props.doc) {
             setDoc(props.doc);
