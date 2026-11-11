@@ -6,6 +6,8 @@ import {NotyFail, NotySuccess} from "../../../util/noty";
 import {RCode} from "../../../../../common/Result.pojo";
 import {useTranslation} from "react-i18next";
 import {parseScene} from "./ExcalidrawEditor";
+import {use_editor_auto_save} from "../../../util/editor_auto_save";
+import {EditorAutoSaveEnum} from "../../../../../common/req/user.req";
 import "@excalidraw/excalidraw/index.css";
 
 /**
@@ -74,7 +76,7 @@ export default function ExcalidrawInline(props: Props) {
         return JSON.stringify(data);
     };
 
-    const save = async (): Promise<boolean> => {
+    const save = async (silent?: boolean): Promise<boolean> => {
         const context = buildData();
         if (context === null) {
             NotyFail(t("编辑器尚未就绪"));
@@ -86,16 +88,26 @@ export default function ExcalidrawInline(props: Props) {
             dirtyRef.current = false;
             latest.current.props.on_dirty?.(false);
             latest.current.props.on_saved?.();
-            NotySuccess(t("保存成功"));
+            // 自动保存不弹提示，只有手动保存才提示成功
+            if (!silent) {
+                NotySuccess(t("保存成功"));
+            }
             return true;
         }
         return false;
     };
 
+    // 自动保存：脏标记只在内容真的变化时才为 true（onChange 里已做序列化比对）
+    use_editor_auto_save(
+        EditorAutoSaveEnum.draw,
+        () => dirtyRef.current,
+        (silent) => save(silent),
+    );
+
     // 向调用方暴露句柄
     useEffect(() => {
         props.register?.({
-            save,
+            save: () => save(),
             is_dirty: () => dirtyRef.current,
         });
         // save 每次渲染都会重建，但句柄内部都走 latest.current，所以只需注册一次

@@ -31,6 +31,8 @@ import {
     stringify_doc,
 } from "./timeline_util";
 import {InputText, InputTextarea} from "../../../../../meta/component/Input";
+import {use_editor_auto_save} from "../../../../util/editor_auto_save";
+import {EditorAutoSaveEnum} from "../../../../../../common/req/user.req";
 
 /**
  * 时间线编辑器（.timeline）。
@@ -231,6 +233,15 @@ export default function TimelineEditor(props: Props) {
         if (ok) mark_dirty(false);
         return ok;
     };
+
+    // 自动保存：只读嵌入（md 内联展示）时 readonly=true 不启动定时器；
+    // 视图模式下 save 内部会直接返回 false，不会误写
+    use_editor_auto_save(
+        EditorAutoSaveEnum.timeline,
+        () => dirtyRef.current,
+        (silent) => save(silent),
+        props.readonly,
+    );
 
     useEffect(() => {
         props.register?.({save, is_dirty: () => dirtyRef.current, is_edit_mode: () => edit_mode});

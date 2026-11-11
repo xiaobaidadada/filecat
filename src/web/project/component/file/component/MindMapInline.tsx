@@ -15,6 +15,8 @@ import PromptInput from "../../../../meta/component/PromptInput";
 import {MenuSelect, OverlayTransparent} from "../../../../meta/component/Dashboard";
 import {Icon} from "../../../../meta/component/Button";
 import {MaterialIcon} from "material-icons";
+import {use_editor_auto_save} from "../../../util/editor_auto_save";
+import {EditorAutoSaveEnum} from "../../../../../common/req/user.req";
 
 // 补充主题要在实例化前注册好（库只有 default 一套内置主题）
 register_mind_themes(MindMap);
@@ -180,6 +182,13 @@ export default function MindMapEditor(props: Props) {
         }
         return ok;
     };
+
+    // 自动保存：silent=true 由 hook 传入，不弹提示
+    use_editor_auto_save(
+        EditorAutoSaveEnum.mind,
+        () => dirtyRef.current,
+        (silent) => save(silent),
+    );
 
     // 暴露句柄给外壳
     useEffect(() => {
