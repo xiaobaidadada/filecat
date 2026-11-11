@@ -48,6 +48,9 @@ export function FileDeepSearch(props: { base_path: string }) {
     const [total, setTotal] = useState(0);
     // 是否已经搜过一次（用于区分「还没搜」和「搜了但没结果」）
     const [searched, setSearched] = useState(false);
+    // searched 的 ref 副本：effect 的清理函数是首次渲染时的闭包，
+    // 直接读 useState 拿到的永远是初始值 false
+    const searched_ref = useRef(false);
     // WS 连接由这个弹窗独占，关闭时一并断开
     const ws = useMemo(() => new WsClient(window.location.host, "file_deep_search"), []);
     // 必须在 setClose 之前就先断开，避免 React 卸载后又触发一次状态更新
@@ -106,15 +109,20 @@ export function FileDeepSearch(props: { base_path: string }) {
         ws.on_message("close", on_close);
         return () => {
             // 卸载即取消：backend 会 abort 掉遍历。
-            // sendData 是「发出去 + 等回包」的请求模式，而 cancel 是单向通知（后端不会回包），
-            // 所以这里必然等不到回包、6 秒后由 ws.client 超时 reject（reject 值还不是 Error），
-            // 必须 catch 掉，否则会变成未处理的 Promise 拒绝
+            // cancel 是单向通知（后端不回包），必须用 sendNotify：
+            // 走 sendData 会等一个永远不来的回包，白等 6 秒超时。
             closed.current = true;
             clearTimeout(flush_timer);
-            ws.sendData(CmdType.file_deep_search_cancel, {}).catch(() => {
-            });
+            // 只有真正发起过搜索才需要通知后端取消，否则会为了一条 cancel 白建一条连接
+            if (searched_ref.current) {
+                // sendNotify 内部要等连接就绪，必须先发完再关，否则 close 掉连接后消息发不出去
+                ws.sendNotify(CmdType.file_deep_search_cancel, {}).catch(() => {
+                }).finally(() => ws.close());
+            }
+            // 退订所有消息，避免 ws 对象被丢弃后 handler 还挂在 emitter 上
+            ws.removeMsg(CmdType.file_deep_search_data);
+            ws.removeMsg(CmdType.file_deep_search_end);
             ws.off_message("close", on_close);
-            ws.close();
         };
     }, []);
 
@@ -128,6 +136,7 @@ export function FileDeepSearch(props: { base_path: string }) {
         setList([]);
         setTotal(0);
         setSearched(true);
+        searched_ref.current = true;
         setSearching(true);
         const req: file_deep_search_req = {
             param_path: props.base_path,
@@ -154,8 +163,8 @@ export function FileDeepSearch(props: { base_path: string }) {
 
     const cancel = () => {
         cancelled.current = true;
-        // 同卸载：cancel 是单向通知，后端不回包，必然超时 reject，catch 掉避免未处理的拒绝
-        ws.sendData(CmdType.file_deep_search_cancel, {}).catch(() => {
+        // cancel 是单向通知，后端不回包，用 sendNotify 直接发出去即可
+        ws.sendNotify(CmdType.file_deep_search_cancel, {}).catch(() => {
         });
         setSearching(false);
     };
