@@ -1308,5 +1308,13 @@
   "ro": "权限",
   "读写": "读写",
   "挂载类型": "挂载类型",
-  "标识色": "标识色"
+  "标识色": "标识色",
+  "手动添加": "手动添加",
+  "账号 id（uk）": "账号 id（uk）",
+  "粘贴 access_token": "粘贴 access_token",
+  "粘贴 refresh_token": "粘贴 refresh_token",
+  "添加账号": "添加账号",
+  "请填写账号 id": "请填写账号 id",
+  "请填写 access_token": "请填写 access_token",
+  "头像": "头像"
 }

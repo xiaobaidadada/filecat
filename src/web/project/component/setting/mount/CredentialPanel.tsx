@@ -8,6 +8,7 @@ import {ActionButton} from "../../../../meta/component/Button";
 import {InputRadio, InputRow, InputText, InputTextarea, Select} from "../../../../meta/component/Input";
 import {Table} from "../../../../meta/component/Table";
 import {InstanceItem} from "../../../../meta/component/InstanceList";
+import {Avatar} from "../../../../meta/component/Avatar";
 import {mountHttp} from "../../../util/config";
 import {NotyFail, NotySuccess} from "../../../util/noty";
 import {using_confirm} from "../../prompts/prompt.util";
@@ -103,6 +104,10 @@ export default function CredentialPanel() {
     /** 百度授权相关状态 */
     const [auth_mode, set_auth_mode] = useState<"one_click" | "oob">("oob");
     const [auth_code, set_auth_code] = useState("");
+    /** 手动导入账号表单：id(uk) + 两个 token */
+    const [import_uk, set_import_uk] = useState("");
+    const [import_access, set_import_access] = useState("");
+    const [import_refresh, set_import_refresh] = useState("");
     /** 多账号类型的账号列表（SMB/WebDAV/SFTP/S3 的认证信息） */
     const [accounts, set_accounts] = useState<MountAccountRow[]>([]);
 
@@ -391,6 +396,10 @@ export default function CredentialPanel() {
         });
         set_accounts(item.accounts ?? []);
         set_auth_code("");
+        // 切换凭据时清空手动导入表单，避免上一次输入残留
+        set_import_uk("");
+        set_import_access("");
+        set_import_refresh("");
         set_enabled(item.enabled !== false);
         // 有动态下拉字段的类型（tcp_proxy），编辑时也要把选项拉回来
         const edit_fields = metas.find(m => m.type === item.type)?.fields ?? [];
@@ -423,7 +432,38 @@ export default function CredentialPanel() {
             const rsq = await mountHttp.post("baidu/exchange", {id, code: auth_code.trim(), mode: auth_mode});
             NotySuccess(`${t("授权成功")}：${rsq?.data?.baidu_name ?? ""}`);
             set_auth_code("");
-            await load();
+            // 授权后后端会新增一条账号，必须回填 accounts，否则要刷新页面才看得到
+            await refresh_accounts(id);
+        } catch (e) {
+            // Http 层已提示
+        }
+    };
+
+    /**
+     * 手动导入账号：后端先用 access_token 调百度 uinfo 验证，
+     * 通过后才写入 accounts，并回填头像/昵称。
+     */
+    const submit_import = async () => {
+        if (!import_uk.trim()) {
+            NotyFail(t("请填写账号 id"));
+            return;
+        }
+        if (!import_access.trim()) {
+            NotyFail(t("请填写 access_token"));
+            return;
+        }
+        try {
+            const rsq = await mountHttp.post("baidu/import", {
+                id,
+                uk: import_uk.trim(),
+                access_token: import_access.trim(),
+                refresh_token: import_refresh.trim(),
+            });
+            NotySuccess(`${t("添加成功")}：${rsq?.data?.baidu_name ?? ""}`);
+            set_import_uk("");
+            set_import_access("");
+            set_import_refresh("");
+            await refresh_accounts(id);
         } catch (e) {
             // Http 层已提示
         }
@@ -458,7 +498,9 @@ export default function CredentialPanel() {
             </div>}
             {accounts.map((acc, index) => (
                 <InstanceItem key={acc.id ?? index}
-                              title={`${t("账号")} #${index + 1}`}
+                              title={<>
+                                  <span>{`${t("账号")} #${index + 1}`}</span>
+                              </>}
                               toolbar={<>
                                   <ActionButton icon={"save"} title={t("保存")}
                                                 onClick={() => save_account(acc)}/>
@@ -488,6 +530,10 @@ export default function CredentialPanel() {
                     ))}
                     {/* 百度这类账号有服务端返回的只读信息，展示在字段下方 */}
                     {acc.id && acc.token !== undefined && <>
+                        <Avatar src={acc.avatar_url}
+                                name={acc.nickname || acc.account_name}
+                                label={t("头像")}
+                                label_width={"7rem"}/>
                         <InputRow label={t("百度账号")} label_width={"7rem"}>
                             <p>{acc.account_name || acc.id}</p>
                         </InputRow>
@@ -632,6 +678,22 @@ export default function CredentialPanel() {
                 <ActionButton icon={"open_in_new"} title={t("去授权")} onClick={open_authorize}/>
                 {auth_mode === "oob" &&
                     <ActionButton icon={"check"} title={t("完成授权")} onClick={submit_code}/>}
+            </div>
+            {/* 手动导入：已有 id + token 时跳过 OAuth 直接添加账号 */}
+            <InputRow label={t("手动添加")} label_width={"6rem"}>
+                <InputText placeholder={t("账号 id（uk）")} value={import_uk}
+                           handleInputChange={set_import_uk}/>
+            </InputRow>
+            <InputRow label={t("access_token")} label_width={"6rem"}>
+                <InputText placeholder={t("粘贴 access_token")} value={import_access}
+                           handleInputChange={set_import_access}/>
+            </InputRow>
+            <InputRow label={t("refresh_token")} label_width={"6rem"}>
+                <InputText placeholder={t("粘贴 refresh_token")} value={import_refresh}
+                           handleInputChange={set_import_refresh}/>
+            </InputRow>
+            <div className={"div-row"}>
+                <ActionButton icon={"add"} title={t("添加账号")} onClick={submit_import}/>
             </div>
         </React.Fragment>;
     };

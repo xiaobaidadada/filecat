@@ -1385,5 +1385,13 @@
     "src_dir_ph": "O escribe el nombre del directorio origen",
     "sftp_path_ph": "Una / inicial indica una ruta absoluta en el servidor, si no es relativa al directorio de acceso",
   "ro": "Permiso",
-  "读写": "Lectura-escritura"
+  "读写": "Lectura-escritura",
+  "手动添加": "Añadir manual",
+  "账号 id（uk）": "ID de cuenta (uk)",
+  "粘贴 access_token": "Pegar access_token",
+  "粘贴 refresh_token": "Pegar refresh_token",
+  "添加账号": "Añadir cuenta",
+  "请填写账号 id": "Introduce el ID de cuenta",
+  "请填写 access_token": "Introduce access_token",
+  "头像": "Avatar"
 }

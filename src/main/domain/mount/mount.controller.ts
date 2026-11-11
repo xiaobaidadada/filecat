@@ -330,6 +330,11 @@ export class MountController {
     }
 
     /** 校验某个百度账号 */
+    @Post("/baidu/import")
+    async baidu_import(@Body() body: { id: string; uk: string; access_token: string; refresh_token: string }) {
+        return Sucess(await mountService.baidu_import_account(body.id, body.uk, body.access_token, body.refresh_token));
+    }
+
     @Post("/baidu/verify/all")
     async baidu_verify_all(@Req() r) {
         userService.have_user_auth(r.headers.authorization, UserAuth.file_mount);

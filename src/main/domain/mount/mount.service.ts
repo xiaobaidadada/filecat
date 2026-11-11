@@ -685,6 +685,17 @@ export class MountService {
     }
 
     /**
+     * 手动导入百度账号（直接提供 id + token，不走 OAuth）。
+     * 后端会先用 access_token 请求百度 uinfo 验证，通过后才写入 accounts。
+     */
+    async baidu_import_account(id: string, uk: string, access_token: string, refresh_token: string): Promise<{uk: string; baidu_name: string}> {
+        const store = new BaiduTokenStore(id);
+        const r = await store.import_by_token(uk, access_token, refresh_token);
+        this.dispose_by_credential(id);
+        return r;
+    }
+
+    /**
      * 校验某个百度账号（顺带同步百度侧信息）。
      * @param account_id 账号 id（= 百度 uk）
      */

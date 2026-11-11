@@ -1389,5 +1389,13 @@
     "src_dir_ph": "Or type the source directory name",
     "sftp_path_ph": "A leading / means an absolute server path, otherwise relative to the login directory",
   "ro": "Permission",
-  "读写": "Read-write"
+  "读写": "Read-write",
+  "手动添加": "Manual add",
+  "账号 id（uk）": "Account id (uk)",
+  "粘贴 access_token": "Paste access_token",
+  "粘贴 refresh_token": "Paste refresh_token",
+  "添加账号": "Add account",
+  "请填写账号 id": "Please enter the account id",
+  "请填写 access_token": "Please enter access_token",
+  "头像": "Avatar"
 }

@@ -1385,5 +1385,13 @@
     "src_dir_ph": "Oder Quellverzeichnisnamen eingeben",
     "sftp_path_ph": "Ein führendes / bedeutet absoluten Serverpfad, sonst relativ zum Anmeldeverzeichnis",
   "ro": "Berechtigung",
-  "读写": "Lesen-Schreiben"
+  "读写": "Lesen-Schreiben",
+  "手动添加": "Manuell hinzufügen",
+  "账号 id（uk）": "Konto-ID (uk)",
+  "粘贴 access_token": "access_token einfügen",
+  "粘贴 refresh_token": "refresh_token einfügen",
+  "添加账号": "Konto hinzufügen",
+  "请填写账号 id": "Bitte Konto-ID eingeben",
+  "请填写 access_token": "Bitte access_token eingeben",
+  "头像": "Avatar"
 }

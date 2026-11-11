@@ -215,6 +215,38 @@ export class BaiduTokenStore {
     }
 
     /**
+     * 手动导入账号：直接给 access_token / refresh_token，不经过 OAuth。
+     * 必须先用 access_token 调 uinfo 验证，验证通过才落库；
+     * 同时把百度侧的昵称、头像同步下来，与 OAuth 授权得到的账号信息保持一致。
+     * @param uk 账号 id（百度 uk），由用户提供
+     */
+    async import_by_token(uk: string, access_token: string, refresh_token: string): Promise<{uk: string; baidu_name: string}> {
+        const account_id = String(uk).trim();
+        if (!account_id) {
+            throw new Error("请填写百度账号 id（uk）");
+        }
+        if (!access_token.trim()) {
+            throw new Error("请填写 access_token");
+        }
+        // 先用给定的 access_token 验证；无效会在这里抛错，不会污染已有数据
+        const info = await this.get_uinfo(access_token.trim());
+        this.upsert_account(account_id, {
+            token: {
+                access_token: access_token.trim(),
+                refresh_token: refresh_token.trim(),
+                // 手动导入拿不到 expires_in，先按已过期处理，
+                // 首次调用时由 refresh_token 自动续期，避免用到过期 token
+                expires_at: 0,
+                obtained_at: Date.now(),
+            },
+            account_name: info.baidu_name,
+            nickname: info.netdisk_name,
+            avatar_url: info.avatar_url,
+        });
+        return {uk: account_id, baidu_name: info.baidu_name ?? account_id};
+    }
+
+    /**
      * 取当前账号可用的 access_token。
      * 过期时用 refresh_token 续期；没有 refresh_token 说明从未授权，报错让用户去授权。
      */

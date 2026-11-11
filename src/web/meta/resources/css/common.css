@@ -99,3 +99,34 @@
     font-weight: bold;
     min-width: fit-content;
 }
+
+/* 头像：圆形图片，无图时用首字母兜底 */
+.avatar {
+    flex-shrink: 0;
+    border-radius: 50%;
+    vertical-align: middle;
+}
+
+/* 无图兜底块：柔和底色 + 淡一点的字，避免抢标题视线 */
+.avatar--fallback {
+    background-color: var(--surfaceSecondary);
+    color: var(--textSecondary);
+    font-size: 0.75em;
+    font-weight: bold;
+    user-select: none;
+}
+
+/* 头像 + 名字的整体容器，让两者垂直居中对齐 */
+.avatar-with-name {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    vertical-align: middle;
+}
+
+/* 头像右侧的名字，比标题淡一些 */
+.avatar__name {
+    font-size: 0.9em;
+    color: var(--textSecondary);
+}
+
