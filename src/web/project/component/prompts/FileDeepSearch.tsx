@@ -7,6 +7,7 @@ import {file_deep_search_item, file_deep_search_req, file_deep_search_type} from
 import {routerConfig} from "../../../../common/RouterConfig";
 import {CmdType, WsData} from "../../../../common/frame/WsData";
 import {WsClient} from "../../../../common/frame/ws.client";
+import {get_ws_base} from "../../util/ws";
 import {InputCheckbox, InputTextIcon} from "../../../meta/component/Input";
 import {ActionButton} from "../../../meta/component/Button";
 import {SearchExcludePanel} from "./SearchExcludePanel";
@@ -52,7 +53,7 @@ export function FileDeepSearch(props: { base_path: string }) {
     // 直接读 useState 拿到的永远是初始值 false
     const searched_ref = useRef(false);
     // WS 连接由这个弹窗独占，关闭时一并断开
-    const ws = useMemo(() => new WsClient(window.location.host, "file_deep_search"), []);
+    const ws = useMemo(() => new WsClient(get_ws_base(), "file_deep_search"), []);
     // 必须在 setClose 之前就先断开，避免 React 卸载后又触发一次状态更新
     const closed = useRef(false);
     // 用户主动取消当前这次搜索。后端可能还有数据在路上，靠它把后续的包丢掉；

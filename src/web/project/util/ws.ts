@@ -13,9 +13,17 @@ import {$stroe} from "./store";
  * 唯一需要额外参数的场景是「挂载目录转发到对端」：
  * tcp_client_num_id 触发本机 filecat 代理走隧道，forward_mount 让代理把 token 换成对端的。
  */
+/**
+ * WS 地址里与业务无关的那一段：`host + base_url + /api`。
+ * 所有自建 WsClient 都要用它，否则部署在子路径（如 --base_url /filecat）时连不上。
+ * 与全局 WS 不同的是：这里不带挂载转发参数，需要转发的场景请用 build_ws_url。
+ */
+export function get_ws_base() {
+    return `${window.location.host}${front_config.baseUrl}`.replace(/\/+$/, "");
+}
+
 function build_ws_url() {
-    // baseUrl 形如 /api/，去掉末尾斜杠得到 /api
-    const base = `${window.location.host}${front_config.baseUrl}`.replace(/\/+$/, "");
+    const base = get_ws_base();
     const mount = getDefaultStore().get($stroe.current_mount);
     if (!mount?.forward_to_remote || !mount?.forward_client_num_id) {
         return base;

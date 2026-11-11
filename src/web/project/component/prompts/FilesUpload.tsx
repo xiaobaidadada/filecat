@@ -13,6 +13,7 @@ import {FileInfoItemData, FileTypeEnum} from "../../../../common/file.pojo";
 import {ws_file_upload_req} from "../../../../common/req/file.req";
 import {fileHttp} from "../../util/config";
 import {WsClient} from "../../../../common/frame/ws.client";
+import {get_ws_base} from "../../util/ws";
 import {dir_upload_max_num_item} from "../../../../common/req/setting.req";
 import {generateRandomHash, matchGitignore} from "../../../../common/StringUtil";
 import {browser_file_pojo} from "../../../../common/req/common.pojo";
@@ -100,7 +101,7 @@ export function FilesUpload() {
         // const all_wss_list: WsClient[] = [];
         if (all_wss_list.length < part_size) {
             for (let i = all_wss_list.length; i <= part_size; i++) {
-                all_wss_list.push(new WsClient(window.location.host+window.location.pathname))
+                all_wss_list.push(new WsClient(get_ws_base()))
             }
         }
 
