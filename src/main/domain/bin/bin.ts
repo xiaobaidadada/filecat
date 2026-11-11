@@ -103,7 +103,11 @@ let base_url:string; // 前后端
 async function  init_pre_path() {
     Env.parseArgs()
     // dev 与 production 一致：--env 指定的文件已由 Env.parseArgs 载入 Env.base_url
-    base_url = Env.base_url || process.env.base_url || "";
+    // 统一规范化：保证以 / 开头、不以 / 结尾（空串表示部署在根路径）
+    let raw = Env.base_url || process.env.base_url || "";
+    raw = raw.trim().replace(/\/+$/, "");
+    if (raw !== "" && !raw.startsWith("/")) raw = "/" + raw;
+    base_url = raw;
     sys_pre = `${base_url}/api`;
 }
 

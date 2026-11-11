@@ -40,7 +40,7 @@ module.exports = {
         filename: '[name].[contenthash].js',  // 使用 contenthash 进行文件名哈希 下次更新代码 浏览器缓存也会更新
         // 按需加载的 chunk 同样输出到 dist 根目录：后端静态资源是按 basename 找文件的
         chunkFilename: '[name].[contenthash].js',
-        publicPath: '/',  // 固定为根路径，避免嵌套路由下自动推导出错
+        publicPath: 'auto',  // auto：运行时从当前脚本 URL 推断，支持 base_url 子路径部署
         path: path.resolve(__dirname, '..', "..", 'build', 'dist'),
     },
     module: {
