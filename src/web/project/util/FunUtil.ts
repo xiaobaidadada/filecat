@@ -92,20 +92,6 @@ export function setTheme(theme: themes) {
 }
 
 
-export async function hashString(input, salt = '') {
-    // 使用 TextEncoder 将字符串转换为字节数组
-    const encoder = new TextEncoder();
-    const data = encoder.encode(`${input}${salt ?? ''}`);  // 合并输入字符串和盐
-
-    // 使用 Web Crypto API 计算 SHA-256 哈希值
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-
-    // 将结果转化为十六进制字符串
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map(byte => byte.toString(16).padStart(2, '0')).join('');
-}
-
-
 export const get_select_style = (select:boolean)=> {
    return {
        color: select?"var(--blue)":undefined,

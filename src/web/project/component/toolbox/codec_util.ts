@@ -160,11 +160,11 @@ export function from_html_entity(text: string): string {
 export type codec_name = 'base64' | 'base32' | 'hex' | 'unicode' | 'url' | 'ascii' | 'html'
 
 export const codec_list: { label: string, value: codec_name }[] = [
+  {label: 'URL', value: 'url'},
   {label: 'Base64', value: 'base64'},
   {label: 'Base32', value: 'base32'},
   {label: 'Hex', value: 'hex'},
   {label: 'Unicode', value: 'unicode'},
-  {label: 'URL', value: 'url'},
   {label: 'ASCII', value: 'ascii'},
   {label: 'HTML 实体', value: 'html'}
 ]

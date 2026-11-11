@@ -14,7 +14,7 @@ import {copyToClipboard} from '../../util/FunUtil'
  */
 export function Codec() {
   const {t} = useTranslation()
-  const [codec, set_codec] = useState<codec_name>('base64')
+  const [codec, set_codec] = useState<codec_name>('url')
   const [input, set_input] = useState('')
   const [output, set_output] = useState('')
   const [error, set_error] = useState('')

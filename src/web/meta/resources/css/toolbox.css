@@ -92,33 +92,6 @@ label.toolbox-check > input[type="checkbox"] {
     flex-shrink: 0;
 }
 
-/* 摘要结果行 */
-.hash-row {
-    display: flex;
-    align-items: center;
-    gap: 0.75em;
-    padding: 0.35em 0;
-    border-bottom: 1px solid var(--borderPrimary);
-    font-size: 0.875em;
-}
-
-.hash-row:last-child {
-    border-bottom: none;
-}
-
-.hash-name {
-    width: 5.5em;
-    flex-shrink: 0;
-    color: var(--textSecondary);
-}
-
-.hash-value {
-    flex: 1;
-    min-width: 0;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    word-break: break-all;
-}
-
 /* 正则匹配高亮 */
 .regex-mark {
     background: var(--blue, #d2e3fc);
