@@ -299,7 +299,6 @@ export function Http() {
     }
 
     const save_as = () => {
-        if (!check_user_auth(UserAuth.http_proxy_tag_update)) { NotyFail("no permission"); return; }
         for (const item of form_data_list) {
             if (item.is_file) { NotyFail(t('frm_lm')); return; }
         }
