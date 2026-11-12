@@ -289,32 +289,19 @@ table tr.row-dragging {
     text-overflow: ellipsis; /* 在文本溢出时显示省略号 */
     /*font-size: .8rem; !* 或者使用 em、rem 等单位 *!*/
 }
-.card-text .card-text-tip {
-   display: none;
-}
-
-.card-text-context:hover + .card-text-tip{
-    display: block;
-    position: absolute;
-    top: -1rem;
-    left: 0;
-    background-color: #eaf2f9;
-    width: auto;
-    white-space: nowrap; /* 不换行 */
-    border-radius: 0.1rem;
-    z-index: 1001;
-}
-.card-text-tip:hover {
-    display: block;
-    position: absolute;
-    top: -1rem;
-    left: 0;
+/* 提示浮层：脱离卡片内容区的 overflow 裁剪，定位由 --tip-x / --tip-y 提供，
+   数值等价于原来的 left: 0 / top: -1rem，所以视觉位置不变 */
+.card-text-tip {
+    position: fixed;
+    left: var(--tip-x);
+    top: var(--tip-y);
     background-color: #eaf2f9;
     cursor: pointer;
     width: auto;
     white-space: nowrap; /* 不换行 */
     border-radius: 0.1rem;
-    z-index: 1001;
+    /* 必须高于弹窗本身（.card.floating 为 1003），否则会被弹窗边缘盖住 */
+    z-index: 1004;
 }
 
 .card {

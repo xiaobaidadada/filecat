@@ -1,7 +1,5 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React from 'react';
 import {InputText} from "./Input";
-import {copyToClipboard} from "../../project/util/FunUtil";
-import {NotySuccess} from "../../project/util/noty";
 
 export interface CardProps {
     title?: string;
@@ -51,28 +49,8 @@ export interface TextProps {
     children?: any
 }
 
-export function TextTip(props: TextProps) {
-    const copyRef = useRef<HTMLDivElement>(null);
-    const click = () => {
-        copyToClipboard(props.tip_context ?? props.context ?? props.children)
-        NotySuccess('复制完成')
-    }
-    return (
-        <div className="card-text">
-            <div className={"card-text-context"}>{props.context ?? props.children}</div>
-            <div className={"card-text-tip"} ref={copyRef} onClick={click}>{props.tip_context ?? props.context ?? props.children}</div>
-        </div>
-    )
-}
-
-export function LongText(props: TextProps) {
-    return (
-        <div className="card-text">
-            <div className={"card-text-context"}>{props.context ?? props.children}</div>
-            <div className={"card-text-tip"} >{props.context ?? props.children}</div>
-        </div>
-    )
-}
+// TextTip / LongText 已拆分到独立组件文件，这里重新导出，保持原有 import 路径可用
+export {TextTip, LongText} from "./TextTip";
 
 
 export function CardPrompt(props: {
