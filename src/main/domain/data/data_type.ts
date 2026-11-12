@@ -27,6 +27,7 @@ export enum data_dir_tem_name {
     filecat_upgrade_dir = "filecat_upgrade_dir",
     ai_agent_chat_session_dir = "ai_agent_chat_session_dir",
     md_theme_dir = "md_theme_dir", // md 编辑器主题（一个主题一个 css 文件）
+    mount_upload_file_dir = "mount_upload_file_dir", // 挂载上传的落地临时文件，写完即删
 }
 
 // todo 现在都是加载到内存 如果对于用户特别多的情况 做持久化选择

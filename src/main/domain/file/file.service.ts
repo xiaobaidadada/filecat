@@ -11,6 +11,7 @@ import {
 } from "../../../common/file.pojo";
 // import {config} from "../../other/config";
 import fs, {Stats, WriteStream} from "fs";
+import {Readable} from "stream";
 import fse from 'fs-extra'
 import path from "path";
 import {Fail, Result, Sucess} from "../../other/Result";
@@ -36,7 +37,7 @@ const {node_process_watcher} = get_bin_dependency("node-process-watcher",false);
 import {list_paginate} from "../../../common/ListUtil";
 import {isAbsolutePath} from "../../../common/path_util";
 import {DataUtil} from "../data/DataUtil";
-import {data_common_key, file_key} from "../data/data_type";
+import {data_common_key, data_dir_tem_name, file_key} from "../data/data_type";
 import {getSys} from "../shell/shell.service";
 import {sqliteQueryReq, sqliteQueryResult, file_deep_search_req, file_deep_search_item, file_deep_search_line} from "../../../common/req/file.req";
 import fg from "fast-glob";
@@ -1103,14 +1104,19 @@ export class FileService  {
 
     /**
      * 挂载场景专用的上传中间件。
-     * 本地上传用的是 diskStorage（先落盘再搬），但挂载目标是网盘，
-     * 必须先落盘再上传就违背了「不落服务器磁盘」的原则，
-     * 所以这里用内存存储：文件只在内存里过一遍就直接流转给网盘。
+     * 目标可能是几百 MB 的网盘文件，不能整个放进内存（原来的 memoryStorage 会直接吃满）。
+     * 这里落到系统临时目录，写完再以流的方式转给驱动，内存占用与文件大小无关。
      */
     upload_mount = multer({
-        storage: multer.memoryStorage(),
-        // 内存方式对大文件不友好，限制单个文件 512MB
-        limits: {fileSize: 512 * 1024 * 1024},
+        storage: multer.diskStorage({
+            destination: (req: any, file: any, cb: any) => {
+                const dir = DataUtil.get_tem_path(data_dir_tem_name.mount_upload_file_dir);
+                cb(null, dir);
+            },
+            filename: (req: any, file: any, cb: any) => {
+                cb(null, `${Date.now()}_${Math.random().toString(36).slice(2)}`);
+            }
+        }),
     }).single('file');
 
     public async uploadFile(filePath, req: Request, res: Response, token) {
@@ -1192,20 +1198,22 @@ export class FileService  {
 
     /**
      * 上传到挂载目录。
-     * 用内存存储接收整个文件，再以流的形式写给驱动（不落服务器磁盘）。
+     * 文件先由 multer 落到临时目录，再以读流交给驱动，最后无论成败都删掉临时文件。
+     * 这样内存占用与文件大小无关，也不会在服务器上长期留文件。
      */
     private upload_to_mount(mount_diff: PathResolution, req: Request, res: Response): Promise<any> {
         const mnt_r = require_driver(mount_diff.real_path);
         assert_cap(mnt_r.driver, "write", "上传文件", mount_diff.match);
         return new Promise((resolve) => {
             this.upload_mount(req, res, async (err: any) => {
-                if (err) {
-                    console.log("挂载上传失败：", err);
-                    resolve(Fail(err?.message ?? "上传失败"));
-                    return;
-                }
+                const file = (req as any).file;
+                const temp_path: string | undefined = file?.path;
                 try {
-                    const file = (req as any).file;
+                    if (err) {
+                        console.log("挂载上传失败：", err);
+                        resolve(Fail(err?.message ?? "上传失败"));
+                        return;
+                    }
                     if (!file) {
                         // 仅创建目录（前端 dir=1）
                         if (req.query.dir === "1") {
@@ -1216,12 +1224,16 @@ export class FileService  {
                         resolve(Fail("未接收到文件"));
                         return;
                     }
-                    const {Readable} = require("stream");
-                    await mnt_r.driver.write(mnt_r.inner_path, Readable.from([file.buffer]), file.size);
+                    await mnt_r.driver.write(mnt_r.inner_path, fs.createReadStream(temp_path), file.size);
                     resolve(Sucess(true));
                 } catch (e) {
                     console.log("挂载写入失败：", e);
                     resolve(Fail(e?.message ?? "写入失败"));
+                } finally {
+                    if (temp_path) {
+                        await FileUtil.unlinkSync(temp_path).catch(() => {
+                        });
+                    }
                 }
             });
         });
@@ -1268,6 +1280,8 @@ export class FileService  {
                 lastModified: param.lastModified,
                 chunks: [],
             });
+            // 客户端中途断开（关页面、断网）时，把还没写完的分片释放掉，否则会一直挂在内存里
+            (data.wss as Wss).setClose(() => this.abort_mount_upload(sysPath));
             return;
         }
 
@@ -1367,6 +1381,11 @@ export class FileService  {
         }
 
         const num_value = this.file_upload_count_map.get(sysPath);
+        // file_upload_pre 没有建过状态（可能被清理或从未收到 pre），直接丢弃这一片并告知前端
+        if (!num_value) {
+            (data.wss as Wss).send(CmdType.file_upload, Fail("上传会话不存在，请重新上传"));
+            return;
+        }
         try {
             num_value.buffer_list[param.part_count] = data.bin_context; // Buffer.concat([num_value.buffer,chunkData]);
             delete data.bin_context;
@@ -1406,6 +1425,7 @@ export class FileService  {
             }
             num_value.writeStream.end();
             this.file_upload_count_map.delete(sysPath);
+            (data.wss as Wss).send(CmdType.file_upload, Fail(e?.message ?? "上传失败"));
         }
     }
 
@@ -1421,14 +1441,31 @@ export class FileService  {
         parallel_done_num: number,
         total_size: number,
         lastModified: number,
-        /** 已累积的分片（整包用完即释放） */
+        /** 已累积的分片（整包写完即释放） */
         chunks: Buffer[],
     }>();
+
+    /**
+     * 中止一个进行中的挂载上传并释放已占用的内存。
+     * 客户端断连、写入失败都会走到这里，避免分片一直挂在内存里。
+     */
+    private abort_mount_upload(sysPath: string) {
+        const state = this.mount_upload_map.get(sysPath);
+        if (!state) {
+            return;
+        }
+        this.mount_upload_map.delete(sysPath);
+        state.chunks.length = 0;
+        state.buffer_list.length = 0;
+    }
 
     /**
      * 处理挂载目标的一个上传分片。
      * 同一批并行分片（parallel_done_num 个）都到齐后才累积一次，
      * 全部分片收完后一次性作为流写给驱动 —— 数据全程在内存，不落服务器磁盘。
+     *
+     * bin_context 本身就是独立分配的 Uint8Array，直接持有即可，不必再复制；
+     * 拼包只做一次 concat，并传入总长度避免动态扩容的反复拷贝。
      */
     private async mount_file_upload(
         sysPath: string,
@@ -1455,7 +1492,7 @@ export class FileService  {
             for (const chunk of state.buffer_list) {
                 if (chunk) {
                     state.total_size += chunk.length;
-                    state.chunks.push(Buffer.from(chunk));
+                    state.chunks.push(Buffer.from(chunk.buffer, chunk.byteOffset, chunk.byteLength));
                 }
             }
             state.buffer_list = new Array(param.parallel_done_num).fill(undefined);
@@ -1463,15 +1500,15 @@ export class FileService  {
             // 最后一片：一次性写给驱动
             if (param.chunk_index === param.total_chunk_index - 1) {
                 this.mount_upload_map.delete(sysPath);
-                const full = Buffer.concat(state.chunks);
+                const full = Buffer.concat(state.chunks, state.total_size);
                 state.chunks.length = 0;
-                const {Readable} = require("stream");
                 await state.driver.write(state.inner_path, Readable.from([full]), full.length);
             }
         } catch (e) {
-            this.mount_upload_map.delete(sysPath);
-            state.chunks.length = 0;
+            this.abort_mount_upload(sysPath);
             console.log("挂载分片上传失败：", e);
+            // 写入失败要让前端知道，否则界面会停在 100% 却实际没存上
+            (data.wss as Wss).send(CmdType.file_upload, Fail(e?.message ?? "上传失败"));
         }
     }
 
