@@ -135,7 +135,7 @@ export default function Studio(props) {
     const [searchParams] = useSearchParams();
     const chat_open = searchParams.get("chat_open") === "1";
     const set_chat_open = (open: boolean) => updateParams("chat_open", open ? "1" : null);
-    // 右侧面板宽度（em）；默认占右侧可用空间约 40%，最小 320px，最大 70%
+    // 右侧面板宽度（em），默认占右侧可用空间约 40%，实际宽度由用户拖拽决定
     // 宽度持久化通过 $stroe.studio_chat_width（atomWithStorage → localStorage）
     const [chat_width, set_chat_width] = useAtom($stroe.studio_chat_width);
     const chatDividerRef = useRef(null);
@@ -395,10 +395,8 @@ export default function Studio(props) {
         // 面板宽度 = 容器右边界到鼠标的距离
         const right = el.parentElement.getBoundingClientRect().right;
         const width_px = right - event.clientX;
-        // 约束：最小 320px，最大不超过容器的 70%
-        const min_px = 320;
-        const max_px = el.parentElement.getBoundingClientRect().width * 0.7;
-        const clamped = Math.min(Math.max(width_px, min_px), max_px);
+        // 宽度由用户决定，只保证在容器范围内（不小于 0，不超过容器宽度）
+        const clamped = Math.min(Math.max(width_px, 0), el.parentElement.getBoundingClientRect().width);
         set_chat_width(parseFloat((clamped / size).toFixed(2)));
     }, 32), []);
 

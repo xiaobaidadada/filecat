@@ -124,7 +124,7 @@ export default function FileList() {
             updateParams("chat_open", null);
         }
     }, [chat_open, chat_open_auth, user_base_info]);
-    // 面板宽度（em），默认约占右侧可用空间 1/3；最小 320px、最大 70% 由拖拽逻辑约束
+    // 面板宽度（em），默认约占右侧可用空间 1/3，实际宽度由用户拖拽决定
     // 宽度持久化通过 $stroe.studio_chat_width（atomWithStorage → localStorage）
     const [chat_width, set_chat_width] = useAtom($stroe.studio_chat_width);
     const chatDividerRef = React.useRef<HTMLDivElement | null>(null);
@@ -515,8 +515,8 @@ export default function FileList() {
         const parentRect = el.parentElement.getBoundingClientRect();
         // 面板宽度 = 容器右边界到鼠标的距离
         const width_px = parentRect.right - event.clientX;
-        // 约束：最小 320px，最大不超过容器的 70%
-        const clamped = Math.min(Math.max(width_px, 320), parentRect.width * 0.7);
+        // 宽度由用户决定，只保证在容器范围内（不小于 0，不超过容器宽度）
+        const clamped = Math.min(Math.max(width_px, 0), parentRect.width);
         set_chat_width(parseFloat((clamped / size).toFixed(2)));
     }, 32), []);
 

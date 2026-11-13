@@ -535,7 +535,8 @@ body.rtl .card .card-action {
     left: 0;
     height: 100%;
     width: 100%;
-    z-index: 1001;
+    /* 必须高于普通内容（如会话列表），但低于浮窗 1003 和提示 1004 */
+    z-index: 1002;
     visibility: hidden;
     opacity: 0;
     animation: .1s show forwards;
