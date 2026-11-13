@@ -640,7 +640,7 @@ export default function AIAgentChatSetting() {
                                             <ActionButton icon={"settings"} title={"env"} onClick={() => {
                                                 editor_data.set_value_temp(item.env ?? '')
                                                 setEditorSetting({
-                                                    model: "ace/mode/yaml",
+                                                    model: "ace/mode/ini",
                                                     open: true,
                                                     fileName: "",
                                                     save:async (context)=>{
@@ -706,7 +706,7 @@ export default function AIAgentChatSetting() {
                                             <ActionButton icon={"settings"} title={"headers"} onClick={() => {
                                                 editor_data.set_value_temp(item.headers ?? '')
                                                 setEditorSetting({
-                                                    model: "ace/mode/yaml",
+                                                    model: "ace/mode/ini",
                                                     open: true,
                                                     fileName: "",
                                                     save:async (context)=>{
@@ -861,7 +861,7 @@ export default function AIAgentChatSetting() {
                                               <ActionButton icon={"settings"} title={"额外参数设置"} onClick={() => {
                                                   editor_data.set_value_temp(docs_param.current)
                                                   setEditorSetting({
-                                                      model: "ace/mode/yaml",
+                                                      model: "ace/mode/ini",
                                                       open: true,
                                                       fileName: "",
                                                       save:async (context)=>{
