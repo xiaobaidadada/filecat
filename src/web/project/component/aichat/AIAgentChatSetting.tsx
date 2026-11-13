@@ -6,18 +6,19 @@ import { useAtom } from 'jotai';
 import {$stroe} from "../../util/store";
 import {Column, Dashboard, FullScreenContext, FullScreenDiv, Row, TextLine} from "../../../meta/component/Dashboard";
 import {Table} from "../../../meta/component/Table";
-import {InputText, Select} from "../../../meta/component/Input";
+import {InputText, InputTextarea, Select} from "../../../meta/component/Input";
 import {Card, CardFull, StatusCircle} from "../../../meta/component/Card";
 import {using_tip} from "../prompts/prompts.util";
 import {ai_agentHttp, settingHttp} from "../../util/config";
 import {RCode} from "../../../../common/Result.pojo";
-import {NotySuccess} from "../../util/noty";
+import {NotySuccess, NotyFail} from "../../util/noty";
 import {GlobalContext} from "../../GlobalProvider";
 import {editor_data, use_auth_check} from "../../util/store.util";
 import {UserAuth} from "../../../../common/req/user.req";
 import {useNavigate} from "react-router-dom";
 import {ws} from "../../util/ws";
 import {CmdType, WsData} from "../../../../common/frame/WsData";
+import {parse_mcp_import} from "./mcp_import";
 import {formatDuration, formatFileSize} from "../../../../common/ValueUtil";
 import {move_element} from "../../../../common/ListUtil";
 import {using_confirm} from "../prompts/prompt.util";
@@ -239,6 +240,45 @@ export default function AIAgentChatSetting() {
     const copy_mcp = (item: ai_mcp_server_item) => {
         set_mcp_list([...mcp_list,{...item,open:false}]);
         mcp_update_tag.current = true;
+    }
+    /**
+     * 弹出 MCP 导入框：用户粘贴主流 MCP 配置 JSON，前端解析后追加到列表。
+     * 这里只改前端 state，不自动保存，用户确认无误后自己点保存。
+     */
+    const import_mcp = () => {
+        const textarea_ref = React.createRef<HTMLTextAreaElement>();
+        set_prompt_card({
+            open: true,
+            title: t("导入MCP配置"),
+            context_div: (
+                <div>
+                    <InputTextarea
+                        textareaRef={textarea_ref}
+                        focus={true}
+                        spellCheck={false}
+                        style={{width: "100%", height: "18rem"}}
+                        placeholder={'{\n  "type": "stdio",\n  "command": "npx",\n  "args": ["-y", "@modelcontextprotocol/server-filesystem"]\n}'}
+                    />
+                </div>
+            ),
+            confirm: () => {
+                let parsed;
+                try {
+                    parsed = parse_mcp_import(textarea_ref.current?.value ?? "");
+                } catch (e: any) {
+                    NotyFail(e?.message === "empty" ? t("不能为空") : t("不是合法的JSON格式"));
+                    return;
+                }
+                if (parsed.items.length === 0) {
+                    NotyFail(t("没有解析到可用的MCP配置"));
+                    return;
+                }
+                set_mcp_list([...mcp_list, ...parsed.items]);
+                mcp_update_tag.current = true;
+                set_prompt_card({open: false});
+            },
+            cancel: () => set_prompt_card({open: false})
+        });
     }
     const save = async (data_rows?:any) => {
         for (let i =0; i<rows.length;i++) {
@@ -595,6 +635,7 @@ export default function AIAgentChatSetting() {
                     <Row>
                         <Column widthPer={70} maxWidth={"100rem"}>
                             <CardFull self_title={<span className={" div-row "}><h2>{t("MCP")+" "+t("设置")} - stdio</h2> <ActionButton icon={"info"} onClick={()=>{tip(mcp_tip)}} title={"信息"}/></span>} rightTopCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={()=>add_mcp("stdio")}/>
+                                <ActionButton icon={"file_upload"} title={t("导入")} onClick={import_mcp}/>
                                 <ActionButton icon={"save"} title={t("保存")} onClick={()=>{
                                 save_mcp()
                             }}/></div>}>
@@ -670,6 +711,7 @@ export default function AIAgentChatSetting() {
                     <Row>
                         <Column widthPer={70} maxWidth={"100rem"}>
                             <CardFull self_title={<span className={" div-row "}><h2>{t("MCP")+" "+t("设置")} - HTTP</h2> </span>} rightTopCom={<div><ActionButton icon={"add"} title={t("添加")} onClick={()=>add_mcp("http")}/>
+                                <ActionButton icon={"file_upload"} title={t("导入")} onClick={import_mcp}/>
                                 <ActionButton icon={"save"} title={t("保存")} onClick={()=>{
                                 save_mcp()
                             }}/></div>}>

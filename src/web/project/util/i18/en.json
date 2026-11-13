@@ -1397,5 +1397,9 @@
   "添加账号": "Add account",
   "请填写账号 id": "Please enter the account id",
   "请填写 access_token": "Please enter access_token",
-  "头像": "Avatar"
+  "头像": "Avatar",
+  "导入MCP配置": "Import MCP Config",
+  "已添加": "Added",
+  "不是合法的JSON格式": "Invalid JSON format",
+  "没有解析到可用的MCP配置": "No usable MCP config parsed"
 }
