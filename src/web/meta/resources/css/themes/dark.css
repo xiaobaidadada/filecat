@@ -251,6 +251,10 @@ table th {
 .shell__result {
   border-top: 1px solid var(--divider);
 }
+/* xterm 的 viewport 层默认是白色，会在 .xterm-screen 的圆角外露出四个白角 */
+.xterm-viewport {
+  background: transparent !important;
+}
 .xterm-screen {
   background: var(--surfacePrimary);
   border-radius: var(--border-radius);
