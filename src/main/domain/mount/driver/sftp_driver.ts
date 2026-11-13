@@ -1,4 +1,5 @@
 import {Readable} from "stream";
+import {pipeline} from "stream/promises";
 import {FileDriver, DriverCaps, MountDriverType, MountShell} from "./file_driver";
 import {FileItemData} from "../../../../common/file.pojo";
 import {getFileFormat} from "../../../../common/FileMenuType";
@@ -277,25 +278,12 @@ export class SftpDriver implements FileDriver {
     async write(path: string, data: Readable, size?: number): Promise<void> {
         const sftp = await this.get_sftp();
         const abs = this.abs(path);
-        await new Promise<void>((resolve, reject) => {
-            const ws = sftp.createWriteStream(abs);
-            const on_err = (e: any) => {
-                cleanup();
-                reject(e);
-            };
-            const cleanup = () => {
-                data.removeListener("error", on_err);
-                ws.removeListener("error", on_err);
-            };
-            data.on("error", on_err);
-            ws.on("error", on_err);
-            ws.on("close", () => {
-                cleanup();
-                resolve();
-            });
-            // 流式转发，数据不落服务器磁盘
-            data.pipe(ws);
-        });
+        // 流式转发，数据不落服务器磁盘。
+        // 用 pipeline 而不是手写 pipe + close 监听：
+        //   1) close 在写入失败时同样会触发，手写版本会把失败当成功 resolve
+        //   2) 出错时 pipeline 会自动销毁两端并移除监听器，不会把句柄和
+        //      SFTP 通道留在半开状态
+        await pipeline(data, sftp.createWriteStream(abs));
     }
 
     /** 递归删除目录（SFTP 的 rmdir 只能删空目录） */

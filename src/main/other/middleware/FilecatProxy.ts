@@ -58,15 +58,10 @@ export class TunnelDuplexStream extends Duplex {
         const idBuffer = NetUtil.int16_to_buffer(this.socket_id);
         const payload = Buffer.concat([idBuffer, chunk]);
 
-        const ok = this.client.client_util.send_data(NetMsgType.tcp_socket_data, payload);
-
-        if (!ok) {
-            this.client.client_util.get_client().get_socket().once('drain', () => {
-                callback();
-            });
-        } else {
-            callback();
-        }
+        // 把 callback 交给 socket.write 自己处理背压与错误：
+        // 之前手动 once('drain') 每写一次就挂一个监听器，一旦 socket 不再 drain，
+        // 这些 callback 永远不会执行，_write 队列卡死，监听器也全部泄漏
+        this.client.client_util.send_data(NetMsgType.tcp_socket_data, payload, 0, callback);
     }
 
     _read(size: number) {

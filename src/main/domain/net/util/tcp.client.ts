@@ -72,7 +72,7 @@ export class tcp_raw_socket {
         });
     }
 
-    send_data: (code_type: NetMsgType, buffer: Buffer, tag_id?: number) => boolean;
+    send_data: (code_type: NetMsgType, buffer: Buffer, tag_id?: number, callback?: (err?: Error | null) => void) => boolean;
     send_data_call: (tag_id: number, buffer: Buffer) => void;
     send_data_async: (code_type: NetMsgType, buffer: Buffer) => Promise<{ code: NetMsgType, tcpBuffer: Buffer }>;
 }
@@ -153,11 +153,12 @@ export class tcp_client {
         return this.client;
     }
 
-    public send_data(code_type: NetMsgType, buffer: Buffer, tag_id?: number): boolean {
+    public send_data(code_type: NetMsgType, buffer: Buffer, tag_id?: number, callback?: (err?: Error | null) => void): boolean {
         if (!this.client || !this.client.connected) {
+            if (callback) callback(new Error("tcp client is not connected"));
             return false;
         }
-        return this.client.send_data(code_type, buffer, tag_id);
+        return this.client.send_data(code_type, buffer, tag_id, callback);
     }
 
     close() {

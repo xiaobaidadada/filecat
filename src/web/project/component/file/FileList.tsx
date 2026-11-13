@@ -356,6 +356,9 @@ export default function FileList() {
         // init_page()
         return async () => {
             set_to_running_files_set(new Set())
+            if(mount_info) {
+               await ws.close()
+            }
         }
     }, []);
     const init = () =>{

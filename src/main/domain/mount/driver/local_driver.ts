@@ -1,6 +1,7 @@
 import path from "path";
 import fs from "fs";
 import {Readable} from "stream";
+import {pipeline} from "stream/promises";
 import {FileDriver, DriverCaps, MountDriverType} from "./file_driver";
 import {FileItemData} from "../../../../common/file.pojo";
 import {getFileFormat} from "../../../../common/FileMenuType";
@@ -135,14 +136,10 @@ export class LocalDriver implements FileDriver {
         const real = this.real_path(inner);
         // 目标目录可能不存在，先确保父目录存在
         await FileUtil.ensure_dir(path.dirname(real));
-        // 流式写入真实文件，不落额外临时文件
-        await new Promise<void>((resolve, reject) => {
-            const ws = fs.createWriteStream(real);
-            data.pipe(ws);
-            ws.on("finish", () => resolve());
-            ws.on("error", reject);
-            data.on("error", reject);
-        });
+        // 流式写入真实文件，不落额外临时文件。
+        // 用 pipeline 而不是手写 pipe：它在出错时会自动销毁两端并按顺序移除监听器，
+        // 手写 pipe 在 error 分支既不解绑监听器也不销毁写流，会泄漏句柄
+        await pipeline(data, fs.createWriteStream(real));
     }
 
     async remove(inner: string): Promise<void> {

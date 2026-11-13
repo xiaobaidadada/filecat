@@ -242,9 +242,14 @@ export class tcp_stream_util {
     }
 
 
-    public send_data(code_type: NetMsgType, buffer: Buffer,tag_id?:number) {
+    public send_data(code_type: NetMsgType, buffer: Buffer,tag_id?:number,callback?:(err?:Error|null)=>void) {
         const data = NetUtil.getTcpBuffer(code_type, buffer)
-        return this.socket.write( NetUtil.fastBufferConcat([this.protocol,NetUtil.intToBuffer(data.length),NetUtil.int16_to_buffer(tag_id??0),data]));
+        const frame = NetUtil.fastBufferConcat([this.protocol,NetUtil.intToBuffer(data.length),NetUtil.int16_to_buffer(tag_id??0),data]);
+        // 有回调时交给 socket.write 自己处理背压与错误，避免调用方手动挂 drain 监听导致泄漏
+        if (callback) {
+            return this.socket.write(frame, callback);
+        }
+        return this.socket.write(frame);
     }
 
 

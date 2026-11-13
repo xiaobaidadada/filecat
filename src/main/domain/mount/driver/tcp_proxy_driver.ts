@@ -1,5 +1,5 @@
 import http from "http";
-import {Readable} from "stream";
+import {Readable, PassThrough} from "stream";
 import {FileDriver, DriverCaps, MountDriverType} from "./file_driver";
 import {FileItemData} from "../../../../common/file.pojo";
 import {getFileFormat} from "../../../../common/FileMenuType";
@@ -174,6 +174,19 @@ export class TcpProxyDriver implements FileDriver {
             : Env.port;
 
         // 订阅隧道回传数据，按 socket_id 分发给本流
+        let cleaned = false;
+        const cleanup = () => {
+            // 三个出口（响应结束 / 出错 / 隧道被对端关闭）都可能触发，
+            // 这里保证只解绑一次，避免同一 handle 重复 filter 造成无谓开销
+            if (cleaned) {
+                return;
+            }
+            cleaned = true;
+            client.client_util.get_client().delete_on_data(on_data);
+            if (!tunnelStream.writableEnded) {
+                tunnelStream.destroy();
+            }
+        };
         const on_data = (data: Buffer) => {
             const {code, tcpBuffer} = NetUtil.getTcpData(data);
             if (code === NetMsgType.tcp_socket_data) {
@@ -185,17 +198,14 @@ export class TcpProxyDriver implements FileDriver {
                 if (NetUtil.buffer_to_int16(tcpBuffer.subarray(0, 2)) !== socket_id) {
                     return;
                 }
+                // 对端关掉这条 tunnel socket 后不会再有响应回来，
+                // 必须在这里就解绑，否则 on_data 会永久留在 client 的监听器数组里，
+                // 每次请求泄漏一个闭包（连带 tunnelStream 和 client 引用）
+                cleanup();
                 tunnelStream.push(null);
             }
         };
         client.client_util.get_client().add_on_data(on_data);
-
-        const cleanup = () => {
-            client.client_util.get_client().delete_on_data(on_data);
-            if (!tunnelStream.writableEnded) {
-                tunnelStream.destroy();
-            }
-        };
 
         try {
             // 通知客户端连到它自己的 FileCat HTTP 端口。
@@ -254,11 +264,12 @@ export class TcpProxyDriver implements FileDriver {
                     cleanup();
                     reject(e);
                 });
-                if (options?.timeout) {
-                    req.setTimeout(options.timeout, () => {
-                        req.destroy(new Error("请求超时"));
-                    });
-                }
+                // 兜底超时：隧道断在半路时 socket 不会报错也没有响应，
+                // 不设超时这个 Promise 会永久挂起，cleanup 永不执行，
+                // on_data / tunnelStream / 上传流全部泄漏。调用方传的 timeout 优先
+                req.setTimeout(options?.timeout ?? 120000, () => {
+                    req.destroy(new Error("请求超时"));
+                });
                 if (options?.stream) {
                     // 流式上传：直接 pipe 进请求体
                     options.stream.pipe(req);
@@ -660,54 +671,53 @@ export class TcpProxyDriver implements FileDriver {
         );
         const tail = Buffer.from(`\r\n--${boundary}--\r\n`);
 
-        // 头尾之外的部分直接流式转发，避免整个文件进内存
-        const body_stream = new (class extends Readable {
-            private step = 0;
+        // 头尾之外的部分直接流式转发，避免整个文件进内存。
+        // 用 PassThrough 做中转：数据通过 pipe 流进来，Node 会自动在背压时
+        // pause 源流、缓冲区腾空时 resume，不需要自己维护 push/pause 状态机。
+        const body_stream = new PassThrough();
+        const on_data_end = () => body_stream.end(tail);
+        const on_data_error = (e: Error) => body_stream.destroy(e);
+        try {
+            body_stream.write(head);
+            data.pipe(body_stream, {end: false});
+            data.on("end", on_data_end);
+            data.on("error", on_data_error);
 
-            _read() {
-                if (this.step === 0) {
-                    this.step = 1;
-                    this.push(head);
-                    return;
-                }
-                if (this.step === 1) {
-                    this.step = 2;
-                    data.on("data", (c: Buffer) => {
-                        if (!this.push(c)) data.pause();
-                    });
-                    data.on("end", () => {
-                        this.push(tail);
-                        this.push(null);
-                    });
-                    data.on("error", (e: Error) => this.destroy(e));
-                    this.on("drain", () => data.resume());
-                    return;
-                }
+            const headers: Record<string, string> = {
+                "Content-Type": `multipart/form-data; boundary=${boundary}`,
+            };
+            if (size !== undefined && size !== null) {
+                // multipart 总长 = 头 + 文件 + 尾
+                headers["Content-Length"] = String(head.length + size + tail.length);
             }
-        })();
-
-        const headers: Record<string, string> = {
-            "Content-Type": `multipart/form-data; boundary=${boundary}`,
-        };
-        if (size !== undefined && size !== null) {
-            // multipart 总长 = 头 + 文件 + 尾
-            headers["Content-Length"] = String(head.length + size + tail.length);
-        }
-        // 上传的请求体是一次性流，token 失效时无法重放，
-        // 所以这里不接受「重试」语义，直接带上当前 token 发出去；
-        // 若对端确实说登录失效，外层会收到错误，下次操作自然会用新 token。
-        const token = await this.get_token();
-        const res = await this.request("PUT", this.file_url(remote), {
-            stream: body_stream,
-            headers: {...headers, Authorization: token},
-        });
-        if (res.status >= 400) {
-            throw new Error(`写入对端文件失败（HTTP ${res.status}）`);
-        }
-        if (this.body_is_auth_fail(res.body)) {
-            // 本次上传因登录态失效被拒，清缓存让下次重新登录
-            token_cache.delete(this.client_num_id);
-            throw new Error("对端登录已失效，请重试上传（账号或密码可能已被修改）");
+            // 上传的请求体是一次性流，token 失效时无法重放，
+            // 所以这里不接受「重试」语义，直接带上当前 token 发出去；
+            // 若对端确实说登录失效，外层会收到错误，下次操作自然会用新 token。
+            const token = await this.get_token();
+            const res = await this.request("PUT", this.file_url(remote), {
+                stream: body_stream,
+                headers: {...headers, Authorization: token},
+            });
+            if (res.status >= 400) {
+                throw new Error(`写入对端文件失败（HTTP ${res.status}）`);
+            }
+            if (this.body_is_auth_fail(res.body)) {
+                // 本次上传因登录态失效被拒，清缓存让下次重新登录
+                token_cache.delete(this.client_num_id);
+                throw new Error("对端登录已失效，请重试上传（账号或密码可能已被修改）");
+            }
+        } finally {
+            // 无论成功失败都要解绑并释放：否则登录失败等提前抛错的分支
+            // 会把监听器留在上传流上，源流既不被消费也不结束，句柄与缓冲一直占着
+            data.off("end", on_data_end);
+            data.off("error", on_data_error);
+            data.unpipe(body_stream);
+            if (!body_stream.destroyed) {
+                body_stream.destroy();
+            }
+            if (!data.destroyed) {
+                data.destroy();
+            }
         }
     }
 

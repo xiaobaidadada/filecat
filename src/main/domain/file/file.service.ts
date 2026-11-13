@@ -1923,7 +1923,7 @@ export class FileService  {
         await fse.rename(sysPath, sysPathNew);
     }
 
-    download_one_file(file_name: string, file_size: number, file_path: string, res: Response, param?: {
+    async download_one_file(file_name: string, file_size: number, file_path: string, res: Response, param?: {
         handle_type_?: "attachment" | "inline",
         cache?: boolean,
         cache_length?: number, // 过期时间长度
@@ -1949,9 +1949,9 @@ export class FileService  {
         } else if (param?.cache_length) {
             res.setHeader('Cache-Control', `public, max-age=${param.cache_length}`);
         }
-        // 发送文件
-        const readStream = fs.createReadStream(file_path);
-        readStream.pipe(res);
+        // 发送文件。pipeline 在客户端中断时会销毁读流，释放文件句柄；
+        // 裸 pipe 只结束 res，读流会一直挂着直到读完整个文件
+        await pipeline(fs.createReadStream(file_path), res);
     }
 
     /**
@@ -1973,6 +1973,9 @@ export class FileService  {
         archive.on("error", (e) => {
             if (!res.headersSent) res.status(500).send(e.message);
         });
+        // 客户端中断时销毁 archiver，否则内部仍在读的挂载驱动流不会停，
+        // 每个中断的打包请求都会留下若干条远端连接
+        res.on("close", () => archive.abort());
         archive.pipe(res);
 
         await append_mount_dir_to_archive(archive, driver, base_inner_path, "");
@@ -2048,7 +2051,11 @@ export class FileService  {
             }
         }
         res.set(headers);
-        as_readable(stream).pipe(res);
+        // 用 pipeline 而不是裸 pipe：客户端中途断开（下载一半关页面）时，
+        // 裸 pipe 只会结束 res，不会销毁源流。挂载驱动的源流是远端网络连接
+        // （百度/WebDAV/S3 的响应体），不销毁就会一直占用连接和缓冲，
+        // 每中断一次泄漏一个。pipeline 会在 res 关闭时自动销毁源流
+        await pipeline(as_readable(stream), res);
     }
 
     async download_for_private(ctx) {
@@ -2191,11 +2198,12 @@ export class FileService  {
                     "Content-Type": mime.lookup(fileName) || "application/octet-stream",
                     "Content-Disposition": `attachment; filename="${encodedFileName}"; filename*=UTF-8''${encodedFileName}`
                 });
-                readStream.pipe(res);
+                // 客户端中途断开时销毁读流，否则文件句柄会一直挂着
+                await pipeline(readStream, res);
                 return;
             }
             if (stats.isFile()) {
-                this.download_one_file(fileName, fileSize, sysPath, res, {
+                await this.download_one_file(fileName, fileSize, sysPath, res, {
                     cache: cache === "1",
                     handle_type_: show === "1" ? "inline" : "attachment"
                 });
@@ -2203,6 +2211,9 @@ export class FileService  {
             } else {
                 res.attachment(path.basename(sysPath) + ".zip");
                 const archive = archiver('zip', {zlib: {level: 5}});
+                // 客户端中断时销毁 archiver，否则内部仍在读的驱动流不会停
+                res.on("close", () => archive.abort());
+                archive.on("error", () => archive.abort());
                 archive.pipe(res);
                 archive.directory(sysPath, path.basename(sysPath));
                 archive.finalize();
@@ -2215,10 +2226,9 @@ export class FileService  {
             });
             res.attachment("output.zip");
             res.set('Content-Type', 'application/octet-stream');
-            // ctx.set('Content-Type', 'application/zip');
-            // ctx.set('Content-Disposition', 'attachment; filename=output.zip');
-            // const stream = new Stream.PassThrough()
-            // ctx.res.body = stream
+            // 客户端中断时销毁 archiver，否则内部仍在读的挂载驱动流不会停
+            res.on("close", () => archive.abort());
+            archive.on("error", () => archive.abort());
             // 将压缩后的文件流发送给客户端
             archive.pipe(res)
             for (const file of files) {
@@ -2242,9 +2252,16 @@ export class FileService  {
                         try {
                             const stream = await mnt_r.driver.read(mnt_r.inner_path);
                             archive.append(stream, {name: path.basename(sysPath)});
+                            // 等这一项真正写入 zip 再处理下一个，避免同时打开
+                            // 过多远端连接。出错时也要 destroy 源流，否则连接不释放
                             await new Promise<void>((resolve) => {
-                                stream.once("end", () => resolve());
-                                stream.once("error", () => resolve());
+                                const done = () => {
+                                    stream.off("end", done);
+                                    stream.off("error", done);
+                                    resolve();
+                                };
+                                stream.on("end", done);
+                                stream.on("error", done);
                             });
                         } catch (e) {
                             // 单个文件读失败不影响整包
