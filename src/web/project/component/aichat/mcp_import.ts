@@ -1,8 +1,8 @@
 import { ai_mcp_server_item } from "../../../../common/req/filecat.ai.pojo";
 
 /**
- * 把对象转成后端 Env.load 能解析的 TEXT 文本（每行 KEY=VALUE）
- * MCP 的 env / headers 字段在库里存的就是这种文本，而不是 JSON
+ * Convert a key-value object into Env.load compatible text (one KEY=VALUE per line).
+ * MCP env / headers are stored as this text format, not JSON.
  */
 function kv_to_text(obj?: Record<string, unknown>): string {
     if (!obj) return "";
@@ -16,28 +16,27 @@ function kv_to_text(obj?: Record<string, unknown>): string {
 }
 
 /**
- * args 字段：后端 parseArgString 既支持 JSON 数组也支持空格分隔，
- * 这里统一转成 JSON 数组字符串，避免参数里带空格时被拆错
+ * The backend stores args as a space separated string (e.g. "windows-mcp serve").
+ * Arrays are joined with spaces to keep the same format as existing data.
  */
 function args_to_text(args?: unknown): string {
     if (args == null) return "";
-    if (Array.isArray(args)) return JSON.stringify(args.map((v) => String(v)));
+    if (Array.isArray(args)) return args.map((v) => String(v)).join(" ");
     return String(args);
 }
 
 /**
- * 把单条外部 MCP 配置转成 filecat 的 ai_mcp_server_item
- * 支持三种主流格式：
+ * Convert a single external MCP entry into ai_mcp_server_item.
+ * Supported inputs:
  *   { type: "sse", url, headers }
  *   { type: "streamable-http", url, headers }
  *   { type: "stdio", command, args, env }
- * 另外兼容不带 type 的写法（按 command / url 推断），以及 VS Code 的 servers 风格
+ * Entries without type are detected by command / url.
  */
 function raw_to_item(name: string, raw: any): ai_mcp_server_item | null {
     if (!raw || typeof raw !== "object") return null;
 
     const type = String(raw.type ?? raw.transport ?? "").toLowerCase();
-    // url 可能叫 url / endpoint / serverUrl
     const url = raw.url ?? raw.endpoint ?? raw.serverUrl ?? raw.server_url ?? "";
     const command = raw.command ?? "";
 
@@ -45,7 +44,6 @@ function raw_to_item(name: string, raw: any): ai_mcp_server_item | null {
         ? true
         : type === "stdio"
             ? false
-            // 没有 type 时按有没有 command 判断
             : !command && !!url;
 
     if (is_http) {
@@ -75,14 +73,16 @@ function raw_to_item(name: string, raw: any): ai_mcp_server_item | null {
     };
 }
 
-/** 从一条原始配置里取名字，取不到就用 command 或 url 兜底 */
+/**
+ * Pick a display name for the imported entry.
+ * Falls back to the command executable name or the url.
+ */
 function pick_name(raw: any, fallback: string): string {
     const name = raw?.name ?? raw?.server_name ?? raw?.serverName;
     if (name) return String(name).trim();
     if (raw?.command) {
-        const argv = Array.isArray(raw.args) ? raw.args : [];
         const first = String(raw.command).replace(/\\/g, "/").split("/").pop();
-        return [first, ...argv.slice(0, 1)].filter(Boolean).join(" ");
+        return first;
     }
     const url = raw?.url ?? raw?.endpoint ?? raw?.serverUrl;
     if (url) return String(url);
@@ -90,19 +90,16 @@ function pick_name(raw: any, fallback: string): string {
 }
 
 export interface McpImportResult {
-    /** 解析成功、可加入列表的条目 */
     items: ai_mcp_server_item[];
-    /** 解析失败的条目名，用于提示 */
     failed: string[];
 }
 
 /**
- * 解析用户粘贴的 MCP 导入文本。
- * 支持：
- *   1. 单个对象        { type: "stdio", command: "npx", args: [...] }
- *   2. 对象数组        [ {...}, {...} ]
- *   3. Claude 风格     { mcpServers: { 名称: {...} } }
- *   4. 裸映射           { 名称: {...}, 名称2: {...} }
+ * Parse pasted MCP config text. Accepted shapes:
+ *   1. single object   { type: "stdio", command: "npx", args: [...] }
+ *   2. array           [ {...}, {...} ]
+ *   3. claude style    { mcpServers: { name: {...} } }
+ *   4. plain map       { name: {...}, name2: {...} }
  */
 export function parse_mcp_import(text: string): McpImportResult {
     const result: McpImportResult = { items: [], failed: [] };
@@ -116,7 +113,6 @@ export function parse_mcp_import(text: string): McpImportResult {
         throw new Error("invalid_json");
     }
 
-    // 收集待处理的 [名字, 原始配置] 对
     const pairs: Array<[string, any]> = [];
     const push_pairs = (obj: any) => {
         Object.keys(obj ?? {}).forEach((key) => pairs.push([key, obj[key]]));
@@ -127,10 +123,8 @@ export function parse_mcp_import(text: string): McpImportResult {
     } else if (data && typeof data === "object" && data.mcpServers && typeof data.mcpServers === "object") {
         push_pairs(data.mcpServers);
     } else if (data && typeof data === "object" && (data.command || data.url || data.type)) {
-        // 单个条目
         pairs.push([pick_name(data, "mcp"), data]);
     } else if (data && typeof data === "object") {
-        // 裸映射：{ 名称: {...} }
         push_pairs(data);
     } else {
         throw new Error("invalid_json");

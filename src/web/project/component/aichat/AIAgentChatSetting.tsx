@@ -242,8 +242,8 @@ export default function AIAgentChatSetting() {
         mcp_update_tag.current = true;
     }
     /**
-     * 弹出 MCP 导入框：用户粘贴主流 MCP 配置 JSON，前端解析后追加到列表。
-     * 这里只改前端 state，不自动保存，用户确认无误后自己点保存。
+     * Open the MCP import dialog, parse pasted config text and append the result to the list.
+     * Only updates local state, nothing is saved.
      */
     const import_mcp = () => {
         const textarea_ref = React.createRef<HTMLTextAreaElement>();
