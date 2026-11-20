@@ -5,6 +5,11 @@ interface Props {
     bytes: Uint8Array;
     on_change: (dirty: boolean) => void;
     bind_save: (fn: () => Promise<Uint8Array>) => void;
+    /** 把视图状态的读写交给外部（切文件时缓存/还原 sheet 与滚动位置） */
+    bind_view?: (handle: {
+        get_state: () => {sheet: number, scroll_left: number, scroll_top: number};
+        set_state: (s: {sheet?: number, scroll_left?: number, scroll_top?: number}) => void;
+    }) => void;
 }
 
 const HEAD_W = 46;
@@ -51,6 +56,26 @@ export default function XlsxBody(props: Props) {
             return out;
         });
     }, [sheets, bytes, bind_save, on_change]);
+
+    useEffect(() => {
+        props.bind_view?.({
+            get_state: () => ({
+                sheet: active,
+                scroll_left: scroll_ref.current?.scrollLeft ?? 0,
+                scroll_top: scroll_ref.current?.scrollTop ?? 0,
+            }),
+            set_state: (s) => {
+                if (typeof s.sheet === "number" && s.sheet >= 0 && s.sheet < sheets.length) {
+                    set_active(s.sheet);
+                }
+                const el = scroll_ref.current;
+                if (el) {
+                    el.scrollLeft = s.scroll_left ?? 0;
+                    el.scrollTop = s.scroll_top ?? 0;
+                }
+            },
+        });
+    }, [active, sheets.length, props.bind_view]);
 
     const sheet = sheets[active];
 

@@ -21,6 +21,7 @@ import {useLocation, useNavigate, useSearchParams} from "react-router-dom";
 import {UserAuth} from "../../../../../../common/req/user.req";
 import {routerConfig} from "../../../../../../common/RouterConfig";
 import {use_file_capabilities, use_ai_forward, useUpdateUrlParams} from "../../FileUtil";
+import {get_view_state, set_view_state, clear_all_view_state, ViewStateKind, ViewState} from "../../../../util/view_state";
 import {path_join} from "../../../../../../common/path_util";
 import {UserBaseInfo} from "../../../../../../common/req/user.req";
 // import Ace from "../Ace";
@@ -84,6 +85,9 @@ export default function Studio(props) {
     // 已展开的目录，重建后恢复展开，避免改名后树被收起
     const [expand_paths, set_expand_paths] = useState<string[]>([]);
     const [edit_file_path, set_edit_file_path] = useState("");
+    // 供 cache_view_state 在异步回调里读取最新值，避免闭包拿到旧路径
+    const edit_file_path_ref = useRef("");
+    const edit_filename_ref = useRef<{path: string, name: string}>({path: "", name: ""});
     const [confirm, set_confirm] = useAtom($stroe.confirm);
     const [have_update, set_have_update] = useState(false);
     const [shellShow, setShellShow] = useAtom($stroe.fileShellShow);
@@ -111,7 +115,7 @@ export default function Studio(props) {
     // md 编辑器交给外层的编辑能力（保存、模式切换、导出、大纲跳转）
     const md_api = useRef<MdEditorPaneApi | null>(null);
     // 文本编辑器句柄（保存按钮 / Ctrl+S）
-    const ace_api = useRef<{ save: (silent?: boolean) => Promise<void> } | null>(null);
+    const ace_api = useRef<{ save: (silent?: boolean) => Promise<void>; get_view_state?: () => ViewState | undefined } | null>(null);
     // 画板编辑器句柄（保存按钮）
     const excalidraw_api = useRef<any>(null);
     // 思维导图编辑器句柄（保存按钮）
@@ -120,9 +124,47 @@ export default function Studio(props) {
     const timeline_api = useRef<any>(null);
     // 表格编辑器句柄（保存按钮）
     const excel_api = useRef<{ save: () => Promise<boolean> } | null>(null);
+    // 表格视图状态句柄（切文件时缓存 sheet 与滚动位置）
+    const excel_view_api = useRef<{ get_view_state?: () => ViewState | undefined } | null>(null);
     // md 编辑器上报的大纲数据与当前高亮项
     const [outline_items, set_outline_items] = useState<OutlineItem[]>([]);
     const [outline_active, set_outline_active] = useState(-1);
+
+    /** 把当前编辑器的浏览状态写进缓存，供下次打开同一文件时还原。
+     *  切文件前调用；各编辑器自己决定是否有可保存的状态。 */
+    const cache_view_state = useCallback(() => {
+        const path = edit_file_path_ref.current;
+        const name = edit_filename_ref.current.name;
+        if (!path) {
+            return;
+        }
+        let kind: ViewStateKind = "ace";
+        if (is_markdown_file(name)) {
+            kind = "md";
+        } else if (is_draw_file(name)) {
+            kind = "draw";
+        } else if (is_mind_file(name)) {
+            kind = "mind";
+        } else if (is_timeline_file(name)) {
+            kind = "timeline";
+        } else if (is_excel_file(name)) {
+            kind = "excel";
+        }
+        const handle: { get_view_state?: () => ViewState | undefined } | null =
+            kind === "ace" ? ace_api.current
+                : kind === "draw" ? excalidraw_api.current
+                    : kind === "mind" ? mind_api.current
+                        : kind === "timeline" ? timeline_api.current
+                            : kind === "md" ? (md_api.current
+                                ? {get_view_state: () => ({scroll: md_api.current?.get_scroll() ?? 0})}
+                                : null)
+                                : kind === "excel" ? excel_view_api.current
+                                    : null;
+        const state = handle?.get_view_state?.();
+        if (state) {
+            set_view_state(kind, path, state);
+        }
+    }, []);
     // 左侧面板内容：目录 / 大纲（大纲只对 md 文件可用）
     const [nav_content, set_nav_content] = useState<NavContent>("folder");
     // 左侧面板开关。切到非 md 文件时自动回到目录视图
@@ -267,6 +309,9 @@ export default function Studio(props) {
     }, [location]);
 
     const cancel = () => {
+        // 退出 Studio 前记下当前文件的浏览状态，再把本次会话的缓存全清掉
+        cache_view_state();
+        clear_all_view_state();
         // set_studio({});
         setShellShow({
             show: false,
@@ -276,6 +321,8 @@ export default function Studio(props) {
         navigate(-1);
     }
     const load_file = async (name, pre_path) => {
+        // 记录当前文件的浏览状态（滚动位置、光标、缩放等），切回来时还原
+        cache_view_state();
         // const model = getEditModelType(name) ?? "text";
         // set_edit_model(model);
         // editor_data 是全局缓存，换文件期间先清空，避免请求返回前 Ace 拿到上一个文件的内容
@@ -288,6 +335,8 @@ export default function Studio(props) {
         }
         set_edit_filename({path: pre_path, name});
         set_edit_file_path(pre_path);
+        edit_file_path_ref.current = pre_path;
+        edit_filename_ref.current = {path: pre_path, name};
         // 换成别的文件时左侧面板回到目录视图：大纲是上一个 md 文件的，留着会对不上
         set_nav_content("folder");
         set_have_update(false);
@@ -568,6 +617,23 @@ export default function Studio(props) {
                             },
                             register: (api) => {
                                 md_api.current = api;
+                                // md 内容异步渲染，滚动高度要等布局稳定才够，轮询重试直到落位
+                                const saved = get_view_state("md", edit_file_path);
+                                if (!saved?.scroll) {
+                                    return;
+                                }
+                                const target = saved.scroll as number;
+                                let tries = 0;
+                                const tick = () => {
+                                    if (++tries > 40) {
+                                        return;
+                                    }
+                                    api.set_scroll(target);
+                                    if (api.get_scroll() !== target) {
+                                        window.setTimeout(tick, 50);
+                                    }
+                                };
+                                window.setTimeout(tick, 50);
                             },
                         }}/>
                     </React.Suspense>
@@ -577,6 +643,7 @@ export default function Studio(props) {
                     <React.Suspense fallback={null}>
                         <ExcalidrawInline
                             reset_key={edit_file_path}
+                            view_state={get_view_state("draw", edit_file_path)}
                             url={fileHttp.getDownloadUrl(encodeURIComponent(edit_file_path))}
                             save_path={edit_file_path}
                             on_dirty={set_have_update}
@@ -592,6 +659,7 @@ export default function Studio(props) {
                     <React.Suspense fallback={null}>
                         <MindMapInline
                             reset_key={edit_file_path}
+                            view_state={get_view_state("mind", edit_file_path)}
                             url={fileHttp.getDownloadUrl(encodeURIComponent(edit_file_path))}
                             on_dirty={set_have_update}
                             on_saved={() => set_have_update(false)}
@@ -613,6 +681,7 @@ export default function Studio(props) {
                     <React.Suspense fallback={null}>
                         <TimelineInline
                             reset_key={edit_file_path}
+                            view_state={get_view_state("timeline", edit_file_path)}
                             url={fileHttp.getDownloadUrl(encodeURIComponent(edit_file_path))}
                             on_dirty={set_have_update}
                             register={(handle) => {
@@ -638,6 +707,26 @@ export default function Studio(props) {
                             bind_save={(fn) => {
                                 excel_api.current = {save: fn};
                             }}
+                            bind_view={(handle) => {
+                                const saved = get_view_state("excel", edit_file_path);
+                                excel_view_api.current = {
+                                    get_view_state: () => {
+                                        const s = handle.get_state();
+                                        return {
+                                            sheet: s.sheet,
+                                            scroll_x: s.scroll_left,
+                                            scroll_y: s.scroll_top,
+                                        } as ViewState;
+                                    },
+                                };
+                                if (saved) {
+                                    handle.set_state({
+                                        sheet: saved.sheet,
+                                        scroll_left: saved.scroll_x,
+                                        scroll_top: saved.scroll_y,
+                                    });
+                                }
+                            }}
                         />
                     </React.Suspense>
                 </div>
@@ -645,6 +734,8 @@ export default function Studio(props) {
                     {edit_filename.name && <React.Suspense fallback={null}>
                         <Ace name={edit_filename.name}
                              on_dirty={set_have_update}
+                             view_state={get_view_state("ace", edit_file_path)}
+                             on_view_state={(state) => set_view_state("ace", edit_file_path, state)}
                              register={(api) => {
                                  ace_api.current = api;
                              }}

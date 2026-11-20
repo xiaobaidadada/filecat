@@ -33,6 +33,7 @@ import {
 import {InputText, InputTextarea} from "../../../../../meta/component/Input";
 import {use_editor_auto_save} from "../../../../util/editor_auto_save";
 import {EditorAutoSaveEnum} from "../../../../../../common/req/user.req";
+import {ViewState} from "../../../../util/view_state";
 
 /**
  * 时间线编辑器（.timeline）。
@@ -51,6 +52,8 @@ export type TimelineHandle = {
     is_dirty: () => boolean;
     /** 当前是否处于编辑模式（视图模式下的改动绝不保存） */
     is_edit_mode: () => boolean;
+    /** 取当前视图状态（缩放/滚动），供调用方缓存 */
+    get_view_state?: () => ViewState | undefined;
 };
 
 type Props = {
@@ -66,6 +69,8 @@ type Props = {
     /** 编辑模式变化通知（外壳据此显隐保存按钮等） */
     on_edit_mode_change?: (edit: boolean) => void;
     register?: (handle: TimelineHandle) => void;
+    /** 初始视图状态（缩放/滚动），加载后应用 */
+    view_state?: ViewState;
     /** 顶部额外内容（如全屏外壳的文件名、保存、关闭按钮） */
     header?: React.ReactNode;
     /** 是否为全屏浮层模式（影响容器样式类名） */
@@ -244,7 +249,15 @@ export default function TimelineEditor(props: Props) {
     );
 
     useEffect(() => {
-        props.register?.({save, is_dirty: () => dirtyRef.current, is_edit_mode: () => edit_mode});
+        props.register?.({save, is_dirty: () => dirtyRef.current, is_edit_mode: () => edit_mode,
+            get_view_state: () => {
+                const el = scrollRef.current;
+                return {
+                    zoom: zoomRef.current,
+                    scroll_x: el ? el.scrollLeft / (zoomRef.current || 1) : 0,
+                };
+            },
+        });
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [props.register, edit_mode]);
 
@@ -280,14 +293,18 @@ export default function TimelineEditor(props: Props) {
                 if (cancelled) return;
                 const loaded = parse_doc(raw) ?? default_doc();
                 setDoc(loaded);
-                // 应用文档里保存的缩放
-                set_zoom(clamp_num(loaded.layout.zoom ?? 1, MIN_ZOOM, MAX_ZOOM, 1));
+                // 应用文档里保存的缩放；有缓存视图状态时优先用缓存
+                const view_state = props.view_state;
+                const zoom_value = view_state?.zoom
+                    ?? clamp_num(loaded.layout.zoom ?? 1, MIN_ZOOM, MAX_ZOOM, 1);
+                set_zoom(clamp_num(zoom_value, MIN_ZOOM, MAX_ZOOM, 1));
                 // 等布局稳定后还原滚动位置
                 window.setTimeout(() => {
                     const el = scrollRef.current;
                     if (!el) return;
-                    el.scrollLeft = (loaded.layout.scroll_x ?? 0) * (loaded.layout.zoom ?? 1);
-                    el.scrollTop = (loaded.layout.scroll_y ?? 0) * (loaded.layout.zoom ?? 1);
+                    const scroll_x = view_state?.scroll_x ?? loaded.layout.scroll_x ?? 0;
+                    el.scrollLeft = scroll_x * zoom_value;
+                    el.scrollTop = (loaded.layout.scroll_y ?? 0) * zoom_value;
                 }, 60);
             } catch {
                 if (cancelled) return;

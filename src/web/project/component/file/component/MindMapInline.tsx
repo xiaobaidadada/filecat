@@ -17,6 +17,7 @@ import {Icon} from "../../../../meta/component/Button";
 import {MaterialIcon} from "material-icons";
 import {use_editor_auto_save} from "../../../util/editor_auto_save";
 import {EditorAutoSaveEnum} from "../../../../../common/req/user.req";
+import {ViewState} from "../../../util/view_state";
 
 // 补充主题要在实例化前注册好（库只有 default 一套内置主题）
 register_mind_themes(MindMap);
@@ -35,6 +36,8 @@ export type MindHandle = {
     save: (silent?: boolean) => Promise<boolean>;
     /** 是否有未保存的改动 */
     is_dirty: () => boolean;
+    /** 取当前画布视图状态（缩放/平移），供调用方缓存 */
+    get_view_state?: () => ViewState | undefined;
 };
 
 /** 节点右键菜单定义。库不提供菜单 UI，只提供命令，菜单由我们自己渲染。
@@ -122,6 +125,8 @@ type Props = {
     on_saved?: () => void;
     on_dirty?: (dirty: boolean) => void;
     register?: (handle: MindHandle) => void;
+    /** 初始视图状态（缩放/平移），实例创建后应用 */
+    view_state?: ViewState;
     /** 顶部额外内容（如全屏外壳的文件名、保存、关闭按钮） */
     header?: React.ReactNode;
     /** 是否为全屏浮层模式（影响容器样式类名） */
@@ -192,7 +197,22 @@ export default function MindMapEditor(props: Props) {
 
     // 暴露句柄给外壳
     useEffect(() => {
-        props.register?.({save, is_dirty: () => dirtyRef.current});
+        props.register?.({
+            save,
+            is_dirty: () => dirtyRef.current,
+            get_view_state: () => {
+                const mm = mindRef.current;
+                const t = mm?.view?.getTransformData?.();
+                if (!t || !t.state) {
+                    return undefined;
+                }
+                return {
+                    zoom: t.state.scale,
+                    scroll_x: t.state.translateX,
+                    scroll_y: t.state.translateY,
+                };
+            },
+        });
         // save 内部走 latest.current，注册一次即可
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [props.register]);
@@ -246,6 +266,18 @@ export default function MindMapEditor(props: Props) {
             // 布局/主题/视图要在实例创建后按完整数据恢复
             if (full) {
                 mm.setFullData(full);
+            }
+            // 优先用上次离开该文件时的缩放/平移，覆盖 fit:true 的自适应结果
+            const view_state = props.view_state;
+            if (view_state && view_state.zoom !== undefined) {
+                mm.view.setTransformData({
+                    transform: {
+                        scale: view_state.zoom,
+                        translateX: view_state.scroll_x ?? 0,
+                        translateY: view_state.scroll_y ?? 0,
+                    },
+                });
+                setScale(Math.round(view_state.zoom * 100));
             }
             setLoading(false);
             // 数据里带主题就同步到下拉框，否则显示默认

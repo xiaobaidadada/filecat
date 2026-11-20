@@ -11,6 +11,11 @@ interface Props {
     on_dirty?: (dirty: boolean) => void;
     /** 把保存方法交给外部（Studio 的 Header 保存按钮调用） */
     bind_save?: (fn: () => Promise<boolean>) => void;
+    /** 把视图状态读写交给外部 */
+    bind_view?: (handle: {
+        get_state: () => {sheet: number, scroll_left: number, scroll_top: number};
+        set_state: (s: {sheet?: number, scroll_left?: number, scroll_top?: number}) => void;
+    }) => void;
 }
 
 /**
@@ -70,5 +75,6 @@ export default function XlsxPane(props: Props) {
     if (loading || !bytes) {
         return <div className="office-editor__tip">读取中…</div>;
     }
-    return <XlsxBody bytes={bytes} on_change={set_dirty} bind_save={(fn) => (save_ref.current = fn)}/>;
+    return <XlsxBody bytes={bytes} on_change={set_dirty} bind_save={(fn) => (save_ref.current = fn)}
+                     bind_view={props.bind_view}/>;
 }

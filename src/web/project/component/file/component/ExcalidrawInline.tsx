@@ -8,6 +8,7 @@ import {useTranslation} from "react-i18next";
 import {parseScene} from "./ExcalidrawEditor";
 import {use_editor_auto_save} from "../../../util/editor_auto_save";
 import {EditorAutoSaveEnum} from "../../../../../common/req/user.req";
+import {ViewState} from "../../../util/view_state";
 import "@excalidraw/excalidraw/index.css";
 
 /**
@@ -21,6 +22,8 @@ export type ExcalidrawInlineHandle = {
     save: () => Promise<boolean>;
     /** 是否有未保存的改动 */
     is_dirty: () => boolean;
+    /** 取当前画布视图状态（缩放/平移），供调用方缓存 */
+    get_view_state?: () => ViewState | undefined;
 };
 
 type Props = {
@@ -36,6 +39,8 @@ type Props = {
     on_dirty?: (dirty: boolean) => void;
     /** 把操作句柄暴露给外层（如 Header 的保存按钮） */
     register?: (handle: ExcalidrawInlineHandle) => void;
+    /** 初始视图状态（缩放/平移），场景加载后应用 */
+    view_state?: ViewState;
 };
 
 export default function ExcalidrawInline(props: Props) {
@@ -109,6 +114,18 @@ export default function ExcalidrawInline(props: Props) {
         props.register?.({
             save: () => save(),
             is_dirty: () => dirtyRef.current,
+            get_view_state: () => {
+                const api = latest.current.api;
+                if (!api) {
+                    return undefined;
+                }
+                const appState = api.getAppState();
+                return {
+                    zoom: appState.zoom?.value,
+                    scroll_x: appState.scrollX,
+                    scroll_y: appState.scrollY,
+                };
+            },
         });
         // save 每次渲染都会重建，但句柄内部都走 latest.current，所以只需注册一次
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -136,6 +153,18 @@ export default function ExcalidrawInline(props: Props) {
                 const scene = parseScene(rsq);
                 if (!scene) {
                     throw new Error("invalid excalidraw scene");
+                }
+                // 优先用上次离开该文件时的视图状态，覆盖文件里存的 appState 缩放/平移
+                const view_state = props.view_state;
+                if (view_state && (typeof view_state.scroll_x === "number" || typeof view_state.zoom === "number")) {
+                    scene.appState = {
+                        ...(scene.appState ?? {}),
+                        scrollX: view_state.scroll_x ?? scene.appState?.scrollX ?? 0,
+                        scrollY: view_state.scroll_y ?? scene.appState?.scrollY ?? 0,
+                        zoom: view_state.zoom !== undefined
+                            ? {value: view_state.zoom as any}
+                            : scene.appState?.zoom,
+                    };
                 }
                 setInitialData(scene);
             } catch {

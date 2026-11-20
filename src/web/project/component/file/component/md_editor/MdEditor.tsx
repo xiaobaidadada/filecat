@@ -75,6 +75,10 @@ export interface MdEditorPaneApi {
     goto_heading: (item: OutlineItem) => void;
     /** 当前是否有未保存改动 */
     dirty: () => boolean;
+    /** 当前滚动位置，供外部缓存 */
+    get_scroll: () => number;
+    /** 还原滚动位置 */
+    set_scroll: (top: number) => void;
 }
 
 export default function MdEditor(props: {pane?: MdEditorPaneProps}) {
@@ -379,6 +383,8 @@ export default function MdEditor(props: {pane?: MdEditorPaneProps}) {
     save_ref.current = save;
     // 对外（register.dirty）查询未保存状态的 ref，读取最新值
     const dirty_ref = useRef(dirty);
+    // 滚动容器：用于缓存/还原阅读位置
+    const scroll_el_ref = useRef<HTMLDivElement | null>(null);
     dirty_ref.current = dirty;
     // 编辑器自动保存（个人设置里可配置开关/间隔/编辑器范围）；只读模式不自动保存
     use_editor_auto_save(EditorAutoSaveEnum.md, () => dirty_ref.current, (silent) => save(silent), md_editor.readonly);
@@ -413,6 +419,13 @@ export default function MdEditor(props: {pane?: MdEditorPaneProps}) {
             mode: () => mode_ref.current,
             goto_heading: (item) => goto_heading_ref.current(item),
             dirty: () => dirty_ref.current,
+            get_scroll: () => scroll_el_ref.current?.scrollTop ?? 0,
+            set_scroll: (top) => {
+                const el = scroll_el_ref.current;
+                if (el) {
+                    el.scrollTop = top;
+                }
+            },
         });
     }, []);
 
@@ -455,7 +468,7 @@ export default function MdEditor(props: {pane?: MdEditorPaneProps}) {
                         )}
                         {/* 拖动时铺一层透明遮罩：避免指针进入编辑器后被 ProseMirror 抢走事件 */}
                         {!pane_mode && dragging && <div className={"md-editor-drag-overlay"} onPointerUp={handle_pointer_up}/>}
-                        <div className={"md-editor-scroll"}>
+                        <div className={"md-editor-scroll"} ref={scroll_el_ref}>
                             <div className={"md-editor-sheet"}>
                                 {/* 工具栏与右键菜单只在所见即所得模式下有意义：
                                     源码模式里文档就是一个纯文本代码块，没有可格式化的语义。

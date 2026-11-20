@@ -8,6 +8,7 @@ import {$stroe} from "../../../util/store";
 import {editor_data} from "../../../util/store.util";
 import {use_editor_auto_save} from "../../../util/editor_auto_save";
 import {EditorAutoSaveEnum} from "../../../../../common/req/user.req";
+import {ViewState} from "../../../util/view_state";
 // import "ace-builds/src-noconflict/ext-language_tools";
 
 
@@ -19,9 +20,16 @@ import {EditorAutoSaveEnum} from "../../../../../common/req/user.req";
 export interface AceApi {
     /** 保存（silent 为自动保存，失败不提示） */
     save: (silent?: boolean) => Promise<void>;
+    /** 取当前视图状态（供调用方在卸载前缓存） */
+    get_view_state?: () => ViewState | undefined;
 }
 
-export default function Ace(props:{name: string,model?:string,on_change?:()=>void,options?: Partial<AceItem.EditorOptions>,editor_id?:number,save?:(silent?:boolean)=>any,on_dirty?:(dirty:boolean)=>void,register?:(api:AceApi)=>void}) {
+export default function Ace(props:{name: string,model?:string,on_change?:()=>void,options?: Partial<AceItem.EditorOptions>,editor_id?:number,save?:(silent?:boolean)=>any,on_dirty?:(dirty:boolean)=>void,register?:(api:AceApi)=>void,
+    /** 初始视图状态，组件创建后立即恢复（切文件回来时还原滚动位置和光标） */
+    view_state?: ViewState,
+    /** 视图状态变化回调（滚动/光标移动时触发），调用方自行决定是否持久化 */
+    on_view_state?: (state: ViewState) => void,
+}) {
     const editorRef = useRef(null);
     const [userInfo, setUserInfo] = useAtom($stroe.user_base_info);
     // 组件内部维护脏标记，保存成功后自行清掉，不再让调用方各自实现一遍
@@ -49,8 +57,25 @@ export default function Ace(props:{name: string,model?:string,on_change?:()=>voi
     save_expose_ref.current = save;
     const register_ref = useRef(props.register);
     register_ref.current = props.register;
+    // 视图状态回写回调，由调用方注入（本组件不关心存到哪里）
+    const view_state_ref = useRef(props.on_view_state);
+    view_state_ref.current = props.on_view_state;
     useEffect(() => {
-        register_ref.current?.({save: (silent?: boolean) => save_expose_ref.current(silent)});
+        register_ref.current?.({
+            save: (silent?: boolean) => save_expose_ref.current(silent),
+            get_view_state: () => {
+                const editor = editorRef.current;
+                if (!editor) {
+                    return undefined;
+                }
+                const cursor = editor.getCursorPosition();
+                return {
+                    scroll: editor.session.getScrollTop(),
+                    row: cursor.row,
+                    column: cursor.column,
+                };
+            },
+        });
     }, []);
     use_editor_auto_save(EditorAutoSaveEnum.ace,
         () => !!save_ref.current && have_update_ref.current,
@@ -87,14 +112,48 @@ export default function Ace(props:{name: string,model?:string,on_change?:()=>voi
             }
         });
         editorRef.current = editor;
+        // 恢复上次的滚动位置和光标（切回该文件时）
+        const view_state = props.view_state;
+        if (view_state) {
+            if (typeof view_state.scroll === "number") {
+                editor.session.setScrollTop(view_state.scroll);
+            }
+            if (typeof view_state.row === "number") {
+                const pos = {row: view_state.row, column: view_state.column ?? 0};
+                editor.moveCursorToPosition(pos);
+                editor.clearSelection();
+                editor.scrollToLine(view_state.row, false, false);
+                // 光标不在可视区时重新对齐滚动，不覆盖上面恢复的精确滚动值
+                const visible = editor.renderer.getFirstVisibleRow() <= view_state.row
+                    && editor.renderer.getLastVisibleRow() >= view_state.row;
+                if (!visible && typeof view_state.scroll === "number") {
+                    editor.session.setScrollTop(view_state.scroll);
+                }
+            }
+        }
         editor['formatCode'] =  ()=> {
             const beautify = ace.require("ace/ext/beautify") as any;
             const editor = editorRef.current;
             if (editor) beautify.beautify(editor.session);
         }
         editor_data.set_editor_temp(editor,props.editor_id);
+        // 滚动时把视图状态同步出去，卸载前调用方即可拿到最新值
+        const sync_view_state = () => {
+            if (!view_state_ref.current) {
+                return;
+            }
+            const cursor = editor.getCursorPosition();
+            view_state_ref.current({
+                scroll: editor.session.getScrollTop(),
+                row: cursor.row,
+                column: cursor.column,
+            });
+        };
+        editor.session.on("changeScrollTop", sync_view_state);
+        editor.on("changeSelection", sync_view_state);
 
         return () => {
+            sync_view_state();
             editor_data.delete_editor_temp(props.editor_id);
             editor.destroy();
         };
