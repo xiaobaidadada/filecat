@@ -31,6 +31,7 @@ import {md_node_views, set_html_doc_dir} from "./md_html";
 import {
     build_input_rules,
     convert_on_enter,
+    exit_empty_list_item,
     list_commands,
     toggle_mark,
     toggle_blockquote,
@@ -283,6 +284,7 @@ const MdWysiwygEditor = React.forwardRef<MdWysiwygHandle, Props>(function MdWysi
                         // 命中就消费掉这次 Enter；否则继续走后面的常规换行逻辑
                         convert_on_enter,
                         newlineInCode,
+                        exit_empty_list_item,
                         list_commands.split,
                         createParagraphNear,
                         liftEmptyBlock,

@@ -146,14 +146,12 @@ function resolve_all_shells(): ShellProvider[] {
 
     if (is_win) {
 
-        // cmd.exe
-        const cmd = first_usable(cmd_candidates());
-        push(cmd ? create_cmd_provider(cmd) : null);
-
-
-        // 1. pwsh（PowerShell 7 及以上）
+        // 1. pwsh（PowerShell 7 及以上）—— Windows 默认 shell
         const pwsh = first_usable(pwsh_candidates()) ?? find_on_path("pwsh");
         push(pwsh ? create_powershell_provider(pwsh, "pwsh") : null);
+
+        const cmd = first_usable(cmd_candidates());
+        push(cmd ? create_cmd_provider(cmd) : null);
 
         // 2. Windows PowerShell 5.1，系统自带，pwsh 没装时用它
         const powershell = first_usable(windows_powershell_candidates());

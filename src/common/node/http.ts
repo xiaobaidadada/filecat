@@ -23,10 +23,7 @@ export class HttpRequest {
     } catch (e) {
       console.log(e?.message??e);
     }
-    // 系统设置没配时，用进程环境变量兜底（大小写两种都认，与代理工具惯例一致）
-    return process.env.http_proxy || process.env.HTTP_PROXY
-        || process.env.https_proxy || process.env.HTTPS_PROXY
-        || undefined;
+    return ;
   }
 
   /** 构建 axios 配置，自动注入代理 agent */

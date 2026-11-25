@@ -489,6 +489,9 @@ export function use_handleContextMenu() {
         if (file_cap.git_available && nowFileList?.folders?.find(v => v.name === '.git')) {
             list.push({r: t("查看Git提交"), v: "git_page"})
         }
+        // Studio 模式打开当前目录：与文件右键的 studio 入口同一个页面，
+        // 只是这里没有具体文件名，直接把当前目录当工作目录传过去
+        list.push({r: t("o_stdo"), v: "studio_page"})
         if (check_user_auth(UserAuth.http_proxy)) {
             list.push({r: t("dl_here"), v: "http_resource"})
         }
@@ -517,6 +520,13 @@ export function use_handleContextMenu() {
                 const dirPath = getRouterAfter('file', getRouterPath());
                 setShowPrompt({data: undefined, overlay: false, type: "", show: false});
                 navigate(`${routerConfig.git_page}/${encodeURIComponent(dirPath)}`);
+                return;
+            } else if (v === "studio_page") {
+                // Studio 模式打开当前目录：URL 格式与文件右键一致，
+                // 传的是 /file/<相对路径>，Studio 内部再剥掉 /file 前缀
+                const dirPath = getRouterAfter('file', getRouterPath());
+                setShowPrompt({data: undefined, overlay: false, type: "", show: false});
+                navigate(`${routerConfig.studio_page}/${encodeURIComponent(`/file/${dirPath}`)}`);
                 return;
             } else if (v === "http_resource") {
                 const result = await ws.sendData(CmdType.file_info, {

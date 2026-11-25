@@ -315,6 +315,28 @@ export const toggle_blockquote: Command = (state, dispatch) => {
     return true;
 };
 
+
+export const exit_empty_list_item: Command = (state, dispatch) => {
+    const {$from} = state.selection;
+    const {list_item, paragraph} = state.schema.nodes;
+    // doc > list_item > paragraph，正好 depth 3 才可能是顶层列表里的光标
+    if ($from.depth !== 3) {
+        return false;
+    }
+    if ($from.node(-1).type !== list_item || $from.parent.type !== paragraph) {
+        return false;
+    }
+    // 当前段落必须为空，否则是在正常写法里换行，不能抢
+    if ($from.parent.content.size !== 0) {
+        return false;
+    }
+    // 该列表项里除了这个空段落不该有别的内容（多段落的项要正常拆分）
+    if ($from.node(-1).childCount !== 1) {
+        return false;
+    }
+    return liftListItem(list_item)(state, dispatch);
+};
+
 /** 列表项操作（Tab 缩进 / Shift-Tab 反缩进 / Enter 拆分） */
 export const list_commands = {
     sink: sinkListItem(md_schema.nodes.list_item),

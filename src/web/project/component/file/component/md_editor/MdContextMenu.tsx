@@ -1,6 +1,7 @@
 import React, {useCallback, useEffect, useRef, useState} from "react";
 import {useTranslation} from "react-i18next";
 import {EditorView} from "prosemirror-view";
+import {TextSelection} from "prosemirror-state";
 import {MenuSelect, OverlayTransparent} from "../../../../../meta/component/Dashboard";
 import {toggle_mark, toggle_bullet_list, toggle_ordered_list, toggle_blockquote, set_block_type} from "./keymap";
 import {
@@ -88,7 +89,6 @@ export default function MdContextMenu(props: Props) {
             if (pos) {
                 const sel = view.state.selection;
                 if (pos.pos < sel.from || pos.pos > sel.to) {
-                    const {TextSelection} = view.state.selection.constructor;
                     try {
                         view.dispatch(view.state.tr.setSelection(
                             TextSelection.near(view.state.doc.resolve(pos.pos))
