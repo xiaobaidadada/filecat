@@ -130,3 +130,25 @@
     color: var(--textSecondary);
 }
 
+
+/* 通用搜索框：无图标，整行铺满（AI 会话列表、Studio 文件树共用） */
+.search-input {
+    width: 100%;
+    padding: .375rem .625rem;
+    font-size: .9em;
+    border: 1px solid var(--borderPrimary, #d6d9de);
+    border-radius: .5rem;
+    outline: none;
+    box-sizing: border-box;
+    background: var(--surfacePrimary, #fff);
+    color: var(--textPrimary, #222);
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: var(--borderPrimary, #d1d5db);
+}
+
+.search-input::placeholder {
+    color: var(--textSecondary, #9ca3af);
+}

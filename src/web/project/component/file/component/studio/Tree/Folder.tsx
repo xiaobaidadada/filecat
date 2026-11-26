@@ -15,6 +15,8 @@ export function Folder(props: FileTree & {
     fatherNowToggleExpansion?:()=>void,
     /** 重建后需要恢复展开的目录路径 */
     expand_paths?: string[],
+    /** 子项加载完成后的上报，FolderTree 用它建立「路径 → 子项」缓存，供前端搜索使用 */
+    on_children_loaded?: (pre_path: string, list: FileTree[]) => void,
 }): React.JSX.Element {
     {
         // 这里的pre_path 是以/结尾的
@@ -22,6 +24,7 @@ export function Folder(props: FileTree & {
         const [children, setChildren] = useState<FileTree[]>([]);
         const set_children = (list: FileTree[]) => {
             setChildren(list);
+            props.on_children_loaded?.(props.pre_path, list);
         }
         const toggleExpansion = async () => {
 
@@ -53,6 +56,14 @@ export function Folder(props: FileTree & {
         useEffect(() => {
             setChildren(props.children);
         }, [props.children]);
+        // 搜索时 expand_paths 会动态变化（把命中的目录自动展开），
+        // 但 expanded 原本只在初始化时读一次，这里同步一次。
+        useEffect(() => {
+            const want = Boolean(props.expand_paths?.includes(props.pre_path));
+            if (want !== expanded) {
+                setExpanded(want);
+            }
+        }, [props.expand_paths]);
         // 由 expand_paths 初始展开时，子项还没加载，需要主动拉一次
         useEffect(() => {
             if (expanded && props.type === "folder" && props.click) {
@@ -94,6 +105,7 @@ export function Folder(props: FileTree & {
                                          handleContextMenu={props.handleContextMenu}
                                          active_path={props.active_path}
                                          fatherNowToggleExpansion={nowToggleExpansion}
+                                         on_children_loaded={props.on_children_loaded}
                                 />}
                             </React.Fragment>
                         ))}

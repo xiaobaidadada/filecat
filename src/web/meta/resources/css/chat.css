@@ -69,34 +69,13 @@
     box-sizing: border-box;
 }
 
-/* 会话搜索框 */
+/* 会话搜索框容器（输入框样式用通用 .search-input） */
 .chat-session-search {
     padding: .375rem 0 .5rem 0;
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
     gap: .375rem;
-}
-
-.chat-session-search-input {
-    width: 100%;
-    padding: .375rem .625rem;
-    font-size: 0.9em;
-    border: 1px solid #d6d9de;
-    border-radius: .5rem;
-    outline: none;
-    box-sizing: border-box;
-    background: #fff;
-    color: #222;
-}
-
-.chat-session-search-input:focus {
-    outline: none;
-    border-color: #d1d5db;
-}
-
-.chat-session-search-input::placeholder {
-    color: #9ca3af;
 }
 
 /* 当前选中会话：与搜索框一起固定在顶部，点击滚动到该会话位置 */

@@ -89,7 +89,7 @@ export const exec_cmd_schema:ai_agent_params_type = {
                     description: "可选，设为 false 表示完全不经过 shell，直接把 cmd 当可执行文件启动。"
                 },
             },
-            required: ["cmd"]
+            required: ["cmd","shell"]
         }
     }
 }

@@ -5,6 +5,7 @@ import {Icon, ActionButton} from "../../../../meta/component/Button";
 import {MenuSelect, OverlayTransparent} from "../../../../meta/component/Dashboard";
 import {ai_agent_chat_session_meta, ai_system_prompt_item} from "../../../../../common/req/filecat.ai.pojo";
 import SessionMetaList, {SessionMetaItem} from "./SessionMetaList";
+import {SearchInput} from "../../../../meta/component/SearchInput";
 
 function toSessionTitle(title: string) {
     return title || "新会话";
@@ -206,12 +207,10 @@ export default function SessionList({
         <>
         <aside className="chat-session-list">
             <div className="chat-session-search">
-                <input
-                    type="text"
-                    className="chat-session-search-input"
+                <SearchInput
                     placeholder={t('搜索会话')}
                     value={searchText}
-                    onChange={(e) => setSearchText(e.target.value)}
+                    onChange={setSearchText}
                 />
                 {/* 当前选中会话：与搜索框一起固定显示，点击滚动到该会话位置 */}
                 {current_session && (

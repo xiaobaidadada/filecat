@@ -134,6 +134,31 @@
     border-top: 1px solid var(--divider, #e8eaed);
 }
 
+/* 目录树内的文件搜索框：固定在面板顶部，不随树滚动。
+   DOM 层级：.studio-nav > .studio-nav-folder > (.studio-nav-search + .studio-nav-tree)
+   .studio-nav-folder 已由上面 `flex:1` 撑满高度，这里再让它成为纵向 flex 容器，
+   内部搜索框 flex:none、树区 flex:1，树区才能一直撑到底部。 */
+.studio-nav .studio-nav-folder {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.studio-nav .studio-nav-search {
+    flex: none;
+    padding: 0.4em 0.5em;
+}
+
+
+
+/* 搜索无结果时的提示 */
+.studio-nav-empty {
+    padding: 0.75em 0.75em;
+    color: var(--textSecondary, #80868b);
+    font-size: 0.9em;
+}
+
+
 /* ===== GitStudio 专用样式 ===== */
 .git-studio-select-all {
     padding: 6px 12px;
