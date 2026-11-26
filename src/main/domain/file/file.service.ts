@@ -2294,39 +2294,39 @@ export class FileService  {
     }
 
 
-    async file_video_trans(data: WsData<FileVideoFormatTransPojo>) {
-        const pojo = data.context as FileVideoFormatTransPojo;
-        userService.have_user_auth(pojo.token, UserAuth.filecat_file_context_update_upload_created_copy_decompression);
-        const wss = data.wss as Wss;
-        const root_path = settingService.getFileRootPath(pojo.token);
-        const sysPath = path.join(root_path, decodeURIComponent(pojo.source_filename));
-        const sysPathNew = path.join(root_path, decodeURIComponent(pojo.to_filename));
-
-
-        (await settingService.getFfmpeg())(sysPath)
-            .toFormat(pojo.to_format)
-            // .videoCodec('libx264')
-            // .audioCodec('aac')
-            .on('start', function (commandLine) {
-                const result = new WsData<SysPojo>(CmdType.file_video_trans_progress);
-                result.context = 0;
-                wss.sendData(result.encode());
-            })
-            .on('progress', function (progress) {
-                const result = new WsData<SysPojo>(CmdType.file_video_trans_progress);
-                result.context = progress.percent.toFixed(0);
-                wss.sendData(result.encode());
-            })
-            .on('error', function (err, stdout, stderr) {
-                wss.ws.close();
-            })
-            .on('end', function () {
-                const result = new WsData<SysPojo>(CmdType.file_video_trans_progress);
-                result.context = 100;
-                wss.sendData(result.encode());
-            })
-            .save(sysPathNew);
-    }
+    // async file_video_trans(data: WsData<FileVideoFormatTransPojo>) {
+    //     const pojo = data.context as FileVideoFormatTransPojo;
+    //     userService.have_user_auth(pojo.token, UserAuth.filecat_file_context_update_upload_created_copy_decompression);
+    //     const wss = data.wss as Wss;
+    //     const root_path = settingService.getFileRootPath(pojo.token);
+    //     const sysPath = path.join(root_path, decodeURIComponent(pojo.source_filename));
+    //     const sysPathNew = path.join(root_path, decodeURIComponent(pojo.to_filename));
+    //
+    //
+    //     (await settingService.getFfmpeg())(sysPath)
+    //         .toFormat(pojo.to_format)
+    //         // .videoCodec('libx264')
+    //         // .audioCodec('aac')
+    //         .on('start', function (commandLine) {
+    //             const result = new WsData<SysPojo>(CmdType.file_video_trans_progress);
+    //             result.context = 0;
+    //             wss.sendData(result.encode());
+    //         })
+    //         .on('progress', function (progress) {
+    //             const result = new WsData<SysPojo>(CmdType.file_video_trans_progress);
+    //             result.context = progress.percent.toFixed(0);
+    //             wss.sendData(result.encode());
+    //         })
+    //         .on('error', function (err, stdout, stderr) {
+    //             wss.ws.close();
+    //         })
+    //         .on('end', function () {
+    //             const result = new WsData<SysPojo>(CmdType.file_video_trans_progress);
+    //             result.context = 100;
+    //             wss.sendData(result.encode());
+    //         })
+    //         .save(sysPathNew);
+    // }
 
     async uncompress(data: WsData<FileCompressPojo>) {
         const pojo = data.context as FileCompressPojo;

@@ -746,23 +746,23 @@ export function FileMenu() {
         return (div);
     }
     switch (pojo.type) {
-        case FileTypeEnum.video:
-            if (!user_base_info.sysSoftWare || !user_base_info.sysSoftWare[SysSoftware.ffmpeg] || !user_base_info.sysSoftWare[SysSoftware.ffmpeg].installed) {
-                NotyFail("not ffmpeg")
-                // setTimeout(()=>{
-                //     close(); // 等下不然会报错 只要不是顺序的执行应都可以 0秒表示只是加入队列
-                // },0)
-                Promise.resolve().then(() => {
-                    close(); // 这样也行 微队列
-                });
-                break;
-            }
-            div = <div onWheel={() => {
-                close();
-            }}>
-                <VideoTrans/>
-            </div>
-            break;
+        // case FileTypeEnum.video:
+        //     // if (!user_base_info.sysSoftWare || !user_base_info.sysSoftWare[SysSoftware.ffmpeg] || !user_base_info.sysSoftWare[SysSoftware.ffmpeg].installed) {
+        //     //     NotyFail("not ffmpeg")
+        //     //     // setTimeout(()=>{
+        //     //     //     close(); // 等下不然会报错 只要不是顺序的执行应都可以 0秒表示只是加入队列
+        //     //     // },0)
+        //     //     Promise.resolve().then(() => {
+        //     //         close(); // 这样也行 微队列
+        //     //     });
+        //     //     break;
+        //     // }
+        //     div = <div onWheel={() => {
+        //         close();
+        //     }}>
+        //         <VideoTrans/>
+        //     </div>
+        //     break;
         case FileTypeEnum.uncompress:
             div = <div onWheel={() => {
                 close();

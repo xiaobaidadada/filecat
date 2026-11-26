@@ -220,11 +220,11 @@ export class FileController {
         return Sucess(user_data.folder_item_now === undefined ? 0 : user_data.folder_item_now);
     }
 
-    @msg(CmdType.file_video_trans)
-    async file_video_trans(data: WsData<FileVideoFormatTransPojo>) {
-        await FileServiceImpl.file_video_trans(data);
-        return ""
-    }
+    // @msg(CmdType.file_video_trans)
+    // async file_video_trans(data: WsData<FileVideoFormatTransPojo>) {
+    //     await FileServiceImpl.file_video_trans(data);
+    //     return ""
+    // }
 
     @msg(CmdType.file_uncompress)
     async uncompress(data: WsData<FileCompressPojo>) {

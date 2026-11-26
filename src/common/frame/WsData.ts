@@ -94,8 +94,8 @@ export enum CmdType {
     tcp_proxy_client_status,
     //文件功能
     file_info,
-    file_video_trans,
-    file_video_trans_progress,
+    file_video_trans, // 废弃
+    file_video_trans_progress, // 废弃
     file_uncompress,
     file_uncompress_progress,
     file_compress,
