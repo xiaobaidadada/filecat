@@ -1397,5 +1397,7 @@
   "导入MCP配置": "Importer la configuration MCP",
   "已添加": "Ajouté",
   "不是合法的JSON格式": "Format JSON invalide",
-  "没有解析到可用的MCP配置": "Aucune configuration MCP exploitable"
+  "没有解析到可用的MCP配置": "Aucune configuration MCP exploitable",
+  "打开方式": "Ouvrir avec",
+  "数据库查询": "Requête de base de données"
 }

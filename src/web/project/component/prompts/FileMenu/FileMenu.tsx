@@ -105,15 +105,16 @@ export function FileMenu() {
     ]
 
     if (!hit_mount_item) {
+        // 目录才有的「统计信息」：文件没有意义，不显示
+        const folder_only_items = [
+            {r: t("统计信息"), v: common_menu_type.folder_size_info},
+        ]
         const local_button_list = [
             {
                 r: t("详细信息"), v: common_menu_type.file_base_info,
                 items: []
             },
-            {
-                r: t("统计信息"),
-                v: common_menu_type.folder_size_info
-            },
+            ...(hit_mount_item ? [] : folder_only_items),
             {r: t("重命名"), v: common_menu_type.file_rename},
             {r: t("删除"), v: common_menu_type.file_delete},
             {r: t("下载"), v: common_menu_type.file_download},
@@ -151,21 +152,45 @@ export function FileMenu() {
         // {code: "big5", v: common_menu_type.logviwer_big5},
         // {code: "ios-8859-1", v: common_menu_type.logviwer_ios_8859_1},
     ];
+
+    const md_editor_way = {
+        r: t("MD编辑器"),
+        v: common_menu_type.md_editor_open
+    }
+    const sql_query_way = {
+        r:"Sqlite " + t("数据库查询"),
+        v: common_menu_type.sqlite_query
+    }
+    const image_editor_way = {
+        r: t("o_img"),
+        v: common_menu_type.image_open
+    }
+    const file_open_way = {
+        r: t("打开方式"),
+        items: [
+            {r: t("以文本打开"), v: common_menu_type.open_text},
+            {
+                r: t("以日志打开"), v: common_menu_type.logviwer_text, items:
+                    logviwer_encodings.map(enc => ({
+                        r: enc.code,
+                        v: enc.v,
+                        items: [
+                            {r: t("自动换行"), v: common_menu_type.logviwer_wrap, encoding: enc.code},
+                            {r: t("不换行"), v: common_menu_type.logviwer_nowrap, encoding: enc.code}
+                        ]
+                    }))
+            },
+            md_editor_way,
+            sql_query_way,
+            image_editor_way,
+        ]
+    }
+
     const show_items: any[] = [
-        {r: t("以文本打开"), v: common_menu_type.open_text},
-        {
-            r: t("以日志打开"), v: common_menu_type.logviwer_text, items:
-                logviwer_encodings.map(enc => ({
-                    r: enc.code,
-                    v: enc.v,
-                    items: [
-                        {r: t("自动换行"), v: common_menu_type.logviwer_wrap, encoding: enc.code},
-                        {r: t("不换行"), v: common_menu_type.logviwer_nowrap, encoding: enc.code}
-                    ]
-                }))
-        },
+        file_open_way,
         ...must_needs
     ]
+
 
     const getItemsForDefault = () => {
         // 基于 show_items 创建一份拷贝，避免污染原始定义
@@ -190,17 +215,11 @@ export function FileMenu() {
     }
 
     if (showPrompt.data?.type === FileTypeEnum.database || /\.(db|sqlite|sqlite3)$/i.test(showPrompt.data?.filename ?? "")) {
-        show_items.unshift({
-            r: t("数据库查询"),
-            v: common_menu_type.sqlite_query
-        });
+        show_items.unshift(sql_query_way);
     }
     // md 文件：提供专门的 MD 编辑器入口（双击仍是预览）
     if (showPrompt.data?.type === FileTypeEnum.md || /\.md$/i.test(showPrompt.data?.filename ?? "")) {
-        show_items.unshift({
-            r: t("MD编辑器"),
-            v: common_menu_type.md_editor_open
-        });
+        show_items.unshift(md_editor_way);
     }
     // .url 快捷方式：生成二维码，方便手机扫码打开
     if (showPrompt.data?.type === FileTypeEnum.url || /\.url$/i.test(showPrompt.data?.filename ?? "")) {
@@ -224,23 +243,6 @@ export function FileMenu() {
         }
     }
 
-    /**
-     * 比较两个路径是否指向同一目录。
-     * Windows 大小写不敏感、分隔符不统一，直接 === 会漏判。
-     */
-    const norm_compare = (a?: string, b?: string) => {
-        if (!a || !b) {
-            return false;
-        }
-        const n = (p: string) => {
-            let s = p.replace(/\\/g, "/").replace(/\/+$/, "");
-            if (/^[a-zA-Z]:/.test(s)) {
-                s = s[0].toUpperCase() + s.slice(1);
-            }
-            return s;
-        };
-        return n(a).toLowerCase() === n(b).toLowerCase();
-    }
 
     const get_ab_path = () => {
         return get_bas_path(showPrompt.data.filename)
@@ -273,10 +275,7 @@ export function FileMenu() {
             return [{r: t("挂载"), v: common_menu_type.mount_dir}];
         })() : []),
     ];
-    const items_images = [{
-        r: t("o_img"),
-        v: common_menu_type.image_open
-    },
+    const items_images = [image_editor_way,
         {
             r: t(`${user_base_info?.user_data?.not_pre_show_image ? t("开启") : t("关闭")} ${t("预览图片")}`),
             v: common_menu_type.image_preview

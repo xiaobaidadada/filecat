@@ -1401,5 +1401,7 @@
   "导入MCP配置": "Import MCP Config",
   "已添加": "Added",
   "不是合法的JSON格式": "Invalid JSON format",
-  "没有解析到可用的MCP配置": "No usable MCP config parsed"
+  "没有解析到可用的MCP配置": "No usable MCP config parsed",
+  "打开方式": "Open with",
+  "数据库查询": "Database Query"
 }
