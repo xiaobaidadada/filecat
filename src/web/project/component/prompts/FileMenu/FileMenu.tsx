@@ -104,19 +104,21 @@ export function FileMenu() {
         },
     ]
 
-    const is_dir = showPrompt.data.type === FileTypeEnum.directory
+    const is_dir = showPrompt.data.type === FileTypeEnum.folder
 
     if (!hit_mount_item) {
         // 目录才有的「统计信息」：文件没有意义，不显示
         const folder_only_items = [
             {r: t("统计信息"), v: common_menu_type.folder_size_info},
         ]
+        if (is_dir) {
+            must_needs.push(...(folder_only_items as any))
+        }
         const local_button_list = [
             {
                 r: t("详细信息"), v: common_menu_type.file_base_info,
                 items: []
             },
-            ...(hit_mount_item || !is_dir? [] : folder_only_items),
             {r: t("重命名"), v: common_menu_type.file_rename},
             {r: t("删除"), v: common_menu_type.file_delete},
             {r: t("下载"), v: common_menu_type.file_download},
