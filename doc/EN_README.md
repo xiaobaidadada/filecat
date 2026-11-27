@@ -52,24 +52,27 @@ FileCat uses the UI of [filebrowser](https://github.com/filebrowser/filebrowser)
 
 ## Features
 
-| Category                     | Features                                                                                                                                                                                      |
-| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| File Management              | Browse, upload, download, edit, and preview files online (images, videos, Markdown, drawings, etc.)                                                                                           |
-| Markdown WYSIWYG Editor      | Typora-like Markdown editing — what you see is what you get                                                                                                                                    |
-| Cloud Storage Mount         | Mount Baidu Netdisk / SSH(SFTP) / S3 / WebDAV / SMB as local folders, managed with the same file operations                                                                                          |
-| File Server                 | The reverse direction: expose local folders over SMB / WebDAV / SFTP, accessible from Windows Explorer and any standard client                                                                          |
-| AI Agent                     | Integrates large language models to assist with server management and file processing (API configuration required). Supports QQ, WeCom, Feishu, DingTalk, and other third-party platform bots |
-| Intranet Tunneling           | Expose services on an internal network to the public internet, or enable communication between multiple internal networks                                                                     |
-| SSH Terminal                 | Built-in Web terminal for connecting to servers anytime through a browser                                                                                                                     |
-| Windows Remote Desktop       | Directly operate remote Windows desktops (RDP) through a browser                                                                                                                              |
-| System Information Dashboard | Real-time monitoring of CPU, memory, disk, network, and other system information                                                                                                              |
-| CI/CD Workflow               | Create custom command pipelines for continuous integration and deployment                                                                                                                     |
-| Large Log Viewer             | Instantly open text log files of any size and efficiently locate problems                                                                                                                     |
-| Deep Search                  | Recursively search file names or file contents, with regex, case-insensitive and exclusion filters; open it by clicking the magnifier icon on the left of the search box                                              |
-| Excalidraw Drawing           | Built-in whiteboard drawing tool                                                                                                                                                              |
-| Multi-user Management        | Comprehensive permission management system                                                                                                                                                    |
-| Shareable Links              | Generate file sharing links for convenient downloads                                                                                                                                          |
-| Multiple Path Mounts         | Support mounting multiple filesystem paths                                                                                                                                                    |
+| Category | Features |
+|------|------|
+| File Management | Browse, upload, download, rename, move, copy, compress and extract; drag-and-drop upload and paged infinite scrolling |
+| File Preview | Online preview for images, video, audio, PDF, Office documents, Markdown, source code, logs and more |
+| Office Editor | Edit Word (docx), Excel (xlsx) and PowerPoint (pptx) right in the browser — no local Office installation required |
+| Markdown WYSIWYG | Typora-like live-preview editing with 7 built-in themes, Mermaid / SVG diagrams and KaTeX formulas |
+| Code Editor | Built-in Ace editor with syntax highlighting, multi-language detection and a split-pane Studio mode |
+| Large Log Viewer | Instantly open log files of any size, with virtual scrolling, live tail and keyword highlighting |
+| Deep Search | Recursively search file names or contents, with regex, case-insensitive and exclusion filters; open it via the magnifier icon left of the search box |
+| Cloud Storage Mount | Mount Baidu Netdisk / SSH(SFTP) / S3 / WebDAV / SMB as local folders, managed with the same file operations |
+| File Server | The reverse direction: expose local folders over SMB / WebDAV / SFTP, accessible from Windows Explorer and any standard client |
+| Intranet Tunneling | Expose internal services to the public internet, or connect multiple internal networks; with multi-machine deployment it enables cross-machine file sync and CI/CD automation |
+| SSH Terminal | Built-in Web terminal for connecting to servers anytime, including mounted SSH hosts |
+| Windows Remote Desktop | Operate remote Windows desktops (RDP) directly through a browser |
+| CI/CD Workflow | Custom command pipelines (.workflow.yml / .act) for continuous integration and deployment |
+| System Management | System dashboard (CPU / memory / disk / network), process manager, systemd services, firewall (ufw / nftables), Docker configuration |
+| Git Management | Built-in Git client with staging and committing, commit history graph, branch and remote branch management, diff view, blame, stash and tags |
+| AI Agent | Integrates large language models to assist with server management and file processing (API configuration required). Supports QQ, WeCom, Feishu, DingTalk and other third-party platform bots |
+| Excalidraw Drawing | Built-in whiteboard tool that edits .draw files directly |
+| Multi-user Management | Comprehensive permission system with role-based, user-level permissions and directory access restrictions |
+| Shareable Links | Generate share links for files or folders, with optional password and expiry |
 
 ---
 

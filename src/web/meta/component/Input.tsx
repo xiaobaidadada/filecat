@@ -148,10 +148,35 @@ function Input(props: {
                 }
             });
 
+            /**
+             * 把下拉列表宽度对齐到输入框。
+             *
+             * 结构是 div.awesomplete > ul，而 ul 在 .card-content 里被设为
+             * position:fixed（避免被祖先 overflow 裁掉）。fixed 元素脱离文档流后
+             * 宽度不再跟随父级，库的 min-width:100% 会按视口算，实测算出 1532px，
+             * 下拉直接横跨整屏。只能量好输入框宽度显式写进去。
+             */
+            const sync_dropdown_width = () => {
+                const input = inputRef.current;
+                if (!input) {
+                    return;
+                }
+                // 本项目把 .awesomplete 类加在 input 上，所以 closest 会返回 input 本身。
+                // awesomplete 库生成的 ul 挂在 input 的父级 div 下，从父级找。
+                const box = input.parentElement;
+                const ul = box?.querySelector(":scope > ul") as HTMLElement | null;
+                if (!ul) {
+                    return;
+                }
+                ul.style.width = `${input.getBoundingClientRect().width}px`;
+            };
+
             // 聚焦时：强制展示全部选项（不论输入框当前有没有值），
             // 避免「只匹配到当前已选值」导致其它选项看不见。
             const handleFocus = () => {
                 awesomplete.evaluate();
+                // evaluate 之后 ul 才被填充，下一帧再量
+                requestAnimationFrame(sync_dropdown_width);
             };
 
             // 选中下拉项时的逻辑
@@ -175,12 +200,16 @@ function Input(props: {
 
             inputRef.current.addEventListener("focus", handleFocus);
             inputRef.current.addEventListener("awesomplete-selectcomplete", handleSelect);
+            inputRef.current.addEventListener("awesomplete-open", sync_dropdown_width);
+            window.addEventListener("resize", sync_dropdown_width);
 
             return () => {
                 if (inputRef.current) {
                     inputRef.current.removeEventListener("focus", handleFocus);
                     inputRef.current.removeEventListener("awesomplete-selectcomplete", handleSelect);
+                    inputRef.current.removeEventListener("awesomplete-open", sync_dropdown_width);
                 }
+                window.removeEventListener("resize", sync_dropdown_width);
                 awesomplete.destroy();
             };
         }

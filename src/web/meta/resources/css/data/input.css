@@ -22,6 +22,18 @@
     position: fixed;
     left: auto;
     z-index: 1004;
+
+    /* fixed 后宽度不再跟父级走，库的 min-width:100% 会按视口算（实测 1532px）。
+       这里用 min-width:0 顶掉它，实际宽度由 Input.tsx 量输入框后写入。 */
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+/* 宽度写进去之前不能先按内容撑开，否则会闪一下整屏宽 */
+.card-content .awesomplete > ul > li {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .input {
