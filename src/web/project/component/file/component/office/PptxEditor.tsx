@@ -6,6 +6,7 @@ import PptxPane from "./PptxPane";
 import {get_save_path} from "./office_util";
 import {use_editor_auto_save} from "../../../../util/editor_auto_save";
 import {EditorAutoSaveEnum} from "../../../../../../common/req/user.req";
+import {useTranslation} from "react-i18next";
 
 /**
  * pptx 编辑器：占满全屏。
@@ -14,10 +15,11 @@ import {EditorAutoSaveEnum} from "../../../../../../common/req/user.req";
  * 外层 Header 的保存按钮只是转调 EditorHandle.save()。
  */
 export default function PptxEditor() {
+    const {t} = useTranslation();
     const [editor, set_editor] = useAtom($stroe.pptx_editor);
     const [dirty, set_dirty] = useState(false);
     const [saving, set_saving] = useState(false);
-    const save_ref = useRef<() => Promise<boolean>>();
+    const save_ref = useRef<(ok_text: string) => Promise<boolean>>();
 
     const close = () => {
         const fn = editor.close;
@@ -25,13 +27,14 @@ export default function PptxEditor() {
         fn?.();
     };
 
-    const on_save = async () => {
+    const on_save = async (silent = false) => {
         if (!save_ref.current) {
             return false;
         }
         set_saving(true);
         try {
-            return await save_ref.current();
+            // 自动保存时不弹成功提示
+            return await save_ref.current(silent ? "" : t("保存成功"));
         } finally {
             set_saving(false);
         }
@@ -39,7 +42,7 @@ export default function PptxEditor() {
     // 自动保存读最新 dirty 状态
     const dirty_ref = useRef(dirty);
     dirty_ref.current = dirty;
-    use_editor_auto_save(EditorAutoSaveEnum.pptx, () => dirty_ref.current, () => on_save());
+    use_editor_auto_save(EditorAutoSaveEnum.pptx, () => dirty_ref.current, () => on_save(true));
 
     return (
         <OfficeEditorShell

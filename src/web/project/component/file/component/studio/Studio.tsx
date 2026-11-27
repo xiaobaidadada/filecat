@@ -42,6 +42,8 @@ const MindMapInline = React.lazy(() => import("../MindMapInline"));
 const TimelineInline = React.lazy(() => import("../timeline/TimelineInline"));
 // 内嵌表格编辑器（.xlsx）
 const XlsxPane = React.lazy(() => import("../office/XlsxPane"));
+const DocxPane = React.lazy(() => import("../office/DocxPane"));
+const PptxPane = React.lazy(() => import("../office/PptxPane"));
 
 /** 是否用 md 编辑器（所见即所得）打开：只认 .md 后缀，其余一律走 Ace 文本编辑 */
 function is_markdown_file(name: string): boolean {
@@ -66,6 +68,16 @@ function is_timeline_file(name: string): boolean {
 /** 是否是表格文件：.xlsx 后缀 */
 function is_excel_file(name: string): boolean {
     return getFileFormat(name) === FileTypeEnum.excel;
+}
+
+/** 是否是 Word 文件：.docx / .docm 后缀 */
+function is_docx_file(name: string): boolean {
+    return getFileFormat(name) === FileTypeEnum.docx;
+}
+
+/** 是否是演示文稿：.pptx 后缀 */
+function is_pptx_file(name: string): boolean {
+    return getFileFormat(name) === FileTypeEnum.pptx;
 }
 
 /** 左侧面板显示的内容 */
@@ -112,6 +124,10 @@ export default function Studio(props) {
     const is_timeline = is_timeline_file(edit_filename.name);
     // 当前文件是否是表格（.xlsx）
     const is_excel = is_excel_file(edit_filename.name);
+    // 当前文件是否是 Word（.docx / .docm）
+    const is_docx = is_docx_file(edit_filename.name);
+    // 当前文件是否是演示文稿（.pptx）
+    const is_pptx = is_pptx_file(edit_filename.name);
     // md 编辑器交给外层的编辑能力（保存、模式切换、导出、大纲跳转）
     const md_api = useRef<MdEditorPaneApi | null>(null);
     // 文本编辑器句柄（保存按钮 / Ctrl+S）
@@ -123,7 +139,11 @@ export default function Studio(props) {
     // 时间轴编辑器句柄（保存按钮）
     const timeline_api = useRef<any>(null);
     // 表格编辑器句柄（保存按钮）
-    const excel_api = useRef<{ save: () => Promise<boolean> } | null>(null);
+    const excel_api = useRef<{ save: (ok_text: string) => Promise<boolean> } | null>(null);
+    // Word 编辑器句柄（保存按钮）
+    const docx_api = useRef<{ save: (ok_text: string) => Promise<boolean> } | null>(null);
+    // 演示文稿编辑器句柄（保存按钮）
+    const pptx_api = useRef<{ save: (ok_text: string) => Promise<boolean> } | null>(null);
     // 表格视图状态句柄（切文件时缓存 sheet 与滚动位置）
     const excel_view_api = useRef<{ get_view_state?: () => ViewState | undefined } | null>(null);
     // md 编辑器上报的大纲数据与当前高亮项
@@ -394,11 +414,26 @@ export default function Studio(props) {
         ace_api.current?.save();
     }
     const handleKeyDown = (event) => {
-        if (event.ctrlKey && event.key === 's') {
+        // macOS 用 Cmd（metaKey），Windows / Linux 用 Ctrl
+        if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
             event.preventDefault();
             // md / 画板 / 思维导图 / 时间轴 各自有专属编辑器，
-            // 它们内部已经处理了 Ctrl+S，这里只负责纯文本文件，避免误调 Ace 的取值而报错。
-            if (is_md || is_draw || is_mind || is_timeline || is_excel) {
+            // 它们内部已经处理了 Ctrl+S，这里只负责其余文件，避免误调 Ace 的取值而报错。
+            if (is_md || is_draw || is_mind || is_timeline) {
+                return;
+            }
+            // 表格 / Word / PPT 的保存句柄由各 Pane 通过 bind_save 交出，
+            // 编辑器自己不吃 Ctrl+S，在这里统一分发
+            if (is_excel) {
+                excel_api.current?.save(t("保存成功"));
+                return;
+            }
+            if (is_docx) {
+                docx_api.current?.save(t("保存成功"));
+                return;
+            }
+            if (is_pptx) {
+                pptx_api.current?.save(t("保存成功"));
                 return;
             }
             if (have_update) {
@@ -412,7 +447,7 @@ export default function Studio(props) {
         return () => {
             document.removeEventListener('keydown', handleKeyDown);
         };
-    }, [have_update, is_md, is_draw, is_mind, is_timeline, is_excel]);
+    }, [have_update, is_md, is_draw, is_mind, is_timeline, is_excel, is_docx, is_pptx]);
     const handleDrag = useCallback(lodash.throttle((event) => {
 
         const size = parseFloat(getComputedStyle(studio_nav_ref.current).fontSize);
@@ -554,7 +589,9 @@ export default function Studio(props) {
                 : is_draw ? <ActionButton title={t("保存")} icon={"save"} onClick={() => excalidraw_api.current?.save()}/>
                 : is_mind ? <ActionButton title={t("保存")} icon={"save"} onClick={() => mind_api.current?.save()}/>
                 : is_timeline ? <ActionButton title={t("保存")} icon={"save"} onClick={() => timeline_api.current?.save()}/>
-                : is_excel ? <ActionButton title={t("保存")} icon={"save"} onClick={() => excel_api.current?.save()}/>
+                : is_excel ? <ActionButton title={t("保存")} icon={"save"} onClick={() => excel_api.current?.save(t("保存成功"))}/>
+                : is_docx ? <ActionButton title={t("保存")} icon={"save"} onClick={() => docx_api.current?.save(t("保存成功"))}/>
+                : is_pptx ? <ActionButton title={t("保存")} icon={"save"} onClick={() => pptx_api.current?.save(t("保存成功"))}/>
                 : <ActionButton title={t("保存")} icon={"save"} onClick={file_save}/>
             )}
         </Header>
@@ -726,6 +763,32 @@ export default function Studio(props) {
                                         scroll_top: saved.scroll_y,
                                     });
                                 }
+                            }}
+                        />
+                    </React.Suspense>
+                </div>
+                : is_docx
+                ? <div className={"studio-editor studio-editor--office"} key={edit_file_path}>
+                    <React.Suspense fallback={null}>
+                        <DocxPane
+                            url={fileHttp.getDownloadUrl(encodeURIComponent(edit_file_path))}
+                            save_path={edit_file_path}
+                            on_dirty={set_have_update}
+                            bind_save={(fn) => {
+                                docx_api.current = {save: fn};
+                            }}
+                        />
+                    </React.Suspense>
+                </div>
+                : is_pptx
+                ? <div className={"studio-editor studio-editor--office"} key={edit_file_path}>
+                    <React.Suspense fallback={null}>
+                        <PptxPane
+                            url={fileHttp.getDownloadUrl(encodeURIComponent(edit_file_path))}
+                            save_path={edit_file_path}
+                            on_dirty={set_have_update}
+                            bind_save={(fn) => {
+                                pptx_api.current = {save: fn};
                             }}
                         />
                     </React.Suspense>

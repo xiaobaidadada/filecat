@@ -1357,6 +1357,20 @@ line.git-log__graph-edge {
     min-height: 0;
 }
 
+/* Word / PPT 内嵌到 Studio：Pane 自己撑满，这里只负责给个 flex 容器 */
+.studio-editor--office {
+    display: flex;
+    margin: 0;
+    flex-basis: 0;
+    min-height: 0;
+    overflow: auto;
+}
+
+.studio-editor--office > * {
+    flex: 1;
+    min-width: 0;
+}
+
 .excalidraw-inline {
     flex: 1;
     min-width: 0;

@@ -17,7 +17,7 @@ export class Cache {
     private static session_mode: TokenSessionMode = TokenSessionMode.independent;
 
     /**
-     * username → 该用户名下所有 token 的反向索引。
+     * id → 该用户名下所有 token 的反向索引。
      *
      * valueMap 的 key 是 token，无法反查某个用户签过哪些 token，
      * 复用模式和单会话模式都依赖这个索引。
@@ -34,29 +34,29 @@ export class Cache {
     }
 
     /** 把 token 登记到用户的索引里 */
-    private static index_user_token(username: string, token: string): void {
-        let set = this.userTokenMap.get(username);
+    private static index_user_token(id: string, token: string): void {
+        let set = this.userTokenMap.get(id);
         if (!set) {
             set = new Set();
-            this.userTokenMap.set(username, set);
+            this.userTokenMap.set(id, set);
         }
         set.add(token);
     }
 
     /** 从索引里移除单个 token，索引空了就删掉这个用户 */
-    private static unindex_user_token(username: string, token: string): void {
-        const set = this.userTokenMap.get(username);
+    private static unindex_user_token(id: string, token: string): void {
+        const set = this.userTokenMap.get(id);
         if (!set) return;
         set.delete(token);
-        if (set.size === 0) this.userTokenMap.delete(username);
+        if (set.size === 0) this.userTokenMap.delete(id);
     }
 
     /**
      * 取出该用户当前真正有效的 token（已过期的会被顺手清掉）。
-     * @param username
+     * @param id
      */
-    public static get_user_tokens(username: string): string[] {
-        const set = this.userTokenMap.get(username);
+    public static get_user_tokens(id: string): string[] {
+        const set = this.userTokenMap.get(id);
         if (!set) return [];
         const alive: string[] = [];
         for (const token of set) {
@@ -69,23 +69,23 @@ export class Cache {
             if (valid) alive.push(token);
             else set.delete(token);
         }
-        if (set.size === 0) this.userTokenMap.delete(username);
+        if (set.size === 0) this.userTokenMap.delete(id);
         return alive;
     }
 
     /**
      * 删除该用户全部 token。
-     * @param username
+     * @param id
      */
-    public static clear_user_token(username: string): void {
-        const set = this.userTokenMap.get(username);
+    public static clear_user_token(id: string): void {
+        const set = this.userTokenMap.get(id);
         if (!set) return;
         for (const token of set) {
             this.valueMap.delete(token);
             this.timeLenMap.delete(token);
             this.stampMap.delete(token);
         }
-        this.userTokenMap.delete(username);
+        this.userTokenMap.delete(id);
         this.persist();
     }
 
@@ -97,24 +97,24 @@ export class Cache {
      * - reuse：该用户已有有效 token 就直接复用，没有才新建
      * - single：必定新建 token，并清掉该用户此前所有 token
      *
-     * @param username 用户名
+     * @param id 用户名
      * @param new_token 由调用方生成的候选 token（随机串）
      * @param value 随 token 一起保存的数据
      * @returns 最终使用的 token
      */
-    public static issue_token(username: string, new_token: string, value: any): string {
+    public static issue_token(id: string, new_token: string, value: any): string {
         if (this.session_mode === TokenSessionMode.reuse) {
-            const alive = this.get_user_tokens(username);
+            const alive = this.get_user_tokens(id);
             if (alive.length > 0) {
                 // 复用已有 token，不新建
                 return alive[0];
             }
         } else if (this.session_mode === TokenSessionMode.single) {
-            this.clear_user_token(username);
+            this.clear_user_token(id);
         }
         // independent 与上面两种的“没有可复用 token”分支
         this.setValue(new_token, value);
-        this.index_user_token(username, new_token);
+        this.index_user_token(id, new_token);
         this.persist();
         return new_token;
     }
@@ -161,6 +161,14 @@ export class Cache {
             if (data.stampMap) {
                 this.stampMap = new Map(Object.entries(data.stampMap));
             }
+            // 索引不落盘，恢复后必须按 valueMap 重建，否则复用/单会话模式失效：
+            // get_user_tokens 永远是空，clear_user_token 也删不掉旧 token
+            this.userTokenMap.clear();
+            for (const [token, value] of this.valueMap) {
+                if (value && value.id !== undefined) {
+                    this.index_user_token(value.id, token);
+                }
+            }
         } catch (e) {
             console.log('token 缓存恢复失败', e);
         }
@@ -188,7 +196,9 @@ export class Cache {
      * @param key
      */
     public static updateStamp(key: string): void {
+        if (!this.valueMap.has(key)) return;
         this.stampMap.set(key, Date.now());
+        this.persist();
     }
 
     /**
@@ -208,8 +218,8 @@ export class Cache {
             return this.valueMap.get(key);
         }
         // 过期了
-        if (value.username !== undefined) {
-            this.unindex_user_token(value.username, key);
+        if (value.id !== undefined) {
+            this.unindex_user_token(value.id, key);
         }
         this.stampMap.delete(key);
         this.timeLenMap.delete(key);
@@ -233,8 +243,8 @@ export class Cache {
     public static deleteValue(key: string): void {
         const value = this.valueMap.get(key);
         // 同步把 token 从用户索引里摘掉
-        if (value && value.username !== undefined) {
-            this.unindex_user_token(value.username, key);
+        if (value && value.id !== undefined) {
+            this.unindex_user_token(value.id, key);
         }
         this.valueMap.delete(key);
         this.timeLenMap.delete(key);

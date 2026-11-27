@@ -144,7 +144,14 @@ export default function DocxBody(props: Props) {
                 }
             });
         } else {
-            // 3. 只替换内容变了的块（光标所在块原地改文字，不换节点）
+            // 3. 只改动内容变了的块（光标所在块原地改文字，不换节点）。
+            //
+            // 这里绝不能写 old_el.outerHTML = ... ：此刻 host 里是分页后的结构，
+            // 块可能被包在 .docx-page__slice 里，outerHTML 赋值会就地换节点，
+            // 块逐层套进自己内部（实测块全变成 <p> 套 <p>），页面看起来就空了。
+            //
+            // 分页只管「块放在哪一页」，块本身的内容直接同步 innerHTML 即可，
+            // 位置由后面的 apply_pages 重新分配。
             for (let i = 0; i < next_blocks.length; i++) {
                 if (prev_blocks[i] === next_blocks[i]) {
                     continue;
@@ -153,16 +160,7 @@ export default function DocxBody(props: Props) {
                 if (!old_el) {
                     continue;
                 }
-                if (i === caret_block) {
-                    old_el.innerHTML = holder.children[i].innerHTML;
-                } else {
-                    old_el.outerHTML = next_blocks[i];
-                    // outerHTML 会换掉节点，重新登记
-                    const new_el = host.querySelector(`[data-wk-block="${i}"]`);
-                    if (new_el) {
-                        block_els_ref.current.set(i, new_el as HTMLElement);
-                    }
-                }
+                old_el.innerHTML = holder.children[i].innerHTML;
             }
         }
         block_cache_ref.current = next_blocks;
@@ -270,15 +268,14 @@ export default function DocxBody(props: Props) {
         pages: PageSlice[],
         geo: PageGeometryPx,
     ) => {
-        // 分页签名没变就不用动 DOM
+        // 注意：这里不能按「分页签名没变」就提前 return。
+        // measure_heights 为了量高会把块 appendChild 进临时量测容器，
+        // 量完容器被移除，块也跟着脱离文档 —— 每次 paint 进来时块都是悬空的。
+        // 一旦提前 return，页面就只剩空壳（实测整页内容消失）。
+        // 所以每次都必须重新分发，位置对不上才跳过。
         const key = pages.map((p) => p.fragments.map((f) => f.block).join(",")).join("|");
-        if (layout_key_ref.current === key) {
-            return;
-        }
         layout_key_ref.current = key;
 
-        // 块此刻已被 measure_heights 从量测容器里摘下来（不在文档中），
-        // 这里直接清空宿主再分发即可
         host.innerHTML = "";
 
         // 逐页建容器

@@ -10,7 +10,7 @@ interface Props {
     /** 脏标记变化（用于外部决定是否显示保存按钮） */
     on_dirty?: (dirty: boolean) => void;
     /** 把保存方法交给外部（Studio 的 Header 保存按钮调用） */
-    bind_save?: (fn: () => Promise<boolean>) => void;
+    bind_save?: (fn: (ok_text: string) => Promise<boolean>) => void;
     /** 把视图状态读写交给外部 */
     bind_view?: (handle: {
         get_state: () => {sheet: number, scroll_left: number, scroll_top: number};
@@ -55,12 +55,12 @@ export default function XlsxPane(props: Props) {
 
     // 保存：把网格写回字节，再上传
     useEffect(() => {
-        bind_save?.(async () => {
+        bind_save?.(async (ok_text: string) => {
             if (!save_ref.current) {
                 return false;
             }
             const out = await save_ref.current();
-            const ok = await write_back(save_path, out);
+            const ok = await write_back(save_path, out, ok_text);
             if (ok) {
                 set_bytes(out);
                 set_dirty(false);

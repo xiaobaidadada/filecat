@@ -12,7 +12,7 @@ interface Props {
     /** 脏标记变化（用于外部决定是否显示保存按钮） */
     on_dirty?: (dirty: boolean) => void;
     /** 把保存方法交给外部（Studio 的 Header 保存按钮调用） */
-    bind_save?: (fn: () => Promise<boolean>) => void;
+    bind_save?: (fn: (ok_text: string) => Promise<boolean>) => void;
 }
 
 /**
@@ -57,11 +57,11 @@ export default function DocxPane(props: Props) {
 
     // 保存：把模型导出成字节，再上传
     useEffect(() => {
-        bind_save?.(async () => {
+        bind_save?.(async (ok_text: string) => {
             if (!export_ref.current) {
                 return false;
             }
-            const ok = await write_back(save_path, export_ref.current());
+            const ok = await write_back(save_path, export_ref.current(), ok_text);
             if (ok) {
                 set_dirty(false);
             }

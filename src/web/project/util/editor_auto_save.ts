@@ -12,6 +12,8 @@ export const AUTO_SAVE_EDITORS: { id: EditorAutoSaveEnum, label: string }[] = [
     {id: EditorAutoSaveEnum.timeline, label: "时间线编辑器"},
     {id: EditorAutoSaveEnum.image, label: "图片编辑器"},
     {id: EditorAutoSaveEnum.excel, label: "excel编辑器"},
+    {id: EditorAutoSaveEnum.docx, label: "docx编辑器"},
+    {id: EditorAutoSaveEnum.pptx, label: "pptx编辑器"},
 ];
 
 export type EditorAutoSaveConfig = NonNullable<UserData["editor_auto_save"]>;

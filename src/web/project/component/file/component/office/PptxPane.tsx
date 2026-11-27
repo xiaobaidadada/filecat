@@ -12,7 +12,7 @@ interface Props {
     /** 脏标记变化 */
     on_dirty?: (dirty: boolean) => void;
     /** 把保存方法交给外部（Header 的保存按钮用） */
-    bind_save?: (fn: () => Promise<boolean>) => void;
+    bind_save?: (fn: (ok_text: string) => Promise<boolean>) => void;
 }
 
 /**
@@ -28,6 +28,9 @@ export default function PptxPane(props: Props) {
     const {url, save_path, file_name, on_dirty, bind_save} = props;
     const host_ref = useRef<HTMLDivElement>(null);
     const handle_ref = useRef<EditorHandle>();
+    // onSave 是 mountEditor 时就注册进去的闭包，读不到后续的 ok_text 参数，
+    // 用 ref 中转当前该显示的提示文案
+    const save_ok_text_ref = useRef("");
     const [error, set_error] = useState("");
     const [loading, set_loading] = useState(true);
 
@@ -52,17 +55,28 @@ export default function PptxPane(props: Props) {
                 handle = mountEditor(host, {
                     source: bytes,
                     fileName: file_name,
-                    // 保存走我们的接口：EditorHandle 会在用户点保存 / Ctrl+S /
-                    // 自动保存时把当前字节交出来，这里直接写回服务器。
+                    // 保存走我们的接口：用户点保存或按 Ctrl+S 时，
+                    // 编辑器把当前字节交出来，这里直接写回服务器。
                     onSave: async (pptx) => {
-                        return await write_back(save_path, pptx);
+                        const ok = await write_back(save_path, pptx, save_ok_text_ref.current);
+                        if (ok) {
+                            on_dirty?.(false);
+                        }
+                        return ok;
                     },
-                    autoSave: true,
+                    // 关掉编辑器自带的自动保存：本项目有自己的自动保存开关，
+                    // 两套同时生效会让「保存」这个动作变得没有意义
+                    autoSave: false,
                     // 外层已经有 Header（文件名 + 保存 + 关闭），
                     // 用 compact 去掉编辑器自带标题栏的产品名，避免两套标题叠着
                     compact: true,
                 });
-undefined
+                // 保存句柄要给到外层，否则顶栏保存按钮和 Ctrl+S 都调不到编辑器的 save
+                handle_ref.current = handle;
+                // 有改动时把 dirty 状态交给外层，顶栏才会出现保存按钮
+                handle.on("dirtychange", (e) => {
+                    on_dirty?.(e.dirty);
+                });
             })
             .catch((e) => {
                 if (alive) {
@@ -81,13 +95,15 @@ undefined
 
     // 把保存能力交给外层 Header
     useEffect(() => {
-        bind_save?.(async () => {
+        bind_save?.(async (ok_text: string) => {
             const handle = handle_ref.current;
             if (!handle) {
                 return false;
             }
             // save() 会走 onSave，成功后 dirty 归位
+            save_ok_text_ref.current = ok_text;
             await handle.save();
+            save_ok_text_ref.current = "";
             return !handle.dirty;
         });
     }, [bind_save]);

@@ -14,7 +14,7 @@ export interface OfficeEditorShellProps {
     /** 保存中 */
     saving?: boolean;
     /** 保存动作，返回是否成功 */
-    on_save?: () => Promise<boolean>;
+    on_save?: (silent?: boolean) => Promise<boolean>;
     /** 关闭动作 */
     on_close?: () => void;
     /** 内容区 */
@@ -51,7 +51,7 @@ export default function OfficeEditorShell(props: OfficeEditorShellProps) {
             if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
                 e.preventDefault();
                 e.stopPropagation();
-                save_ref.current?.();
+                save_ref.current?.(false);
             } else if (e.key === "Escape") {
                 handle_close();
             }

@@ -42,7 +42,7 @@ export class UserController {
                     if (result) {
                         const uuid = generateSaltyUUID();
                         const cache: UserLoginData = {username: user_data.username, id: user_data.id};
-                        const token = Cache.issue_token(user_data.username, uuid, cache);
+                        const token = Cache.issue_token(user_data.id, uuid, cache);
                         await CommonUtil.sleep_lock_key(user.username, 1000 * CommonUtil.random01())
                         return Sucess(token)
                     }
@@ -57,7 +57,7 @@ export class UserController {
             if (!!user_data && hash_string(user.password) === user_data.hash_password) {
                 const uuid = generateSaltyUUID();
                 const cache: UserLoginData = {username: user_data.username, id: user_data.id};
-                const token = Cache.issue_token(user_data.username, uuid, cache);
+                const token = Cache.issue_token(user_data.id, uuid, cache);
                 await CommonUtil.sleep_lock_key(user.username,1000*CommonUtil.random01())
                 return Sucess(token)
             }
@@ -156,6 +156,7 @@ export class UserController {
         if (user.password) {
             user.hash_password = hash_string(user.password);
             delete user.password;
+            Cache.clear_user_token(user.id)
         }
         if (!user.cwd) throw "cwd not found";
         userService.check_same_user(user.username,user.id)
