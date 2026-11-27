@@ -30,6 +30,8 @@ export enum FileTypeEnum {
     excel = "excel",
     /** Word 文档 docx */
     docx = "docx",
+    /** 演示文稿 pptx */
+    pptx = "pptx",
     workflow_act = "act",
     dev = "dev", // linux设备 不是文件或者目录
     url = "url"

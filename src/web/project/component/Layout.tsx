@@ -27,6 +27,7 @@ const MindEditor = React.lazy(() => import("./file/component/MindEditor"))
 const TimelineEditor = React.lazy(() => import("./file/component/TimelineEditor"))
 const XlsxEditor = React.lazy(() => import("./file/component/office/XlsxEditor"))
 const DocxEditor = React.lazy(() => import("./file/component/office/DocxEditor"))
+const PptxEditor = React.lazy(() => import("./file/component/office/PptxEditor"))
 const StudioLazy = React.lazy(() => import("./file/component/studio/StudioLazy"))
 const Net = React.lazy(() => import("./net/Net"))
 const TcpProxy = React.lazy(() => import("./net/tcp_proxy/TcpProxy"))
@@ -55,6 +56,7 @@ function Layout() {
     const [timeline_editor, set_timeline_editor] = useAtom($stroe.timeline_editor);
     const [excel_editor] = useAtom($stroe.excel_editor);
     const [docx_editor] = useAtom($stroe.docx_editor);
+    const [pptx_editor] = useAtom($stroe.pptx_editor);
     const [md_editor, set_md_editor] = useAtom($stroe.md_editor);
     const [custom_fun_opt, set_custom_fun_opt] = useAtom($stroe.custom_fun_opt);
     // const [nav_style, set_nav_style] = useAtom($stroe.nav_style);
@@ -180,6 +182,9 @@ function Layout() {
                     </Suspense>}
                     {docx_editor.url !== undefined && <Suspense fallback={<div></div>}>
                         <DocxEditor/>
+                    </Suspense>}
+                    {pptx_editor.url !== undefined && <Suspense fallback={<div></div>}>
+                        <PptxEditor/>
                     </Suspense>}
             {md_editor.url !== undefined && <Suspense fallback={<div></div>}>
                 <MdEditor/>

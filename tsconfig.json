@@ -31,7 +31,9 @@
     "baseUrl": ".",
     "paths": {
       "@office-kit/xlsx/io": ["node_modules/@office-kit/xlsx/dist/io/index.d.ts"],
-      "@office-kit/xlsx/node": ["node_modules/@office-kit/xlsx/dist/node.d.ts"]
+      "@office-kit/xlsx/node": ["node_modules/@office-kit/xlsx/dist/node.d.ts"],
+      "@office-kit/pptx-editor": ["node_modules/@office-kit/pptx-editor/dist/index.d.ts"],
+      "@office-kit/pptx": ["node_modules/@office-kit/pptx/dist/index.d.ts"]
     }
   },
   "include": [

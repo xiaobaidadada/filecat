@@ -184,6 +184,7 @@ export enum EditorAutoSaveEnum {
     image = "image",
     excel = "excel",
     docx = "docx", // Word 文档
+    pptx = "pptx", // 演示文稿
 }
 
 export class UserData extends UserLogin {

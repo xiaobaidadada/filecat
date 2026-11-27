@@ -70,6 +70,7 @@ export default function FileList() {
     const [, set_timeline_editor] = useAtom($stroe.timeline_editor);
     const [, set_excel_editor] = useAtom($stroe.excel_editor);
     const [, set_docx_editor] = useAtom($stroe.docx_editor);
+    const [, set_pptx_editor] = useAtom($stroe.pptx_editor);
     const [file_preview, setFilePreview] = useAtom($stroe.file_preview);
 
     const {t} = useTranslation();
@@ -232,6 +233,7 @@ export default function FileList() {
         set_timeline_editor({});
         set_excel_editor({});
         set_docx_editor({});
+        set_pptx_editor({});
     };
 
     /**

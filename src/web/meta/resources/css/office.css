@@ -295,3 +295,25 @@
     position: relative;
     overflow: hidden;
 }
+
+/* ============================================================
+ * pptx 编辑器
+ *
+ * @office-kit/pptx-editor 自带完整 UI（标题栏、工具栏、缩略图、画布），
+ * 它「fills target，给 target 高度」——所以这里唯一必须做的就是
+ * 让挂载点撑满可用空间，其余交给编辑器自己。
+ * ============================================================ */
+
+.pptx-pane {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    height: 100%;
+}
+
+.pptx-pane__host {
+    flex: 1;
+    min-height: 0;
+    /* 编辑器把内容渲染进 shadow root，这里不设任何排版样式，避免干扰它 */
+}

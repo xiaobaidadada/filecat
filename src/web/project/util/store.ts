@@ -212,6 +212,12 @@ export const $stroe = {
         name?: string,
         close?: () => any,
     }>({}),
+    // 演示文稿编辑器（.pptx）
+    pptx_editor: atom<{
+        url?: string,
+        name?: string,
+        close?: () => any,
+    }>({}),
     // 磁盘
     disk: atom<{type?: string, data?: DiskDevicePojo}>({
         type: ""

@@ -46,6 +46,9 @@ const office_format_map = new Map<string, FileTypeEnum>([
     // Word 文档：docm 与 docx 同为 OOXML 包，同样可读写
     ["docx", FileTypeEnum.docx],
     ["docm", FileTypeEnum.docx],
+    // 演示文稿：pptm 与 pptx 同为 OOXML 包
+    ["pptx", FileTypeEnum.pptx],
+    ["pptm", FileTypeEnum.pptx],
 ]);
 const txt = new Set(["txt","ts","js"]);
 const ExtBeautify = new Set(["js","mjs","json","html","htm","css","xml"]);
