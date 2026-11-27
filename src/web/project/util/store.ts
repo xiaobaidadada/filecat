@@ -206,6 +206,12 @@ export const $stroe = {
         name?: string,
         close?: () => any,
     }>({}),
+    // Word 文档编辑器（.docx）
+    docx_editor: atom<{
+        url?: string,
+        name?: string,
+        close?: () => any,
+    }>({}),
     // 磁盘
     disk: atom<{type?: string, data?: DiskDevicePojo}>({
         type: ""

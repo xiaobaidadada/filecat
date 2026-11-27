@@ -28,6 +28,8 @@ export enum FileTypeEnum {
     timeline = "timeline",
     /** 表格文件 xlsx */
     excel = "excel",
+    /** Word 文档 docx */
+    docx = "docx",
     workflow_act = "act",
     dev = "dev", // linux设备 不是文件或者目录
     url = "url"

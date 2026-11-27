@@ -58,6 +58,8 @@
     "@excalidraw/excalidraw": "^0.18.1",
     "@larksuiteoapi/node-sdk": "^1.68.0",
     "@microsoft/fetch-event-source": "^2.0.1",
+    "@office-kit/docx": "^0.2.2",
+    "@office-kit/docx-editor": "^0.1.2",
     "@office-kit/xlsx": "^0.24.2",
     "@types/better-sqlite3": "^7.6.13",
     "@types/markdown-it": "^14.1.2",

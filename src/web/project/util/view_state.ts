@@ -10,7 +10,7 @@
 const STORAGE_KEY = 'filecat_studio_view_state';
 
 /** 编辑器类型，用于隔离同路径下不同编辑器的状态 */
-export type ViewStateKind = 'ace' | 'draw' | 'mind' | 'timeline' | 'md' | 'excel';
+export type ViewStateKind = 'ace' | 'draw' | 'mind' | 'timeline' | 'md' | 'excel' | 'docx';
 
 /** 通用视图状态，各编辑器只填自己关心的字段 */
 export type ViewState = {

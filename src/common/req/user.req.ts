@@ -183,6 +183,7 @@ export enum EditorAutoSaveEnum {
     timeline = "timeline",
     image = "image",
     excel = "excel",
+    docx = "docx", // Word 文档
 }
 
 export class UserData extends UserLogin {

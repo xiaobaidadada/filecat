@@ -217,3 +217,65 @@
     box-sizing: border-box;
     z-index: 10;
 }
+
+/* ============================================================
+ * docx 文档正文
+ *
+ * 渲染出来的 HTML 由 @office-kit/docx-editor 生成，里面已经带了完整的
+ * 行内样式（字号、字体、间距、缩进等全部来自原文件），所以这里不能对
+ * 内容元素做任何排版上的覆盖 —— 一旦改字号或边距，就和 Word 里看到的
+ * 不是同一份东西了。这里只负责「纸张容器」本身：灰底、居中、白纸、
+ * 阴影，以及页边距。
+ * ============================================================ */
+
+.docx-body {
+    height: 100%;
+    overflow: auto;
+    background: var(--background, #f8f9fa);
+    padding: 1.5em 0;
+}
+
+/* 白纸：A4 宽度 21cm，左右各留 2.54cm（Word 默认页边距） */
+.docx-body__page {
+    width: 21cm;
+    min-height: 29.7cm;
+    margin: 0 auto;
+    padding: 2.54cm;
+    background: var(--surfacePrimary, #fff);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, .18);
+    box-sizing: border-box;
+    /* 原文字号以 pt 计，这里保证 pt 按 96dpi 换算 */
+    font-size: 11pt;
+    color: #000;
+}
+
+/* 段落默认继承父级，库输出里已带 w:p 的样式，不要再加 */
+.docx-body__page > * {
+    max-width: 100%;
+}
+
+/* 表格允许撑破纸张时横向滚动，而不是把纸张顶宽 */
+.docx-body__page table {
+    max-width: 100%;
+}
+
+/*
+ * 可编辑纸张：库渲染的正文默认是静态 HTML，加了 contenteditable 才有插入符。
+ * 这里只补两件事——让插入符可见、去掉编辑时的焦点描边，不改任何排版。
+ */
+.docx-body__page {
+    outline: none;
+    /* 浏览器默认的插入符颜色跟文字同色，深色文字下已经够清楚 */
+    caret-color: var(--blue, #1a73e8);
+}
+
+/* 编辑时不要浏览器给的空格和段落占位，库的 HTML 已带完整样式 */
+.docx-body__page * {
+    cursor: text;
+}
+
+/* 图片、表格边框等非文字元素用默认光标 */
+.docx-body__page img,
+.docx-body__page table {
+    cursor: default;
+}
