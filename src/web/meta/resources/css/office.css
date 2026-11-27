@@ -219,13 +219,11 @@
 }
 
 /* ============================================================
- * docx 文档正文
+ * docx 分页显示
  *
- * 渲染出来的 HTML 由 @office-kit/docx-editor 生成，里面已经带了完整的
- * 行内样式（字号、字体、间距、缩进等全部来自原文件），所以这里不能对
- * 内容元素做任何排版上的覆盖 —— 一旦改字号或边距，就和 Word 里看到的
- * 不是同一份东西了。这里只负责「纸张容器」本身：灰底、居中、白纸、
- * 阴影，以及页边距。
+ * 每个 .docx-page 就是一页纸，宽高和页边距全部由 JS 按 docx 的 sectPr
+ * 写进内联样式（不同文档页面尺寸可能不同，不能写死在 CSS 里）。
+ * 这里只管视觉：灰底、居中、纸张阴影、页码。
  * ============================================================ */
 
 .docx-body {
@@ -235,47 +233,65 @@
     padding: 1.5em 0;
 }
 
-/* 白纸：A4 宽度 21cm，左右各留 2.54cm（Word 默认页边距） */
-.docx-body__page {
-    width: 21cm;
-    min-height: 29.7cm;
-    margin: 0 auto;
-    padding: 2.54cm;
+.docx-pages {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5em;
+}
+
+/* 一页纸 */
+.docx-page {
+    position: relative;
+    box-sizing: border-box;
     background: var(--surfacePrimary, #fff);
     box-shadow: 0 1px 4px rgba(0, 0, 0, .18);
-    box-sizing: border-box;
-    /* 原文字号以 pt 计，这里保证 pt 按 96dpi 换算 */
-    font-size: 11pt;
     color: #000;
+    flex: none;
+    /* 高度由 JS 按 docx 的 sectPr 写死，超出部分裁掉。
+       分页算法是逐块累加的，块内 margin 折叠在极少情况下会差几像素，
+       裁掉能保证每页永远是标准 A4，不会出现「越往下页越高」。 */
+    overflow: hidden;
 }
 
-/* 段落默认继承父级，库输出里已带 w:p 的样式，不要再加 */
-.docx-body__page > * {
-    max-width: 100%;
-}
-
-/* 表格允许撑破纸张时横向滚动，而不是把纸张顶宽 */
-.docx-body__page table {
-    max-width: 100%;
-}
-
-/*
- * 可编辑纸张：库渲染的正文默认是静态 HTML，加了 contenteditable 才有插入符。
- * 这里只补两件事——让插入符可见、去掉编辑时的焦点描边，不改任何排版。
- */
-.docx-body__page {
+/* 正文区：可编辑，撑满纸张减去页边距后的区域 */
+.docx-page__body {
     outline: none;
-    /* 浏览器默认的插入符颜色跟文字同色，深色文字下已经够清楚 */
     caret-color: var(--blue, #1a73e8);
+    word-wrap: break-word;
 }
 
-/* 编辑时不要浏览器给的空格和段落占位，库的 HTML 已带完整样式 */
-.docx-body__page * {
+
+
+.docx-page__body * {
     cursor: text;
 }
 
-/* 图片、表格边框等非文字元素用默认光标 */
-.docx-body__page img,
-.docx-body__page table {
+.docx-page__body img,
+.docx-page__body table {
     cursor: default;
+}
+
+/* 页码：贴在纸张底部居中 */
+.docx-page__number {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 1.2em;
+    text-align: center;
+    font-size: 10pt;
+    color: var(--textSecondary, #5f6368);
+    user-select: none;
+    pointer-events: none;
+}
+
+/*
+ * 跨页块的本页部分。
+ * 分页算法给的是像素区间，这里用固定高度 + overflow:hidden 裁出来，
+ * 内部用负 margin 把已经在前一页画过的部分顶出去。
+ * 高度由 JS 写内联样式，单位 px。
+ */
+.docx-page__slice {
+    position: relative;
+    overflow: hidden;
 }
