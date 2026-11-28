@@ -90,11 +90,13 @@ export function Compress(props) {
                                         value: FileCompressType.tar_gz
                                     },
                                     {title: `gz ${t("格式")}`, value: FileCompressType.gz},
-                                    ]}/>,
-                            ( <Select value={compress_level} onChange={(value) => {
-                                const v = parseInt(value);
-                                setCompress_level(v);
-                            }} options={levels}/>),
+                                    {title: `7z ${t("格式")}`, value: FileCompressType.sevenZip},
+                                ]}/>,
+                                ( format === FileCompressType.sevenZip?<span></span>:
+                                    <Select value={compress_level} onChange={(value) => {
+                                        const v = parseInt(value);
+                                        setCompress_level(v);
+                                    }} options={levels}/>),
                                 <InputText placeholder={placeholder} placeholderOut={t("压缩到")} value={tar_filename}
                                            handleInputChange={(value) => setTar_filename(value)}/>] :
                             [<div>{t("进度")}:</div>,

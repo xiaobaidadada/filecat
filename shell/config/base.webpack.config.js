@@ -60,6 +60,11 @@ const npm_externals = [
         'node-libsmb2': 'commonjs node-libsmb2',
         'better-sqlite3/build/Release/better_sqlite3.node': 'commonjs better-sqlite3/build/Release/better_sqlite3.node',
         'better-sqlite3': 'commonjs better-sqlite3',
+        '7zip-min': 'commonjs 7zip-min',
+        // 7zip-min 运行时 require('7zip-bin') 拿二进制路径，
+        // 若被打进 bundle，pkg 快照里 __dirname 会解析成 build 目录，
+        // 导致二进制路径退化为 build/mac/arm64/7za 而找不到文件。
+        '7zip-bin': 'commonjs 7zip-bin',
     }
 ]
 const pkg_externals = [
@@ -68,6 +73,11 @@ const pkg_externals = [
         'cors': 'commonjs cors',
         '@koa/cors': 'commonjs @koa/cors', // 动态加载无法打包 如果需要可以使用 import "cors"
         // 'routing-controllers':'commonjs routing-controllers', // 有一些动态引入(他需要的动态引入也需要导入)，或者含有.node(使用用户自己安装编译的版本) 无法被打包 直接忽略这个包
+        '7zip-min': 'commonjs 7zip-min',
+        // 7zip-min 运行时 require('7zip-bin') 拿二进制路径，
+        // 若被打进 bundle，pkg 快照里 __dirname 会解析成 build 目录，
+        // 导致二进制路径退化为 build/mac/arm64/7za 而找不到文件。
+        '7zip-bin': 'commonjs 7zip-bin',
     }
 ]
 
