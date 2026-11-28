@@ -55,7 +55,7 @@ FileCat uses the UI of [filebrowser](https://github.com/filebrowser/filebrowser)
 | Category | Features |
 |------|------|
 | File Management | Browse, upload, download, rename, move, copy, compress and extract; drag-and-drop upload and paged infinite scrolling |
-| File Preview | Online preview for images, video, audio, PDF, Office documents, Markdown, source code, logs and more |
+| File Preview | Online preview for images, video, audio, PDF, Office documents, Epub 、 Markdown, source code, logs and more |
 | Office Editor | Edit Word (docx), Excel (xlsx) and PowerPoint (pptx) right in the browser — no local Office installation required |
 | Markdown WYSIWYG | Typora-like live-preview editing with 7 built-in themes, Mermaid / SVG diagrams and KaTeX formulas |
 | Code Editor | Built-in Ace editor with syntax highlighting, multi-language detection and a split-pane Studio mode |

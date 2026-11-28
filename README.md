@@ -52,7 +52,7 @@ FileCat是采用[filebrowser](https://github.com/filebrowser/filebrowser)的ui�
 | 类别 | 功能 |
 |------|------|
 | 文件管理 | 浏览、上传、下载、重命名、移动、复制、压缩解压，支持拖拽上传与分页滚动加载 |
-| 文件预览 | 图片、视频、音频、PDF、Office 文档、Markdown、代码、日志等格式在线预览 |
+| 文件预览 | 图片、视频、音频、PDF、Office 文档、epub小说、Markdown、代码、日志等格式在线预览 |
 | Office 编辑器 | 在线编辑 Word（docx）、Excel（xlsx）、PowerPoint（pptx），无需本地安装 Office |
 | Markdown 所见即所得 | 类 Typora 的实时预览编辑，内置 7 套主题，支持 Mermaid / SVG 绘图与 KaTeX 公式 |
 | 代码编辑器 | 内置 Ace 编辑器，支持语法高亮、多语言识别与 Studio 分栏代码模式 |
