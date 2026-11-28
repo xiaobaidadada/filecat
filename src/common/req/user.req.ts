@@ -33,7 +33,7 @@ export class UserBaseInfo {
 
     process_env_run_env:string | "exe"|"npm"
 
-    sys_env:{ web_site_title: string, show_login_user_info:boolean, logo?: string}
+    sys_env:{ web_site_title: string, show_login_user_info:boolean, logo?: string, hide_version?: boolean}
     // 解析后的网站 logo 可访问地址（http 远程地址或后端 logo 接口地址），为空表示使用内置默认 logo
     logo_url?: string
 

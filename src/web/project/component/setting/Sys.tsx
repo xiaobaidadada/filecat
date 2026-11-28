@@ -31,6 +31,7 @@ export function Sys() {
     const [web_site_title, set_web_site_title] = useState("");
     const [site_logo, set_site_logo] = useState("");
     const [show_login_user_info, set_show_login_user_info] = useState(false);
+    const [hide_version, set_hide_version] = useState(false);
     // http 代理地址已经挪到「环境控制」的 yaml 里，这里仅保留历史值原样回传，避免保存时把它清空
     const [http_proxy, set_http_proxy] = useState("");
     const [recycle_open, set_recycle_open] = useState(false);
@@ -86,6 +87,7 @@ export function Sys() {
             set_web_site_title(sys_env?.web_site_title);
             set_site_logo(sys_env?.logo || '');
             set_show_login_user_info(sys_env?.show_login_user_info);
+            set_hide_version(sys_env?.hide_version ?? false);
             set_http_proxy(sys_env?.http_proxy || '');
             set_control_env_str(sys_env?.control_env_str || CONTROL_ENV_STR_DEFAULT);
         }
@@ -145,6 +147,7 @@ export function Sys() {
             type: sys_setting_type.sys_env, value: {
                 web_site_title,
                 show_login_user_info,
+                hide_version,
                 http_proxy,
                 logo: site_logo
             }
@@ -221,14 +224,28 @@ export function Sys() {
                                        set_site_logo(value)
                                    }}/>
 
-                        {t("lgn_usr")}
-                        <input
-                            type="checkbox"
-                            checked={show_login_user_info}
-                            onChange={() => {
-                                set_show_login_user_info(!show_login_user_info)
-                            }}
-                        />
+                        <div>
+                            <input
+                                type="checkbox"
+                                checked={show_login_user_info}
+                                onChange={() => {
+                                    set_show_login_user_info(!show_login_user_info)
+                                }}
+                            />
+                            {t("lgn_usr")}
+
+                        </div>
+                        <div>
+                            <input
+                                type="checkbox"
+                                checked={hide_version}
+                                onChange={() => {
+                                    set_hide_version(!hide_version)
+                                }}
+                            />
+                            {t("hide_ver")}
+
+                        </div>
 
                     </Card>
                     <BrowserProxyCard/>

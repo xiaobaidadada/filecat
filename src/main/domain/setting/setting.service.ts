@@ -420,6 +420,7 @@ export class SettingService {
         const p: sys_env_pojo = DataUtil.get(data_common_key.sys_env_key) ?? {
             web_site_title: 'FileCat',
             show_login_user_info: true,
+            hide_version: false,
             // http_proxy: null,
             logo: "",
             browser_proxy_allow: [],
@@ -459,6 +460,7 @@ export class SettingService {
         const base: sys_env_pojo = DataUtil.get(data_common_key.sys_env_key) ?? {
             web_site_title: 'FileCat',
             show_login_user_info: true,
+            hide_version: false,
             http_proxy: null,
             logo: "",
             browser_proxy_allow: [],
