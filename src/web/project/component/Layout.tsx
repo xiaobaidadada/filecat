@@ -29,6 +29,7 @@ const XlsxEditor = React.lazy(() => import("./file/component/office/XlsxEditor")
 const DocxEditor = React.lazy(() => import("./file/component/office/DocxEditor"))
 const PptxEditor = React.lazy(() => import("./file/component/office/PptxEditor"))
 const EbookReader = React.lazy(() => import("./file/component/ebook/EbookReader"))
+const PlainEditor = React.lazy(() => import("./file/component/plain/PlainEditor"))
 const StudioLazy = React.lazy(() => import("./file/component/studio/StudioLazy"))
 const Net = React.lazy(() => import("./net/Net"))
 const TcpProxy = React.lazy(() => import("./net/tcp_proxy/TcpProxy"))
@@ -59,6 +60,7 @@ function Layout() {
     const [docx_editor] = useAtom($stroe.docx_editor);
     const [pptx_editor] = useAtom($stroe.pptx_editor);
     const [ebook_reader] = useAtom($stroe.ebook_reader);
+    const [plain_editor] = useAtom($stroe.plain_editor);
     const [md_editor, set_md_editor] = useAtom($stroe.md_editor);
     const [custom_fun_opt, set_custom_fun_opt] = useAtom($stroe.custom_fun_opt);
     // const [nav_style, set_nav_style] = useAtom($stroe.nav_style);
@@ -196,6 +198,9 @@ function Layout() {
                     </Suspense>}
                     {ebook_reader.url !== undefined && <Suspense fallback={<div></div>}>
                         <EbookReader/>
+                    </Suspense>}
+                    {plain_editor.open && <Suspense fallback={<div></div>}>
+                        <PlainEditor/>
                     </Suspense>}
                     <Suspense fallback={<div></div>}>
                         <SqliteQuery/>

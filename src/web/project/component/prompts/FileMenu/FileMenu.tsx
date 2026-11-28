@@ -183,6 +183,10 @@ export function FileMenu() {
         r: t("电子书阅读器"),
         v: common_menu_type.ebook_open
     }
+    const plain_editor_way = {
+        r: t("简易文本编辑器"),
+        v: common_menu_type.plain_open
+    }
     const file_open_way = {
         r: t("打开方式"),
         items: [
@@ -205,6 +209,7 @@ export function FileMenu() {
             docx_editor_way,
             pptx_editor_way,
             ebook_reader_way,
+            plain_editor_way,
         ]
     }
 
@@ -477,6 +482,12 @@ export function FileMenu() {
                 const name = showPrompt.data.filename;
                 click_file({name, mode: "ebook", close: () => file_open(null)});
                 file_open({name, mode: "ebook"});
+            }
+                break;
+            case common_menu_type.plain_open: {
+                const name = showPrompt.data.filename;
+                click_file({name, mode: "plain", close: () => file_open(null)});
+                file_open({name, mode: "plain"});
             }
                 break;
             case common_menu_type.md_editor_open: {

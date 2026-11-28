@@ -62,7 +62,7 @@ export class StringUtil {
     }
 
     public static getFileExtension(fileName) {
-        if(!fileName) return "";
+        if (!fileName) return "";
         const list = fileName.split('.')
         if (list.length < 2) {
             return "";
@@ -73,14 +73,19 @@ export class StringUtil {
 
 }
 
-// 获取编辑器模式
-export function getEditModelType(name) {
-    let p = name.split('.');
-    if (p.length === 1) {
-        return '';
+//  如果是文本
+export function is_text_file(name: string): boolean {
+    let ext = name;
+
+    if (ext.includes(".")) {
+        const parts = ext.split(".");
+        if (parts.length === 1) {
+            return false;
+        }
+        ext = parts[parts.length - 1].toLowerCase();
     }
-    p = p[p.length - 1];
-    switch (p) {
+
+    switch (ext) {
         case 'java':
         case 'javascript':
         case 'css':
@@ -94,7 +99,6 @@ export function getEditModelType(name) {
         case 'yaml':
         case 'tsx':
         case 'sql':
-            return p;
         case 'txt':
         case 'ini':
         case 'env':
@@ -106,32 +110,27 @@ export function getEditModelType(name) {
         case 'gitignore':
         case 'conf':
         case 'mod':
-            return 'text';
         case 'js':
-            return 'javascript';
         case 'md':
-            return 'markdown';
         case 'py':
-            return 'python';
         case 'ts':
-            return 'typescript';
         case 'yml':
-            return 'yaml';
+        case 'act':
         case 'cpp':
         case 'h':
         case 'c':
-        case "cc":
-            return 'c_cpp'
-        case "excalidraw":
-            return 'json'
-        case "mind":
-            return "json"
-        case "go":
-            return "golang"
+        case 'cc':
+        case 'excalidraw':
+        case 'mind':
+        case 'go':
         case 'proto':
-            return 'proto'
+        case 'bat':
+        case "Dockerfile":
+        case "LICENSE":
+            return true;
+        default:
+            return false;
     }
-    return "";
 }
 
 export function join_url(u1: string, u2: string) {
@@ -162,7 +161,7 @@ export function generateRandomHash(length = 16) {
     return secure_random_string(length);
 }
 
-export function have_empty_char(str:string) {
+export function have_empty_char(str: string) {
     return /\s/.test(str)
 }
 
@@ -173,7 +172,7 @@ export function removeTrailingPath(str) {
     const trimmedStr = str.trimEnd();
 
     // 如果字符串尾部是反斜杠，删除它
-    if (trimmedStr.endsWith(sep) && !trimmedStr.endsWith(':\\') ) {
+    if (trimmedStr.endsWith(sep) && !trimmedStr.endsWith(':\\')) {
         return trimmedStr.slice(0, -1);
     }
 
@@ -277,7 +276,7 @@ export function formatPermissions(mode: number): string {
 
 export function get_zip_file_format_util(name) {
     for (const ff of file_select_list) {
-        if(name.endsWith(ff)) {
+        if (name.endsWith(ff)) {
             return ff;
         }
     }
@@ -324,11 +323,11 @@ export function format_duration_ms(ms?: number): string {
     ].filter(Boolean).join(" ");
 }
 
-export function get_error_str(e:any) {
-    let m :string = "";
+export function get_error_str(e: any) {
+    let m: string = "";
     if (typeof e === 'string') {
         m = e as string
-    } else if(e != null) {
+    } else if (e != null) {
         try {
             m = e?.message || JSON.stringify(e)
         } catch (e1) {
@@ -339,6 +338,6 @@ export function get_error_str(e:any) {
 }
 
 export function trim_slashes(value?: string): string {
-    if(!value) return "";
+    if (!value) return "";
     return value.replace(/^\/+|\/+$/g, "");
 }

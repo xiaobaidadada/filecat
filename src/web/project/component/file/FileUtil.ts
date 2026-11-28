@@ -10,26 +10,25 @@ import {useContext, useEffect, useRef, useState} from "react";
 import {NotyFail, NotySuccess} from "../../util/noty";
 import {debounce, throttle} from "../../../../common/fun.util";
 import {copyToClipboard} from "../../util/FunUtil";
-import {fileHttp, userHttp, set_ai_forward} from "../../util/config";
+import {fileHttp, set_ai_forward, userHttp} from "../../util/config";
 import {Http_controller_router} from "../../../../common/req/http_controller_router";
 import {GlobalContext} from "../../GlobalProvider";
 import {useNavigate, useSearchParams} from "react-router-dom";
 import {getFileFormat} from "../../../../common/FileMenuType";
 import {browser_file_pojo} from "../../../../common/req/common.pojo";
 import {useAtom} from "jotai/index";
-import {getDefaultStore} from "jotai";
 import {useTranslation} from "react-i18next";
 import {MAX_SIZE_TXT} from "../../../../common/ValueUtil";
-import {getEditModelType} from "../../../../common/StringUtil";
 import {path_join} from "pty-shell/dist/path_util";
 import {isAbsolutePath} from "../../../../common/path_util.js";
 import {get_user_now_pwd} from "../../../../common/DataUtil";
-export {isAbsolutePath, get_user_now_pwd};
 import {routerConfig} from "../../../../common/RouterConfig";
 import {Http} from "../../util/http";
 import {saveTxtReq} from "../../../../common/req/file.req";
 import {editor_data} from "../../util/store.util";
 import i18n from "i18next";
+
+export {isAbsolutePath, get_user_now_pwd};
 
 export function getFilesByIndexs(nowFileList, selectedFileList: number[]) {
     const list = []
@@ -446,6 +445,7 @@ export function is_preview_file(name: string) {
 // 按文件类型推断双击时的打开方式，写入 url 与 url 恢复共用同一套映射
 export function get_open_mode_by_type(type: FileTypeEnum | undefined): open_mode | undefined {
     if (type === FileTypeEnum.md) return "md";
+    if (type === FileTypeEnum.text || type === FileTypeEnum.workflow_act) return "text";
     if (type === FileTypeEnum.excalidraw || type === FileTypeEnum.draw) return "excalidraw";
     // 思维导图直接进 Studio 打开
     if (type === FileTypeEnum.mind) return "mind";
@@ -481,7 +481,7 @@ export function use_share_preview() {
 }
 
 // 打开文件的方式（写入 url 参数，刷新后据此恢复）
-export type open_mode = "text" | "md" | "image_edit" | "log" | "preview" | "excalidraw" | "mind" | "timeline" | "excel" | "docx" | "pptx" | "ebook" | "sqlite" | "open";
+export type open_mode = "text" | "md" | "image_edit" | "log" | "preview" | "excalidraw" | "mind" | "timeline" | "excel" | "docx" | "pptx" | "ebook" | "sqlite" | "plain" | "open";
 
 export interface file_open_param {
     name: string;
@@ -554,6 +554,7 @@ export function use_click_folder() {
 export const user_click_file = () => {
     // 四个预览
     const [editorSetting, setEditorSetting] = useAtom($stroe.editorSetting);
+    const [plain_editor, setPlainEditor] = useAtom($stroe.plain_editor);
     const [file_preview, setFilePreview] = useAtom($stroe.file_preview)
     // const [markdown, set_markdown] = useAtom($stroe.markdown)
     const [md_editor, set_md_editor] = useAtom($stroe.md_editor);
@@ -609,7 +610,8 @@ export const user_click_file = () => {
             return false;
         }
         const {name, context} = param;
-        const mode = param.mode ?? get_open_mode_by_type(getFileFormat(name));
+        const format = getFileFormat(name);
+        const mode = param.mode ?? get_open_mode_by_type(format);
         const dir = getRouterAfter('file', getRouterPath());
         const web_path = `${dir}${name}`;
         const absolute_file_path = param.file_path ?? path_join(ab_dir_path, web_path);
@@ -688,6 +690,25 @@ export const user_click_file = () => {
             window.open(target_url, '_blank');
             return true;
         }
+        // 简易文本编辑器：浏览器原生 textarea，移动端输入法兼容性好
+        if (mode === "plain") {
+            const value = context ? context : await Http.get(url);
+            setPlainEditor({
+                open: true,
+                fileName: name,
+                value,
+                save: async (context) => {
+                    const data: saveTxtReq = {context}
+                    const rsq = await fileHttp.post(`save/${file_path_}`, data)
+                    if (rsq.code === 0) {
+                        editor_data.set_value_temp('')
+                    }
+                },
+                close: param.close
+            })
+            editor_data.set_value_temp(value)
+            return true;
+        }
         // 文本编辑器：显式指定了 model，或文件类型仅能当纯文本处理
         if (param.model || mode === "text") {
             let value;
@@ -698,10 +719,11 @@ export const user_click_file = () => {
             } else {
                 value = await Http.get(url);
             }
+            // 特殊格式对待
             let m = param.model;
             if (type === FileTypeEnum.workflow_act) {
                 m = "ace/mode/yaml"
-            } else if (type === FileTypeEnum.draw || type === FileTypeEnum.excalidraw) {
+            } else if (type === FileTypeEnum.draw || type === FileTypeEnum.excalidraw || type === FileTypeEnum.mind || type === FileTypeEnum.timeline) {
                 m = "ace/mode/json"
             }
             setEditorSetting({

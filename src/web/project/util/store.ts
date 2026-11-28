@@ -225,6 +225,14 @@ export const $stroe = {
         name?: string,
         close?: () => any,
     }>({}),
+    // 简易文本编辑器：浏览器原生 textarea，只为移动端等无法顺畅用 Ace 的场景
+    plain_editor: atom<{
+        open?: boolean,
+        fileName?: string,
+        value?: string,
+        save?: (context: string) => Promise<any>,
+        close?: () => any,
+    }>({}),
     // 磁盘
     disk: atom<{type?: string, data?: DiskDevicePojo}>({
         type: ""

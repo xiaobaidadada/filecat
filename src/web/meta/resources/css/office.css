@@ -317,3 +317,24 @@
     min-height: 0;
     /* 编辑器把内容渲染进 shadow root，这里不设任何排版样式，避免干扰它 */
 }
+
+/* 简易文本编辑器：原生 textarea 铺满内容区，移动端输入法才正常 */
+.plain-editor__area {
+    display: block;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    padding: 1rem;
+    border: 0;
+    outline: none;
+    resize: none;
+    background: var(--surfacePrimary);
+    color: var(--textPrimary);
+    font-family: Menlo, Consolas, "Courier New", monospace;
+    font-size: .95rem;
+    line-height: 1.6;
+    /* 长行自动换行，手机上不出现横向滚动 */
+    white-space: pre-wrap;
+    word-break: break-word;
+    -webkit-text-size-adjust: 100%;
+}

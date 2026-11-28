@@ -72,6 +72,7 @@ export default function FileList() {
     const [, set_docx_editor] = useAtom($stroe.docx_editor);
     const [, set_pptx_editor] = useAtom($stroe.pptx_editor);
     const [, set_ebook_reader] = useAtom($stroe.ebook_reader);
+    const [, set_plain_editor] = useAtom($stroe.plain_editor);
     const [file_preview, setFilePreview] = useAtom($stroe.file_preview);
 
     const {t} = useTranslation();
@@ -236,6 +237,7 @@ export default function FileList() {
         set_docx_editor({});
         set_pptx_editor({});
         set_ebook_reader({});
+        set_plain_editor({});
     };
 
     /**

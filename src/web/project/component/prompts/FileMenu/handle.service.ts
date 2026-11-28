@@ -71,6 +71,7 @@ export enum common_menu_type {
     docx_open = "docx_open",
     pptx_open = "pptx_open",
     ebook_open = "ebook_open",
+    plain_open = "plain_open",
     // 以所见即所得编辑器打开 md（双击仍是预览，这里提供专门的编辑入口）
     md_editor_open = "md_editor_open",
     // 挂载：把该目录挂载到网盘/远程协议

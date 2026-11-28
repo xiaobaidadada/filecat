@@ -1,4 +1,4 @@
-import {StringUtil} from "./StringUtil";
+import {is_text_file, StringUtil} from "./StringUtil";
 import {FileTypeEnum} from "./file.pojo";
 
 type menu_item = {r?:string,v?:any,items?:menu_item[]}
@@ -39,8 +39,7 @@ const video_format_set = new Set(["mp4", "webm","flv","mov","m4v","mkv","avi","w
 const compressing_list = new Set(["tar","zip","gz","tgz","rar"]);// compressing
 const image_list = new Set(["jpg","jpeg","png","gif"]);
 const sqlite_list = new Set(["db", "sqlite", "sqlite3"]);
-// Office 表格：走独立的表格编辑器（xlsm 与 xlsx 同为 OOXML 包，编辑器可正常读写）
-const office_format_map = new Map<string, FileTypeEnum>([
+const format_map = new Map<string, FileTypeEnum>([
     ["xlsx", FileTypeEnum.excel],
     ["xlsm", FileTypeEnum.excel],
     // ["xls", FileTypeEnum.excel],
@@ -61,7 +60,7 @@ const office_format_map = new Map<string, FileTypeEnum>([
     ["fbz", FileTypeEnum.ebook],
     ["cbz", FileTypeEnum.ebook],
 ]);
-const txt = new Set(["txt","ts","js"]);
+// const txt = new Set(["txt","ts","js","act","py","text","log","bash","sh","java"]);
 const ExtBeautify = new Set(["js","mjs","json","html","htm","css","xml"]);
 
 // 返回文件格式
@@ -85,12 +84,20 @@ export function getFileFormat(filename:string): FileTypeEnum {
         return FileTypeEnum.mind;
     } else if (extension === FileTypeEnum.timeline) {
         return FileTypeEnum.timeline;
-    } else if (office_format_map.has(extension)) {
-        return office_format_map.get(extension);
     } else if(extension === FileTypeEnum.workflow_act) {
         return FileTypeEnum.workflow_act;
     } else if(extension === 'url') {
         return FileTypeEnum.url;
+    }
+    // else if(txt.has(extension)) {
+    //     return FileTypeEnum.text;
+    // }
+    else if (format_map.has(extension)) {
+        return format_map.get(extension);
+    }
+    const edit_mode = is_text_file(filename);
+    if(edit_mode) {
+        return FileTypeEnum.text;
     }
     return FileTypeEnum.unknow;
 }

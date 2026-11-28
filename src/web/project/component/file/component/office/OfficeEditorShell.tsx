@@ -70,13 +70,11 @@ export default function OfficeEditorShell(props: OfficeEditorShellProps) {
                 </div>
                 <div className="office-editor__ops">
                     {extra}
-                    {saving && <span className="office-editor__saving">保存中…</span>}
-                    {on_save && <ActionButton icon={"save"} title="保存 (Ctrl+S)" onClick={() => on_save()}/>}
+                    {on_save && dirty && <ActionButton icon={"save"} title="保存 (Ctrl+S)" onClick={() => on_save()}/>}
                     <ActionButton icon={"close"} title="关闭 (Esc)" onClick={handle_close}/>
                 </div>
             </div>
             <div className="office-editor__body">
-                {loading && <div className="office-editor__tip">加载中…</div>}
                 {!loading && error && <div className="office-editor__tip office-editor__tip--error">{error}</div>}
                 {!loading && !error && children}
             </div>

@@ -17,7 +17,7 @@ export enum FileTypeEnum {
     studio_file = 'studio_file',
     studio_folder = 'studio_folder',
     directory = 'directory', // 一些目录操作 点击一些目录下的资源
-    unknow = "text",
+    unknow = "unknow",
     uncompress = "uncompress", // 压缩文件
     md = "md",
     excalidraw = "excalidraw",
