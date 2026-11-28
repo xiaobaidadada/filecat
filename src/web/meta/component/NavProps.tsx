@@ -13,7 +13,8 @@ export interface NavItem {
     name?: string, // 隐藏的也不需要
     rto?: string,
     clickFun?: Function, // 隐藏的也不需要
-    component?:ReactNode
+    component?:ReactNode,
+    dom?: ReactNode, // 直接插入导航的 DOM
 }
 
 export interface NavProps {
@@ -62,6 +63,9 @@ export function Nav(props: NavProps) {
                     <div key={groupIndex} className="nav_1">
                         {group.map((item, itemIndex) => {
                             const key = `${groupIndex}_${itemIndex}`;
+                            if (item.dom) {
+                                return <React.Fragment key={key}>{item.dom}</React.Fragment>;
+                            }
                             return (
                                 <To
                                     key={key}

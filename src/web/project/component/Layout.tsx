@@ -145,6 +145,11 @@ function Layout() {
         // @ts-ignore
         MainNavList[MainNavList.length - 1].push(custom_fun_opt);
     }
+    MainNavList[MainNavList.length - 1].push({
+        dom: <span className={"credits"} onClick={() => window.open("https://github.com/xiaobaidadada/filecat", "_blank")}>
+            {`FileCat version : ${process.env.version}`}
+        </span>
+    });
     // const pcCollapsed = nav_style?.pc_collapsed ?? false;
 
     return (
