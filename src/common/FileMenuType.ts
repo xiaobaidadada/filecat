@@ -43,15 +43,15 @@ const sqlite_list = new Set(["db", "sqlite", "sqlite3"]);
 const office_format_map = new Map<string, FileTypeEnum>([
     ["xlsx", FileTypeEnum.excel],
     ["xlsm", FileTypeEnum.excel],
-    ["xls", FileTypeEnum.excel],
+    // ["xls", FileTypeEnum.excel],
     // Word 文档：docm 与 docx 同为 OOXML 包，同样可读写
     ["docx", FileTypeEnum.docx],
     ["docm", FileTypeEnum.docx],
-    ["doc", FileTypeEnum.docx],
+    // ["doc", FileTypeEnum.docx],
     // 演示文稿：pptm 与 pptx 同为 OOXML 包
     ["pptx", FileTypeEnum.pptx],
     ["pptm", FileTypeEnum.pptx],
-    ["ppt", FileTypeEnum.pptx],
+    // ["ppt", FileTypeEnum.pptx],
     // 电子书：epub/mobi/azw3/fb2/cbz 都由 foliate-js 渲染，只读
     ["epub", FileTypeEnum.ebook],
     ["mobi", FileTypeEnum.ebook],

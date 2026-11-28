@@ -72,8 +72,6 @@ export function FileMenu() {
     // const [studio, set_studio] = useAtom($stroe.studio);
     const {click_file} = user_click_file();
     const file_open = use_file_open();
-    const [image_editor, set_image_editor] = useAtom($stroe.image_editor);
-    const [md_editor, set_md_editor] = useAtom($stroe.md_editor);
     const [shell_file_log, set_file_log] = useAtom($stroe.log_viewer);
     const [workflow_show, set_workflow_show] = useAtom($stroe.workflow_realtime_show);
     const [prompt_card, set_prompt_card] = useAtom($stroe.prompt_card);
@@ -169,6 +167,22 @@ export function FileMenu() {
         r: t("o_img"),
         v: common_menu_type.image_open
     }
+    const excel_editor_way = {
+        r: "Excel " + t("编辑器"),
+        v: common_menu_type.excel_open
+    }
+    const docx_editor_way = {
+        r: "Word " + t("编辑器"),
+        v: common_menu_type.docx_open
+    }
+    const pptx_editor_way = {
+        r: "PPT " + t("编辑器"),
+        v: common_menu_type.pptx_open
+    }
+    const ebook_reader_way = {
+        r: t("电子书阅读器"),
+        v: common_menu_type.ebook_open
+    }
     const file_open_way = {
         r: t("打开方式"),
         items: [
@@ -187,6 +201,10 @@ export function FileMenu() {
             md_editor_way,
             sql_query_way,
             image_editor_way,
+            excel_editor_way,
+            docx_editor_way,
+            pptx_editor_way,
+            ebook_reader_way,
         ]
     }
 
@@ -306,7 +324,7 @@ export function FileMenu() {
                 const name = showPrompt.data.filename;
                 file_open({name, mode: "text"});
                 click_file({
-                    name, model: "text", size: showPrompt.data.size, opt_shell: true,
+                    name, mode: "text", size: showPrompt.data.size, opt_shell: true,
                     close: () => file_open(null)
                 });
             }
@@ -432,25 +450,45 @@ export function FileMenu() {
                 copyToClipboard(get_ab_path())
                 break;
             case common_menu_type.sqlite_query: {
-                click_file({
-                    name: showPrompt.data.filename,
-                    file_path: get_ab_path(),
-                });
+                const name = showPrompt.data.filename;
+                click_file({name, mode: "sqlite", close: () => file_open(null)});
+                file_open({name, mode: "sqlite"});
+            }
+                break;
+            case common_menu_type.excel_open: {
+                const name = showPrompt.data.filename;
+                click_file({name, mode: "excel", close: () => file_open(null)});
+                file_open({name, mode: "excel"});
+            }
+                break;
+            case common_menu_type.docx_open: {
+                const name = showPrompt.data.filename;
+                click_file({name, mode: "docx", close: () => file_open(null)});
+                file_open({name, mode: "docx"});
+            }
+                break;
+            case common_menu_type.pptx_open: {
+                const name = showPrompt.data.filename;
+                click_file({name, mode: "pptx", close: () => file_open(null)});
+                file_open({name, mode: "pptx"});
+            }
+                break;
+            case common_menu_type.ebook_open: {
+                const name = showPrompt.data.filename;
+                click_file({name, mode: "ebook", close: () => file_open(null)});
+                file_open({name, mode: "ebook"});
             }
                 break;
             case common_menu_type.md_editor_open: {
-                // 以所见即所得编辑器打开 md：给出可读取内容的地址与保存用的相对路径
-                // 编码规则与 Excalidraw 等保持一致：目录部分编码，文件名原样
-                const dir = getRouterAfter('file', getRouterPath());
                 const name = showPrompt.data.filename;
-                const file_path = `${dir}${name}`;
+                click_file({name, mode: "md", close: () => file_open(null)});
                 file_open({name, mode: "md"});
-                set_md_editor({
-                    url: fileHttp.getDownloadUrl(`${encodeURIComponent(dir)}${name}`),
-                    path: file_path,
-                    name,
-                    close: () => file_open(null),
-                });
+            }
+                break;
+            case common_menu_type.image_open: {
+                const name = showPrompt.data.filename;
+                click_file({name, mode: "image_edit", close: () => file_open(null)});
+                file_open({name, mode: "image_edit"});
             }
                 break;
             case common_menu_type.url_qrcode: {
@@ -788,14 +826,14 @@ export function FileMenu() {
                                                                         click={async (v, item) => {
                                                                             // 图片专属项：编辑器打开 / 切换预览开关
                                                                             if (v == common_menu_type.image_open) {
+                                                                                click_file({
+                                                                                    name: showPrompt.data.filename,
+                                                                                    mode: "image_edit",
+                                                                                    close: () => file_open(null),
+                                                                                });
                                                                                 file_open({
                                                                                     name: showPrompt.data.filename,
                                                                                     mode: "image_edit"
-                                                                                });
-                                                                                set_image_editor({
-                                                                                    path: showPrompt.data.path,
-                                                                                    name: showPrompt.data.filename,
-                                                                                    close: () => file_open(null),
                                                                                 });
                                                                                 close();
                                                                             } else if (v == common_menu_type.image_preview) {

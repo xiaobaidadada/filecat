@@ -460,6 +460,8 @@ export function get_open_mode_by_type(type: FileTypeEnum | undefined): open_mode
     // 电子书有独立阅读器
     if (type === FileTypeEnum.ebook) return "ebook";
     if (type === FileTypeEnum.pdf || type === FileTypeEnum.image || type === FileTypeEnum.video) return "preview";
+    // 数据库文件进 SQL 查询页
+    if (type === FileTypeEnum.database) return "sqlite";
     // .url 文件内容是一个网址，双击就是跳转，不需要任何编辑器
     if (type === FileTypeEnum.url) return "open";
     return "text";
@@ -478,7 +480,7 @@ export function use_share_preview() {
 }
 
 // 打开文件的方式（写入 url 参数，刷新后据此恢复）
-export type open_mode = "text" | "md" | "image_edit" | "log" | "preview" | "excalidraw" | "mind" | "timeline" | "excel" | "docx" | "pptx" | "ebook" | "open";
+export type open_mode = "text" | "md" | "image_edit" | "log" | "preview" | "excalidraw" | "mind" | "timeline" | "excel" | "docx" | "pptx" | "ebook" | "sqlite" | "open";
 
 export interface file_open_param {
     name: string;
@@ -562,11 +564,11 @@ export const user_click_file = () => {
     const [docx_editor, set_docx_editor] = useAtom($stroe.docx_editor);
     const [pptx_editor, set_pptx_editor] = useAtom($stroe.pptx_editor);
     const [ebook_reader, set_ebook_reader] = useAtom($stroe.ebook_reader);
+    const [image_editor, set_image_editor] = useAtom($stroe.image_editor);
     const [sqlite_query_context, set_sqlite_query_context] = useAtom($stroe.sqlite_query_context);
 
     const [showPrompt, setShowPrompt] = useAtom($stroe.confirm);
     const [user_base_info, setUser_base_info] = useAtom($stroe.user_base_info);
-    const navigate = useNavigate();
     const {t} = useTranslation();
 
     const click_file = async (param: {
@@ -586,6 +588,8 @@ export const user_click_file = () => {
         save_file_fun?: (text: string) => Promise<void>,
         // 只读打开（如分享模式）：md 编辑器据此隐藏主题切换、不做自动保存
         readonly?: boolean,
+        // 强制用指定的编辑器打开，覆盖按扩展名推断的类型
+        mode?: open_mode,
         close?: () => any
     }):Promise<boolean> => {
         const ab_dir_path = UserBaseInfo.get_now_dir(user_base_info)
@@ -604,22 +608,87 @@ export const user_click_file = () => {
             return false;
         }
         const {name, context} = param;
-        let model = getEditModelType(name);
-        const type = getFileFormat(name);
-        const absolute_file_path = param.file_path ?? path_join(ab_dir_path, `${getRouterAfter('file', getRouterPath())}${name}`)
-        const file_path_ = param.file_path ?? path_join(ab_dir_path, `${encodeURIComponent(getRouterAfter('file', getRouterPath()))}${name}`)
+        const mode = param.mode ?? get_open_mode_by_type(getFileFormat(name));
+        const dir = getRouterAfter('file', getRouterPath());
+        const web_path = `${dir}${name}`;
+        const absolute_file_path = param.file_path ?? path_join(ab_dir_path, web_path);
+        const file_path_ = param.file_path ?? path_join(ab_dir_path, `${encodeURIComponent(dir)}${name}`);
         const url = param.file_url ?? fileHttp.getDownloadUrl(file_path_);
-        if (type === FileTypeEnum.database) {
+        const type = getFileFormat(name);
+        if (mode === "sqlite") {
             set_sqlite_query_context({
                 open: true,
                 path: absolute_file_path,
-                name
+                name,
+                close: param.close,
             });
-            navigate(routerConfig.sqlite_query_page);
             return true;
         }
-        if (param.model === "text") {
-            // 双击文件
+        if (mode === "md") {
+            set_md_editor({
+                url: url,
+                path: web_path,
+                name,
+                readonly: param.readonly,
+                close: param.close,
+            });
+            return true;
+        }
+        if (mode === "excalidraw") {
+            set_excalidraw_editor({url, name, close: param.close});
+            return true;
+        }
+        if (mode === "mind") {
+            set_mind_editor({url, name, close: param.close});
+            return true;
+        }
+        if (mode === "timeline") {
+            set_timeline_editor({url, name, close: param.close});
+            return true;
+        }
+        if (mode === "excel") {
+            set_excel_editor({url, name, close: param.close});
+            return true;
+        }
+        if (mode === "docx") {
+            set_docx_editor({url, name, close: param.close});
+            return true;
+        }
+        if (mode === "pptx") {
+            set_pptx_editor({url, name, close: param.close});
+            return true;
+        }
+        if (mode === "ebook") {
+            set_ebook_reader({url, name, close: param.close});
+            return true;
+        }
+        if (mode === "preview") {
+            setFilePreview({
+                open: true, type, name,
+                url: type === FileTypeEnum.image ? fileHttp.add_params(url, {mtime: param.mtime, cache: 1}) : url,
+                close: param.close
+            });
+            return true;
+        }
+        if (mode === "image_edit") {
+            set_image_editor({
+                path: `${routerConfig.file}/${web_path}`,
+                name,
+                close: param.close,
+            });
+            return true;
+        }
+        if (mode === "open") {
+            const target_url = (await Http.get(url)).trim();
+            if (!target_url) {
+                NotyFail(t("不能为空"));
+                return false;
+            }
+            window.open(target_url, '_blank');
+            return true;
+        }
+        // 文本编辑器：显式指定了 model，或文件类型仅能当纯文本处理
+        if (param.model || mode === "text") {
             let value;
             if (context) {
                 value = context;
@@ -627,17 +696,8 @@ export const user_click_file = () => {
                 value = await param.get_file_fun()
             } else {
                 value = await Http.get(url);
-                // console.log(value)
-                // console.log(url)
-                // value = await get_file_context(param.sys_path ?? `${encodeURIComponent(getRouterAfter('file', getRouterPath()))}${name}`, !!param.sys_path);
-                // if (!value) {
-                //     return;
-                // }
             }
-            // if (!model) {
-            //     model = "text";
-            // }
-            let m = undefined;
+            let m = param.model;
             if (type === FileTypeEnum.workflow_act) {
                 m = "ace/mode/yaml"
             } else if (type === FileTypeEnum.draw || type === FileTypeEnum.excalidraw) {
@@ -656,11 +716,9 @@ export const user_click_file = () => {
                     const data: saveTxtReq = {
                         context
                     }
-                    // const v = encodeURIComponent(getRouterAfter('file', getRouterPath()));
                     const rsq = await fileHttp.post(`save/${file_path_}`, data)
                     if (rsq.code === 0) {
                         editor_data.set_value_temp('')
-                        // setEditorSetting({open: false, model: '', fileName: '', save: null})
                     }
                 },
                 opt_shell: param.opt_shell,
@@ -668,84 +726,9 @@ export const user_click_file = () => {
             })
             editor_data.set_value_temp(value)
             return true;
-        } else {
-            // let url = fileHttp.getDownloadUrl(getFileNameByLocation(name));
-            switch (type) {
-                case FileTypeEnum.draw:
-                case FileTypeEnum.excalidraw:
-                    set_excalidraw_editor({url, name, close: param.close});
-                    break;
-                case FileTypeEnum.mind:
-                    set_mind_editor({url, name, close: param.close});
-                    break;
-                case FileTypeEnum.timeline:
-                    set_timeline_editor({url, name, close: param.close});
-                    break;
-                case FileTypeEnum.excel:
-                    set_excel_editor({url, name, close: param.close});
-                    break;
-                case FileTypeEnum.docx:
-                    set_docx_editor({url, name, close: param.close});
-                    break;
-                case FileTypeEnum.pptx:
-                    set_pptx_editor({url, name, close: param.close});
-                    break;
-                case FileTypeEnum.ebook:
-                    set_ebook_reader({url, name, close: param.close});
-                    break;
-                case FileTypeEnum.md:
-                    // set_markdown({
-                    //     context: await Http.get(url),
-                    //     filename: name,
-                    //     close: param.close
-                    // })
-                    set_md_editor({
-                        url: url,
-                        path: absolute_file_path,
-                        name,
-                        readonly: param.readonly,
-                        close: param.close,
-                    });
-                    break;
-                case FileTypeEnum.video:
-                case FileTypeEnum.pdf:
-                    setFilePreview({open: true, type: type, name, url, close: param.close})
-                    break;
-                case FileTypeEnum.image:
-                    setFilePreview({
-                        open: true,
-                        type: type,
-                        name,
-                        url: fileHttp.add_params(url, {mtime: param.mtime, cache: 1}),
-                        close: param.close
-                    })
-                    break;
-                case FileTypeEnum.workflow_act:
-                    param.model = "text";
-                    click_file(param);
-                    break;
-                case FileTypeEnum.url:
-                    // .url 文件内容就是一个网址，去掉首尾空白/换行再跳转，空内容给个提示
-                    const target_url = (await Http.get(url)).trim();
-                    if (!target_url) {
-                        NotyFail(t("不能为空"));
-                        break;
-                    }
-                    window.open(target_url, '_blank');
-                    break;
-                case FileTypeEnum.unknow:
-                default:
-                    if (model) {
-                        param.model = "text";
-                        click_file(param);
-                        break;
-                    }
-                    NotyFail(param.not_type_tip ?? t("未知类型、请右键点击文件"))
-                    return false;
-            }
-            return true;
-
         }
+        NotyFail(param.not_type_tip ?? t("未知类型、请右键点击文件"))
+        return false;
 
     }
 

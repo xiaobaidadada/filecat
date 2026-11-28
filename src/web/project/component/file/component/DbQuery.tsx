@@ -1,11 +1,11 @@
 import React, {useContext, useEffect, useMemo, useState} from "react";
-import Header from "../../../../meta/component/Header";
 import {ActionButton, ButtonText} from "../../../../meta/component/Button";
+import OfficeEditorShell from "./office/OfficeEditorShell";
 import {fileHttp, userHttp} from "../../../util/config";
 import {useNavigate} from "react-router-dom";
 import {Table} from "../../../../meta/component/Table";
 import {sqliteQueryResult} from "../../../../../common/req/file.req";
-import {Card, TextTip} from "../../../../meta/component/Card";
+import {Card} from "../../../../meta/component/Card";
 import { useAtom } from 'jotai';
 import {$stroe} from "../../../util/store";
 import Ace from "./Ace";
@@ -58,7 +58,7 @@ export default function DbQuery() {
     const navigate = useNavigate();
     const {t} = useTranslation();
     const {initUserInfo} = useContext(GlobalContext);
-    const [sqlite_query_context] = useAtom($stroe.sqlite_query_context);
+    const [sqlite_query_context, set_sqlite_query_context] = useAtom($stroe.sqlite_query_context);
     const [user_base_info] = useAtom($stroe.user_base_info);
     const [, set_prompt_card] = useAtom($stroe.prompt_card);
     const dbPath = useMemo(() => sqlite_query_context?.path ?? "", [sqlite_query_context?.path]);
@@ -285,35 +285,21 @@ export default function DbQuery() {
     const columns = result?.columns?.length ? result.columns : Object.keys(result?.rows?.[0] ?? {});
     const tableRows = (result?.rows ?? []).map((row) => columns.map((column) => formatCell(row[column])));
 
-    return (
-        <div className={"db-query-page"}>
-            <Header
-                ignore_tags={true}
-                left_children={[
-                    <ActionButton key={"back"} icon={"arrow_back"} title={"返回"} onClick={() => navigate(-1)} />,
-                    <ActionButton key={"run"} icon={"play_arrow"} title={"执行"} onClick={runQuery} />,
-                    <ActionButton
-                        key={"table"}
-                        icon={"table_chart"}
-                        title={"表格视图"}
-                        onClick={() => setViewMode("table")}
-                    />,
-                    <ActionButton
-                        key={"json"}
-                        icon={"data_object"}
-                        title={"原 JSON"}
-                        onClick={() => setViewMode("json")}
-                    />,
-                    <ActionButton
-                        key={"preset-setting"}
-                        icon={"settings"}
-                        title={t("SQL预设设置")}
-                        onClick={goPresetSetting}
-                    />,
-                ]}
-                children={<TextTip context={dbLabel} tip_context={"点击复制数据库信息"} />}
-            />
+    if (!sqlite_query_context?.open) {
+        return null;
+    }
 
+    return (
+        <OfficeEditorShell
+            name={dbLabel}
+            on_close={() => { sqlite_query_context?.close?.(); set_sqlite_query_context({...sqlite_query_context, open: false}); }}
+            extra={<>
+                <ActionButton key={"run"} icon={"play_arrow"} title={"执行"} onClick={runQuery} />
+                <ActionButton key={"table"} icon={"table_chart"} title={"表格视图"} onClick={() => setViewMode("table")} />
+                <ActionButton key={"json"} icon={"data_object"} title={"原 JSON"} onClick={() => setViewMode("json")} />
+                <ActionButton key={"preset-setting"} icon={"settings"} title={t("SQL预设设置")} onClick={goPresetSetting} />
+            </>}
+        >
             <div className={"db-query-page__content"}>
                 <Card
                     title={"SQL 查询"}
@@ -417,6 +403,6 @@ export default function DbQuery() {
                     )}
                 </Card>
             </div>
-        </div>
+        </OfficeEditorShell>
     );
 }

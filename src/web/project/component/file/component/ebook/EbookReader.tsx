@@ -7,9 +7,6 @@ import {useTranslation} from "react-i18next";
 import {Http} from "../../../../util/http";
 import "./ebook.css";
 
-/** foliate-js 注册的 <foliate-view> 是运行时自定义元素，React 没有它的类型 */
-const FoliateView = "foliate-view" as unknown as React.ElementType;
-
 /** 按扩展名给 MIME，foliate-js 的格式探测也认后缀 */
 const MIME_MAP: Record<string, string> = {
     epub: "application/epub+zip",
@@ -56,8 +53,10 @@ export default function EbookReader() {
         goLeft: () => void,
         goRight: () => void,
         goTo: (href: string) => Promise<void>,
+        close: () => void,
         book?: { toc?: any[], metadata?: { title?: unknown } },
     }>();
+    const host_ref = useRef<HTMLDivElement>(null);
     const [loading, set_loading] = useState(true);
     const [error, set_error] = useState("");
     const [toc, set_toc] = useState<{ label: string, href: string, depth: number }[]>([]);
@@ -67,8 +66,32 @@ export default function EbookReader() {
 
     const close = () => {
         const fn = reader.close;
+        // 先销毁 foliate 内部 renderer（断开 ResizeObserver），再卸载 DOM，
+        // 否则 observer 会在已脱离文档的元素上触发重排并报 loop 警告
+        view_ref.current?.close();
+        view_ref.current?.remove();
+        view_ref.current = undefined;
         setReader({});
         fn?.();
+    };
+
+    const on_key = (e: KeyboardEvent) => {
+        let delta = 0;
+        if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+            delta = -1;
+        } else if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+            delta = 1;
+        }
+        if (!delta || e.ctrlKey || e.metaKey || e.altKey) {
+            return;
+        }
+        e.preventDefault();
+        e.stopPropagation();
+        if (delta < 0) {
+            view_ref.current?.goLeft();
+        } else {
+            view_ref.current?.goRight();
+        }
     };
 
     useEffect(() => {
@@ -85,24 +108,65 @@ export default function EbookReader() {
             // foliate-js 是纯 ESM 源码，且内部大量用自定义元素和 iframe，
             // 只在真正打开电子书时才加载，避免拖慢首屏
             await import("foliate-js/view.js");
+            // foliate 的 Paginator 用 ResizeObserver 直接调 render()，缩放时 render 又改 iframe
+            // 尺寸，形成「改尺寸 -> 再通知」的循环，浏览器会抛 ResizeObserver loop 错误。
+            // 这里把 render 包一层 rAF 去重：同一帧多次调用只执行最后一次，循环即被打破。
+            const patch_paginator = () => {
+                const paginator = customElements.get("foliate-paginator") as any;
+                if (!paginator || paginator.__render_patched) {
+                    return;
+                }
+                const raw_render = paginator.prototype.render;
+                const pending = new WeakMap<object, number>();
+                paginator.prototype.render = function (...args: unknown[]) {
+                    const old = pending.get(this);
+                    if (old) {
+                        cancelAnimationFrame(old);
+                    }
+                    pending.set(this, requestAnimationFrame(() => {
+                        pending.delete(this);
+                        raw_render.apply(this, args);
+                    }));
+                };
+                paginator.__render_patched = true;
+            };
+            patch_paginator();
             // url 已带 baseUrl 与 token，走项目统一的字节下载封装
             const bytes = await Http.get_bytes_url(reader.url as string);
             const name = reader.name ?? "book.epub";
             const ext = name.slice(name.lastIndexOf(".") + 1).toLowerCase();
-            const file = new File([bytes], name, {type: MIME_MAP[ext] ?? "application/octet-stream"});
-            if (!alive || !view_ref.current) {
+            const file = new File([bytes as BlobPart], name, {type: MIME_MAP[ext] ?? "application/octet-stream"});
+            if (!alive || !host_ref.current) {
                 return;
             }
-            await view_ref.current.open(file);
+            // 手动创建：必须在容器已有稳定尺寸前先把 view 挂上去，否则 foliate 内部
+            // ResizeObserver 会在 iframe 尚未就绪时触发 render 并读到 null 的 body
+            const view = document.createElement("foliate-view") as typeof view_ref.current;
+            host_ref.current.appendChild(view);
+            view_ref.current = view;
+            // 翻页后同步阅读进度：必须在实例存在后绑定，首次挂载时 ref 还是 undefined
+            view.addEventListener("relocate", (e: Event) => {
+                const detail = (e as CustomEvent).detail;
+                if (typeof detail?.fraction === "number") {
+                    set_fraction(Math.round(detail.fraction * 100));
+                }
+            });
+            // 正文在 closed shadow 的 iframe 里，按键只能从 foliate 的 load 事件拿到 document 再绑
+            view.addEventListener("load", (e: Event) => {
+                const doc = (e as CustomEvent).detail?.doc as Document | undefined;
+                doc?.addEventListener("keydown", on_key, true);
+            });
+            await view.open(file);
             if (!alive) {
                 return;
             }
-            // open() 只解析不渲染，init() 才会定位并渲染第一页
-            await view_ref.current.init({showTextStart: true});
+            // open() 之后 foliate 才真正把 view.js/paginator.js 加载完，此时补丁才能生效
+            patch_paginator();
+            await view.init({showTextStart: true});
             if (!alive) {
                 return;
             }
-            set_toc(flatten_toc(view_ref.current.book?.toc));
+            set_toc(flatten_toc(view.book?.toc));
             set_loading(false);
         })().catch((e) => {
             if (alive) {
@@ -113,44 +177,55 @@ export default function EbookReader() {
 
         return () => {
             alive = false;
+            // foliate 内部的 ResizeObserver 挂在 body/container 上，
+            // 不显式 close 就只断开 DOM 引用，observer 仍会触发重排并报 loop 警告
+            view_ref.current?.close();
+            view_ref.current?.remove();
+            view_ref.current = undefined;
         };
     }, [reader.url]);
 
-    /** 翻页后同步阅读进度 */
     useEffect(() => {
-        const view = view_ref.current;
-        if (!view) {
-            return;
-        }
-        const on_relocate = (e: Event) => {
-            const detail = (e as CustomEvent).detail;
-            if (typeof detail?.fraction === "number") {
-                set_fraction(Math.round(detail.fraction * 100));
-            }
-        };
-        view.addEventListener("relocate", on_relocate);
+        document.addEventListener("keydown", on_key, true);
         return () => {
-            view.removeEventListener("relocate", on_relocate);
+            document.removeEventListener("keydown", on_key, true);
         };
     }, []);
 
     /**
-     * foliate 的 paginator 在 ResizeObserver 里重排，浏览器会报
-     * "ResizeObserver loop completed with undelivered notifications"。
-     * 这是无害警告，但 dev 模式下 webpack 会把它当错误弹全屏遮罩挡住页面，
-     * 这里在捕获阶段拦掉这一条，不影响其他错误。
+     * 缩放窗口时把连续 ResizeObserver 回调合并成一次。
+     * foliate 的 render() 会在回调里改滚动位置和 iframe 尺寸，缩放过程中每帧都触发
+     * 就会形成「改尺寸 -> 再通知」的循环，浏览器报 ResizeObserver loop 警告。
+     * 这里在缩放期间锁住 host 尺寸，停手 120ms 后再放开，循环自然消失。
      */
     useEffect(() => {
-        const is_ro_loop = (msg?: string) => !!msg?.includes("ResizeObserver loop");
-        const on_error = (e: ErrorEvent) => {
-            if (is_ro_loop(e.message)) {
-                e.stopImmediatePropagation();
-                e.preventDefault();
+        if (!reader.url) {
+            return;
+        }
+        let timer = 0;
+        const on_resize = () => {
+            const host = host_ref.current;
+            if (!host) {
+                return;
             }
+            if (!timer) {
+                const rect = host.getBoundingClientRect();
+                host.style.width = `${rect.width}px`;
+                host.style.height = `${rect.height}px`;
+            }
+            clearTimeout(timer);
+            timer = window.setTimeout(() => {
+                timer = 0;
+                host.style.width = "";
+                host.style.height = "";
+            }, 120);
         };
-        window.addEventListener("error", on_error, true);
-        return () => window.removeEventListener("error", on_error, true);
-    }, []);
+        window.addEventListener("resize", on_resize);
+        return () => {
+            window.removeEventListener("resize", on_resize);
+            clearTimeout(timer);
+        };
+    }, [reader.url]);
 
     return (
         <OfficeEditorShell
@@ -167,10 +242,7 @@ export default function EbookReader() {
             </>}
         >
             <div className={"ebook-body"}>
-                <div className={"ebook-view"}>
-                    {/* view 必须始终在 DOM 里，open() 依赖它的实例 */}
-                    <FoliateView ref={view_ref as any}/>
-                </div>
+                <div className={"ebook-view"} ref={host_ref}/>
                 {loading && <div className={"ebook-loading"}>{t("加载中")}</div>}
                 {show_toc && <div className={"ebook-toc"}>
                     {toc.map((it, i) => (

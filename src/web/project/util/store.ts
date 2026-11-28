@@ -46,6 +46,7 @@ export class SqliteQueryContext {
     open: boolean = false;
     path: string = "";
     name: string = "";
+    close?: () => any;
 }
 
 export const $stroe = {
@@ -177,7 +178,7 @@ export const $stroe = {
     // 最近一次打开的 md 编辑器正文。主题编辑页用它做实时预览的样例内容
     // （调主题需要看到各种元素，只有几行的短文档看不出效果）。
     md_editor_last_context: atom<string>(""),    // sqlite 查询页上下文
-    sqlite_query_context: sync_atomWithStorage<any>("sqlite_query_context", new SqliteQueryContext()),
+    sqlite_query_context: atom<SqliteQueryContext>(new SqliteQueryContext()),
     // 编辑器
     studio: atom<{folder_path?: string, name?: string}>({}),
     // 图片编辑器

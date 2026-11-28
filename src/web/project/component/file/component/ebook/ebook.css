@@ -22,6 +22,9 @@
     width: 100%;
     height: 100%;
     flex: 1;
+    /* layout 隔离：内部重排不外溢，避免 foliate 在 ResizeObserver 回调里
+       重排导致容器尺寸变化再触发通知，形成 loop 告警 */
+    contain: layout;
 }
 
 .ebook-progress {

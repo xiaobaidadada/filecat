@@ -48,6 +48,17 @@
 .file-icons [aria-label$=".rtf"] i::before
 { content: 'description' }
 
+/* E-book */
+
+.file-icons [aria-label$=".epub"] i::before,
+.file-icons [aria-label$=".mobi"] i::before,
+.file-icons [aria-label$=".azw"] i::before,
+.file-icons [aria-label$=".azw3"] i::before,
+.file-icons [aria-label$=".fb2"] i::before,
+.file-icons [aria-label$=".fbz"] i::before,
+.file-icons [aria-label$=".cbz"] i::before
+{ content: 'book' }
+
 /* #999 - Code */
 
 .file-icons [aria-label$=".c"] i::before,
@@ -186,6 +197,13 @@
 .file-icons [aria-label$=".dmg"] i,
 .file-icons [aria-label$=".doc"] i,
 .file-icons [aria-label$=".docx"] i,
+.file-icons [aria-label$=".epub"] i,
+.file-icons [aria-label$=".mobi"] i,
+.file-icons [aria-label$=".azw"] i,
+.file-icons [aria-label$=".azw3"] i,
+.file-icons [aria-label$=".fb2"] i,
+.file-icons [aria-label$=".fbz"] i,
+.file-icons [aria-label$=".cbz"] i,
 .file-icons [aria-label$=".emf"] i,
 .file-icons [aria-label$=".exe"] i,
 .file-icons [aria-label$=".ico"] i,

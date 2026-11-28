@@ -124,7 +124,6 @@ function Layout() {
             { rto: `${routerConfig.share_list_setting_page}`, component: <ShareListSetting />},
             { rto: `${routerConfig.ai_agent_setting_page}`, component: <AIAgentChatSetting />},
             { rto: `${routerConfig.ai_rebot_setting_page}`, component: <AIRebotSetting />},
-            { rto: `${routerConfig.sqlite_query_page}`, component: <SqliteQuery />},
             { rto: `${routerConfig.sql_preset_setting_page}`, component: <SqlPresetSetting />},
             { rto: `${routerConfig.studio_page}`, component: <StudioLazy />},
             { rto: `${routerConfig.git_page}`, component: <GitStudio />},
@@ -191,6 +190,9 @@ function Layout() {
                     {ebook_reader.url !== undefined && <Suspense fallback={<div></div>}>
                         <EbookReader/>
                     </Suspense>}
+                    <Suspense fallback={<div></div>}>
+                        <SqliteQuery/>
+                    </Suspense>
             {md_editor.url !== undefined && <Suspense fallback={<div></div>}>
                 <MdEditor/>
             </Suspense>}

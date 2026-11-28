@@ -280,10 +280,10 @@ export default function FileList() {
             });
             return true;
         }
-        // text 需显式指定 model，其余由 click_file 依据文件类型判断
-        // （mind 与 excalidraw 都走 click_file 分派到各自的浮层编辑器）
+        // text 需显式指定 model；其余 mode 原样传下去，
+        // 让恢复时用的编辑器与当初打开时一致（比如 .epub 用 Excel 编辑器打开）
         click_file({
-            name, opt_shell: true,
+            name, opt_shell: true, mode,
             ...(mode === "text" ? {model: "text"} : {}),
             close,
         });

@@ -1,13 +1,11 @@
-.db-query-page {
-    overflow-y: auto;
-    height: 100%;
-}
-
 .db-query-page__content {
+    box-sizing: border-box;
     padding: 16px;
     display: grid;
     gap: 16px;
-    align-items: start;
+    align-content: start;
+    height: 100%;
+    overflow-y: auto;
 }
 
 .db-query-page__actions {

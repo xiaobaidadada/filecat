@@ -66,6 +66,11 @@ export enum common_menu_type {
 
     image_open = "image_open",
     image_preview = "image_preview",
+    // 以专门的编辑器打开对应文件（双击时也会自动走这些编辑器）
+    excel_open = "excel_open",
+    docx_open = "docx_open",
+    pptx_open = "pptx_open",
+    ebook_open = "ebook_open",
     // 以所见即所得编辑器打开 md（双击仍是预览，这里提供专门的编辑入口）
     md_editor_open = "md_editor_open",
     // 挂载：把该目录挂载到网盘/远程协议
