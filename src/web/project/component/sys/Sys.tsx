@@ -18,7 +18,7 @@ import {NotyFail} from "../../util/noty";
 import {DiskCheck} from "./info/DiskCheck";
 import {DiskMount} from "./info/DiskMount";
 import {SysEnum} from "../../../../common/req/user.req";
-import {formatFileSize} from '../../../../common/ValueUtil';
+import {formatFileSize, formatSpeed} from '../../../../common/ValueUtil';
 
 let real_time_p = true;
 export function Sys(props) {
@@ -31,6 +31,11 @@ export function Sys(props) {
     const [memPercentage, setmemPercentage] = useState(0);
     const [memLeft, setMemLeft] = useState(0)
     const [memTotal, setMemTotal] = useState(0)
+    // 磁盘 / 网络实时速率（字节/秒）
+    const [diskRead, setDiskRead] = useState(0)
+    const [diskWrite, setDiskWrite] = useState(0)
+    const [netRx, setNetRx] = useState(0)
+    const [netTx, setNetTx] = useState(0)
     const [currentLoad, setCurrentLoad] = useState(0)
     const [node_cpu_usage, setNodeCpuUsage] = useState(0)
     const [sys, setSys] = useState({} as any)
@@ -60,6 +65,10 @@ export function Sys(props) {
             setMemTotal(memTotal);
             setmemPercentage(((memTotal - memLeft) / memTotal) * 100);
             setNodeMemory(wsData.context?.node_memory_usage)
+            setDiskRead(wsData.context?.disk_read_sec ?? 0)
+            setDiskWrite(wsData.context?.disk_write_sec ?? 0)
+            setNetRx(wsData.context?.net_rx_sec ?? 0)
+            setNetTx(wsData.context?.net_tx_sec ?? 0)
             setNodeCpuUsage(wsData.context?.node_cpu_usage)
         })
         await ws.send(new WsData(CmdType.sys_get));
@@ -189,7 +198,7 @@ export function Sys(props) {
                                 </Column>
                                 <Column>
                                     <Row>
-                                        <TextLine left={t("使用率")} center={currentLoad}/>
+                                        <TextLine left={t("使用率")} center={currentLoad+" %"}/>
                                     </Row>
                                 </Column>
                             </Row>
@@ -207,31 +216,46 @@ export function Sys(props) {
                                     <ShowTextDiv content=  {"buffer: "+formatFileSize(node_memory?.arrayBuffers)}/>
                                 </Column>
                                 <Column>
-                                    <ShowTextDiv content= {"cpu growth rate: "+node_cpu_usage}/>
+                                    <ShowTextDiv content= {"cpu usage: "+node_cpu_usage+" %"}/>
                                 </Column>
                             </Row>
                         </Card>
                     </Column>
+                    <Column widthPer={33} maxWidth={"30rem"}>
+                        <Card title={  `${t("网络")}/${t("磁盘")}`}>
+                            <Row>
+                                <Column>
+                                    <ShowTextDiv content={ `${t("下行")}: `+formatSpeed(netRx)}/>
+                                    <ShowTextDiv content={ `${t("上行")}: `+formatSpeed(netTx)}/>
+                                </Column>
+                                <Column>
+                                    <ShowTextDiv content={ `${t("读取")}: `+formatSpeed(diskRead)}/>
+                                    <ShowTextDiv content={ `${t("写入")}: `+formatSpeed(diskWrite)}/>
+                                </Column>
+                            </Row>
+                        </Card>
+                    </Column>
+
                 </Row>}
             <Row>
-                {base && <Column>
+                {base && <Column maxWidth={"30rem"}>
                     <Card title={t("基本信息")}>
-                        <TextLine left={t("总内存")} right={sys.mem_total}/>
+                        <TextLine left={t("总内存")} right={sys.mem_total+" G"}/>
                         <TextLine left={`cpu ${t("制造商")}`} right={sys.cpu_manufacturer}/>
                         <TextLine left={`cpu ${t("品牌")}`} right={sys.cpu_brand}/>
                         <TextLine left={`cpu ${t("逻辑核心")}`} right={sys.cpu_core_num}/>
                         <TextLine left={`cpu ${t("物理核心")}`} right={sys.cpu_phy_core_num}/>
-                        <TextLine left={`cpu ${t("最大")}hz`} right={sys.cpu_speed_hz}/>
+                        <TextLine left={`cpu ${t("最大")} GHz`} right={sys.cpu_speed_hz}/>
                         <TextLine left={`${t("当前系统")}:pid;ppid`} right={sys.pid_ppid}/>
                         <TextLine left={t('运行用户')} right={sys.user}/>
                     </Card>
                 </Column>}
-                {disk && <Column>
+                {disk && <Column maxWidth={"40rem"}>
                     <CardFull title={t(`物理硬盘`)}>
                         <Table headers={diskheaders} rows={diskList} width={"10rem"}/>
                     </CardFull>
                 </Column>}
-                {fileDisk && <Column>
+                {fileDisk && <Column maxWidth={"60rem"}>
                     <CardFull title={t(`文件硬盘`)}>
                         <Table headers={filediskheaders} rows={fileDiskList} width={"10rem"}/>
                     </CardFull>

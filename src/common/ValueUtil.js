@@ -20,6 +20,23 @@ export function formatFileSize(bytes) {
     }
 }
 
+// 格式化速率（字节/秒）。小数位固定，保证数字宽度稳定，界面不会随数值大小抖动
+export function formatSpeed(bytes) {
+    if (typeof bytes !== 'number' || !isFinite(bytes) || bytes < 0) {
+        return '0 B/s';
+    }
+    if (bytes < b_1 - 0.5) {
+        return Math.round(bytes) + ' B/s';
+    }
+    if (bytes < kb_1 - 0.5) {
+        return (bytes / b_1).toFixed(1) + ' KB/s';
+    }
+    if (bytes < mk_1 - 0.5) {
+        return (bytes / kb_1).toFixed(1) + ' MB/s';
+    }
+    return (bytes / mk_1).toFixed(2) + ' GB/s';
+}
+
 // 格式化时间 2025/02/04 03:37:07
 export function formatter_time(date){
     const formatter = new Intl.DateTimeFormat('zh-CN', {

@@ -1,7 +1,18 @@
 export interface SysPojo {
-    mem_total: number,
-    mem_left: number,
+    // 已换算好单位的字符串，前端直接展示
+    memTotal: string,
+    memLeft: string,
     cpu_currentLoad: number,
+    // 磁盘读写速率（字节/秒）
+    disk_read_sec: number,
+    disk_write_sec: number,
+    // 网络上下行速率（字节/秒）
+    net_rx_sec: number,
+    net_tx_sec: number,
+    // FileCat 进程自身
+    node_memory_usage: node_memory_usage,
+    // FileCat 进程自身占整机的 CPU 百分比
+    node_cpu_usage: string,
 }
 
 export interface staticSysPojo {

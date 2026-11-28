@@ -1399,5 +1399,11 @@
   "不是合法的JSON格式": "Format JSON invalide",
   "没有解析到可用的MCP配置": "Aucune configuration MCP exploitable",
   "打开方式": "Ouvrir avec",
-  "数据库查询": "Requête de base de données"
+  "数据库查询": "Requête de base de données",
+  "磁盘": "Disque",
+  "读取": "Lecture",
+  "写入": "Écriture",
+  "网络": "Réseau",
+  "下行": "Téléchargement",
+  "上行": "Envoi"
 }

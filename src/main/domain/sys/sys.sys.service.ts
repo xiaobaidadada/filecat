@@ -32,66 +32,99 @@ class SysSystemService {
                     sysJobInterval = null;
                     return;
                 }
-                const keys = sysWssMap.keys();
-                for (const socketId of keys) {
-                    const wss = sysWssMap.get(socketId)!;
+                // 先采集一次，再广播给所有连接。
+                // 原来是每个连接各跑一遍 si.mem()（单次约 18ms），
+                // 开 3 个面板就白跑 3 遍
+                let encoded: Uint8Array;
+                try {
+                    const data = await this.collectSysInfo();
+                    // 同一份载荷发给所有连接，编码一次就够
+                    encoded = new WsData<SysPojo>(CmdType.sys_getting, data).encode();
+                } catch (e) {
+                    console.log('系统信息采集失败,原因：', e);
+                    return;
+                }
+                for (const [socketId, conn] of sysWssMap) {
                     try {
-                        await this.pushSysInfo(wss);
+                        conn.sendData(encoded);
                     } catch (e) {
-                        console.log('系统信息推送失败sys,原因：',e)
-                        clearInterval(sysJobInterval);
-                        sysJobInterval = null;
-                        if (wss) {
-                            // wss.ws.close();
-                            sysWssMap.delete(socketId);
-                        }
+                        console.log('系统信息推送失败sys,原因：', e);
+                        sysWssMap.delete(socketId);
                     }
                 }
-            }, 1000);
+            }, 2000);
         } else {
+            // 新连上来的先给一份当前的，不用等下一个周期
             try {
-                await this.pushSysInfo(wss);
+                const data = await this.collectSysInfo();
+                wss.sendData(new WsData<SysPojo>(CmdType.sys_getting, data).encode());
             } catch (e) {
-                sysWssMap.delete(wss.id)
+                sysWssMap.delete(wss.id);
             }
         }
     }
 
     // 用于存储上一次CPU时间
     private lastNodeCpuUsage: number | null = null;
+    private lastNodeCpuStamp: number | null = null;
 
-    async pushSysInfo(wss: Wss) {
+    /** 采集一次系统信息，供广播复用（不涉及任何连接） */
+    async collectSysInfo(): Promise<SysPojo> {
         const currentLoad = await si.currentLoad();
-        // 获取总内存（单位：字节）
-        const totalMemory = os.totalmem();
-        // 剩余（单位：字节）
-        const freeMemory = os.freemem();
-        const result = new WsData<SysPojo>(CmdType.sys_getting);
-
-        // ===== Node CPU 增长率（相对于自己上次调用） =====
-        // Node 自身 CPU 用户态时间（微秒）
-        const currentCpuUsage = process.cpuUsage();
-        const userCpu = currentCpuUsage.user+currentCpuUsage.system;
-
-        let nodeCpuGrowthRate = 0;
-
-        if (this.lastNodeCpuUsage !== null && this.lastNodeCpuUsage !== 0) {
-            nodeCpuGrowthRate = ((userCpu - this.lastNodeCpuUsage) / this.lastNodeCpuUsage) * 100;
+        // macOS 的 os.freemem() 只统计「从未被使用」的页，系统把绝大部分空闲内存
+        // 当成文件缓存（inactive / speculative）不算进去，16G 机器常年只有几十 MB，
+        // 面板就成了永远 100%。si.mem().available 已经把可回收缓存算进来，
+        // 三平台语义一致，直接用它。
+        const mem = await si.mem();
+        // 磁盘/网络的速率由 si 自己按两次采样的差值算好，单位字节/秒，
+        // 首次调用返回 -1（没有上一份基准），统一归零
+        const [fs_stats, net_stats] = await Promise.all([si.fsStats(), si.networkStats()]);
+        const pick = (v: number | null | undefined) => (v && v > 0 ? v : 0);
+        let disk_read_sec = 0, disk_write_sec = 0;
+        if (fs_stats) {
+            disk_read_sec = pick(fs_stats.rx_sec);
+            disk_write_sec = pick(fs_stats.wx_sec);
         }
-        // 更新上一次 CPU
-        this.lastNodeCpuUsage = userCpu;
+        let net_rx_sec = 0, net_tx_sec = 0;
+        for (const item of net_stats || []) {
+            net_rx_sec += pick(item.rx_sec);
+            net_tx_sec += pick(item.tx_sec);
+        }
 
-        result.context = {
-            memTotal: (totalMemory / (1024 * 1024 * 1024)).toFixed(2),
-            memLeft: (freeMemory / (1024 * 1024 * 1024)).toFixed(2),
-            cpu_currentLoad: currentLoad.currentLoad.toFixed(2),
+        // ===== FileCat 进程自身的 CPU 使用率 =====
+        // process.cpuUsage() 返回的是累计 CPU 时间（微秒），不是使用率。
+        // 要用「本次差值 / 实际流逝的墙钟时间 / 核数」才是真正的占用比。
+        // 原来算成 (本次累计 - 上次累计) / 上次累计，进程跑得越久数字越小，
+        // 跟忙不忙毫无关系，是个假指标。
+        const cpu_usage_now = process.cpuUsage();
+        const cpu_used_now = cpu_usage_now.user + cpu_usage_now.system; // 微秒
+        const stamp_now = Date.now();
+        let node_cpu_usage = 0;
+        if (this.lastNodeCpuUsage !== null && this.lastNodeCpuStamp !== null) {
+            // 微秒差 / (毫秒差 * 1000) = 占单核的比例，再除以核数得占整机的比例
+            const used_delta = cpu_used_now - this.lastNodeCpuUsage;
+            const elapsed_us = (stamp_now - this.lastNodeCpuStamp) * 1000;
+            const core_num = Math.max(1, os.cpus().length);
+            if (elapsed_us > 0) {
+                // 夹在 0~100，防止采样抖动导致越界
+                node_cpu_usage = Math.min(100, Math.max(0, (used_delta / elapsed_us / core_num) * 100));
+            }
+        }
+        this.lastNodeCpuUsage = cpu_used_now;
+        this.lastNodeCpuStamp = stamp_now;
+
+        return {
+            memTotal: (mem.total / (1024 * 1024 * 1024)).toFixed(2),
+            memLeft: (mem.available / (1024 * 1024 * 1024)).toFixed(2),
+            cpu_currentLoad: Number(currentLoad.currentLoad.toFixed(2)),
+            disk_read_sec,
+            disk_write_sec,
+            net_rx_sec,
+            net_tx_sec,
+            // 下面几个是内部字段，前端按需取用
             node_memory_usage: process.memoryUsage(),
-            node_cpu_usage: nodeCpuGrowthRate.toFixed(2),
-        };
-        // if (wss.ws.readyState ===WebSocket.CLOSED) {
-        //     throw  "断开连接";
-        // }
-        wss.sendData(result.encode())
+            node_cpu_usage: node_cpu_usage.toFixed(2),
+        } as SysPojo;
     }
 
     // 订阅要满足幂等性

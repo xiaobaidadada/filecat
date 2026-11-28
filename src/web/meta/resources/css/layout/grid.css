@@ -1,7 +1,8 @@
 
 .grid_three {
     display: grid;
-    grid-template-columns: repeat(3, 1fr); /* 三列等宽 */
+    /* 标签短、数值长，等宽会让数值列挤到换行；按内容分配宽度 */
+    grid-template-columns: auto 1fr auto;
     gap: 1rem; /* 列之间的间隔 */
 }
 
