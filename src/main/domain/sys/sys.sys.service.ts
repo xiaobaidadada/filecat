@@ -18,49 +18,70 @@ import {ThreadsFilecat} from "../../threads/filecat/threads.filecat";
 import {threads_msg_type, WorkerMessage} from "../../threads/threads.type";
 import {Worker as NodeWorker} from "worker_threads";
 import {settingService} from "../setting/setting.service";
+import {withLock} from "../../../common/lock";
 let sysJobInterval: any = null;
 
 export const sysWssMap = new Map<string, Wss>();
 
 class SysSystemService {
 
+    private readonly sys_push_interval = 1500;
+
+    /**
+     * 全局唯一的采集锁，定时广播和新连接首推共用。
+     * setInterval 不会等上一次结束，采集一旦被系统调用（如 macOS 的 vm_stat）拖慢就会堆积；
+     * 而 si.fsStats()/si.networkStats() 的速率是拿「上一次采样」算差值的，
+     * 并发跑会互相冲掉快照，速率读数直接失真。
+     * 超时 5 秒：真卡死了也要能自愈，否则一次异常就把推送永久锁死。
+     */
+    private collect_task = withLock(async (job: () => Promise<void>) => {
+        await job();
+    }, 5000);
+
+    /** 真正的采集+广播逻辑，由 collect_task 串行调度 */
+    private async collect_and_broadcast() {
+        if (sysWssMap.size === 0) {
+            clearInterval(sysJobInterval);
+            sysJobInterval = null;
+            return;
+        }
+        // 先采集一次，再广播给所有连接。
+        // 原来是每个连接各跑一遍 si.mem()（单次约 18ms），
+        // 开 3 个面板就白跑 3 遍
+        let encoded: Uint8Array;
+        try {
+            const data = await this.collectSysInfo();
+            // 同一份载荷发给所有连接，编码一次就够
+            encoded = new WsData<SysPojo>(CmdType.sys_getting, data).encode();
+        } catch (e) {
+            console.log('系统信息采集失败,原因：', e);
+            return;
+        }
+        for (const [socketId, conn] of sysWssMap) {
+            try {
+                conn.sendData(encoded);
+            } catch (e) {
+                console.log('系统信息推送失败sys,原因：', e);
+                sysWssMap.delete(socketId);
+            }
+        }
+    }
+
     private async openSysPush(wss: Wss) {
         if (!sysJobInterval) {
-            sysJobInterval = setInterval(async () => {
-                if (sysWssMap.size === 0) {
-                    clearInterval(sysJobInterval);
-                    sysJobInterval = null;
-                    return;
-                }
-                // 先采集一次，再广播给所有连接。
-                // 原来是每个连接各跑一遍 si.mem()（单次约 18ms），
-                // 开 3 个面板就白跑 3 遍
-                let encoded: Uint8Array;
+            const tick = () => this.collect_task(() => this.collect_and_broadcast());
+            sysJobInterval = setInterval(tick, this.sys_push_interval);
+        } else {
+            // 新连上来的先给一份当前的，不用等下一个周期。
+            // 走同一把锁，避免和正在跑的 tick 并发采集
+            await this.collect_task(async () => {
                 try {
                     const data = await this.collectSysInfo();
-                    // 同一份载荷发给所有连接，编码一次就够
-                    encoded = new WsData<SysPojo>(CmdType.sys_getting, data).encode();
+                    wss.sendData(new WsData<SysPojo>(CmdType.sys_getting, data).encode());
                 } catch (e) {
-                    console.log('系统信息采集失败,原因：', e);
-                    return;
+                    sysWssMap.delete(wss.id);
                 }
-                for (const [socketId, conn] of sysWssMap) {
-                    try {
-                        conn.sendData(encoded);
-                    } catch (e) {
-                        console.log('系统信息推送失败sys,原因：', e);
-                        sysWssMap.delete(socketId);
-                    }
-                }
-            }, 2000);
-        } else {
-            // 新连上来的先给一份当前的，不用等下一个周期
-            try {
-                const data = await this.collectSysInfo();
-                wss.sendData(new WsData<SysPojo>(CmdType.sys_getting, data).encode());
-            } catch (e) {
-                sysWssMap.delete(wss.id);
-            }
+            });
         }
     }
 
@@ -70,15 +91,20 @@ class SysSystemService {
 
     /** 采集一次系统信息，供广播复用（不涉及任何连接） */
     async collectSysInfo(): Promise<SysPojo> {
-        const currentLoad = await si.currentLoad();
-        // macOS 的 os.freemem() 只统计「从未被使用」的页，系统把绝大部分空闲内存
-        // 当成文件缓存（inactive / speculative）不算进去，16G 机器常年只有几十 MB，
-        // 面板就成了永远 100%。si.mem().available 已经把可回收缓存算进来，
-        // 三平台语义一致，直接用它。
-        const mem = await si.mem();
-        // 磁盘/网络的速率由 si 自己按两次采样的差值算好，单位字节/秒，
-        // 首次调用返回 -1（没有上一份基准），统一归零
-        const [fs_stats, net_stats] = await Promise.all([si.fsStats(), si.networkStats()]);
+        // 四项互不依赖，全部并行：si.mem() 在 macOS 上要调 vm_stat，单次 20ms 左右，
+        // 串行会让整轮采集从 26ms 涨到 46ms
+        const [currentLoad, mem, fs_stats, net_stats] = await Promise.all([
+            si.currentLoad(),
+            // macOS 的 os.freemem() 只统计「从未被使用」的页，系统把绝大部分空闲内存
+            // 当成文件缓存（inactive / speculative）不算进去，16G 机器常年只有几十 MB，
+            // 面板就成了永远 100%。si.mem().available 已经把可回收缓存算进来，
+            // 三平台语义一致，直接用它。
+            si.mem(),
+            // 磁盘/网络的速率由 si 自己按两次采样的差值算好，单位字节/秒，
+            // 首次调用返回 -1（没有上一份基准），统一归零
+            si.fsStats(),
+            si.networkStats(),
+        ]);
         const pick = (v: number | null | undefined) => (v && v > 0 ? v : 0);
         let disk_read_sec = 0, disk_write_sec = 0;
         if (fs_stats) {
