@@ -32,6 +32,8 @@ export enum FileTypeEnum {
     docx = "docx",
     /** 演示文稿 pptx */
     pptx = "pptx",
+    /** 电子书 epub/mobi/azw3/fb2/cbz */
+    ebook = "ebook",
     workflow_act = "act",
     dev = "dev", // linux设备 不是文件或者目录
     url = "url"

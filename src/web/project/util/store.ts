@@ -218,6 +218,12 @@ export const $stroe = {
         name?: string,
         close?: () => any,
     }>({}),
+    // 电子书阅读器（epub/mobi/azw3/fb2/cbz）
+    ebook_reader: atom<{
+        url?: string,
+        name?: string,
+        close?: () => any,
+    }>({}),
     // 磁盘
     disk: atom<{type?: string, data?: DiskDevicePojo}>({
         type: ""

@@ -52,6 +52,14 @@ const office_format_map = new Map<string, FileTypeEnum>([
     ["pptx", FileTypeEnum.pptx],
     ["pptm", FileTypeEnum.pptx],
     ["ppt", FileTypeEnum.pptx],
+    // 电子书：epub/mobi/azw3/fb2/cbz 都由 foliate-js 渲染，只读
+    ["epub", FileTypeEnum.ebook],
+    ["mobi", FileTypeEnum.ebook],
+    ["azw", FileTypeEnum.ebook],
+    ["azw3", FileTypeEnum.ebook],
+    ["fb2", FileTypeEnum.ebook],
+    ["fbz", FileTypeEnum.ebook],
+    ["cbz", FileTypeEnum.ebook],
 ]);
 const txt = new Set(["txt","ts","js"]);
 const ExtBeautify = new Set(["js","mjs","json","html","htm","css","xml"]);

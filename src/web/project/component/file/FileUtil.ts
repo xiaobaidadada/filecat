@@ -457,6 +457,8 @@ export function get_open_mode_by_type(type: FileTypeEnum | undefined): open_mode
     if (type === FileTypeEnum.docx) return "docx";
     // 演示文稿有独立编辑器
     if (type === FileTypeEnum.pptx) return "pptx";
+    // 电子书有独立阅读器
+    if (type === FileTypeEnum.ebook) return "ebook";
     if (type === FileTypeEnum.pdf || type === FileTypeEnum.image || type === FileTypeEnum.video) return "preview";
     // .url 文件内容是一个网址，双击就是跳转，不需要任何编辑器
     if (type === FileTypeEnum.url) return "open";
@@ -476,7 +478,7 @@ export function use_share_preview() {
 }
 
 // 打开文件的方式（写入 url 参数，刷新后据此恢复）
-export type open_mode = "text" | "md" | "image_edit" | "log" | "preview" | "excalidraw" | "mind" | "timeline" | "excel" | "docx" | "pptx" | "open";
+export type open_mode = "text" | "md" | "image_edit" | "log" | "preview" | "excalidraw" | "mind" | "timeline" | "excel" | "docx" | "pptx" | "ebook" | "open";
 
 export interface file_open_param {
     name: string;
@@ -559,6 +561,7 @@ export const user_click_file = () => {
     const [excel_editor, set_excel_editor] = useAtom($stroe.excel_editor);
     const [docx_editor, set_docx_editor] = useAtom($stroe.docx_editor);
     const [pptx_editor, set_pptx_editor] = useAtom($stroe.pptx_editor);
+    const [ebook_reader, set_ebook_reader] = useAtom($stroe.ebook_reader);
     const [sqlite_query_context, set_sqlite_query_context] = useAtom($stroe.sqlite_query_context);
 
     const [showPrompt, setShowPrompt] = useAtom($stroe.confirm);
@@ -686,6 +689,9 @@ export const user_click_file = () => {
                     break;
                 case FileTypeEnum.pptx:
                     set_pptx_editor({url, name, close: param.close});
+                    break;
+                case FileTypeEnum.ebook:
+                    set_ebook_reader({url, name, close: param.close});
                     break;
                 case FileTypeEnum.md:
                     // set_markdown({
