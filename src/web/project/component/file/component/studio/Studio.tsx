@@ -38,6 +38,10 @@ const ChatPanel = React.lazy(() => import("../../../aichat/page/ChatPanel"));
 const ExcalidrawInline = React.lazy(() => import("../ExcalidrawInline"));
 // 内嵌思维导图编辑器（.mind）
 const MindMapInline = React.lazy(() => import("../MindMapInline"));
+// 内嵌电子书阅读器（epub/mobi/azw3/fb2/cbz）
+const EbookInline = React.lazy(() => import("../ebook/EbookInline"));
+// 内嵌图片查看器
+const ImageInline = React.lazy(() => import("../image/ImageInline"));
 // 内嵌时间轴编辑器（.timeline）
 const TimelineInline = React.lazy(() => import("../timeline/TimelineInline"));
 // 内嵌表格编辑器（.xlsx）
@@ -78,6 +82,16 @@ function is_docx_file(name: string): boolean {
 /** 是否是演示文稿：.pptx 后缀 */
 function is_pptx_file(name: string): boolean {
     return getFileFormat(name) === FileTypeEnum.pptx;
+}
+
+/** 是否是电子书：epub / mobi / azw3 / fb2 / cbz 等 */
+function is_ebook_file(name: string): boolean {
+    return getFileFormat(name) === FileTypeEnum.ebook;
+}
+
+/** 是否是图片：交给图片查看器显示 */
+function is_image_file(name: string): boolean {
+    return getFileFormat(name) === FileTypeEnum.image;
 }
 
 /** 左侧面板显示的内容 */
@@ -128,6 +142,10 @@ export default function Studio(props) {
     const is_docx = is_docx_file(edit_filename.name);
     // 当前文件是否是演示文稿（.pptx）
     const is_pptx = is_pptx_file(edit_filename.name);
+    // 当前文件是否是电子书（epub/mobi/azw3/fb2/cbz）
+    const is_ebook = is_ebook_file(edit_filename.name);
+    // 当前文件是否是图片
+    const is_image = is_image_file(edit_filename.name);
     // md 编辑器交给外层的编辑能力（保存、模式切换、导出、大纲跳转）
     const md_api = useRef<MdEditorPaneApi | null>(null);
     // 文本编辑器句柄（保存按钮 / Ctrl+S）
@@ -791,6 +809,21 @@ export default function Studio(props) {
                                 pptx_api.current = {save: fn};
                             }}
                         />
+                    </React.Suspense>
+                </div>
+                : is_ebook
+                ? <div className={"studio-editor studio-editor--ebook"} key={edit_file_path}>
+                    <React.Suspense fallback={null}>
+                        <EbookInline
+                            url={fileHttp.getDownloadUrl(encodeURIComponent(edit_file_path))}
+                            name={edit_filename.name}
+                        />
+                    </React.Suspense>
+                </div>
+                : is_image
+                ? <div className={"studio-editor studio-editor--image"} key={edit_file_path}>
+                    <React.Suspense fallback={null}>
+                        <ImageInline url={fileHttp.getDownloadUrl(encodeURIComponent(edit_file_path))}/>
                     </React.Suspense>
                 </div>
                 : <div className={"studio-editor"} key={edit_file_path}>

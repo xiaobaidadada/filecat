@@ -444,7 +444,7 @@ export function is_preview_file(name: string) {
 }
 
 // 按文件类型推断双击时的打开方式，写入 url 与 url 恢复共用同一套映射
-export function get_open_mode_by_type(type: FileTypeEnum | undefined): open_mode {
+export function get_open_mode_by_type(type: FileTypeEnum | undefined): open_mode | undefined {
     if (type === FileTypeEnum.md) return "md";
     if (type === FileTypeEnum.excalidraw || type === FileTypeEnum.draw) return "excalidraw";
     // 思维导图直接进 Studio 打开
@@ -464,7 +464,8 @@ export function get_open_mode_by_type(type: FileTypeEnum | undefined): open_mode
     if (type === FileTypeEnum.database) return "sqlite";
     // .url 文件内容是一个网址，双击就是跳转，不需要任何编辑器
     if (type === FileTypeEnum.url) return "open";
-    return "text";
+    // 匹配不到任何打开方式，交给调用方提示
+    return undefined;
 }
 
 // 检测 并执行 能不能预览

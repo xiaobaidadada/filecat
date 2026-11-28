@@ -8,6 +8,20 @@
     background: var(--background);
 }
 
+/* 操作条：浮在阅读区上方，不参与水位计算 */
+.ebook-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: .2rem;
+    padding: .2rem .5rem;
+}
+
 .ebook-view {
     flex: 1;
     min-width: 0;
